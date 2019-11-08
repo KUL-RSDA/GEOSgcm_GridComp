@@ -591,8 +591,9 @@ contains
 !Obtain Brunt-Vaisalla frequency from diagnosed SGS buoyancy flux
 !Presumably it is more precise than BV freq. calculated in  eddy_length()?
           
-          buoy_sgs = - a_prod_bu / (wrk + 0.0001)   ! tkh is eddy thermal diffussivity
-!         buoy_sgs = - a_prod_bu / (prnum*wrk + 0.0001)   ! tk is eddy viscosity
+          buoy_sgs = brunt
+!          buoy_sgs = - a_prod_bu / (wrk + 0.0001)   ! tkh is eddy thermal diffussivity
+!          buoy_sgs = - a_prod_bu / (prnum*wrk + 0.0001)   ! tk is eddy viscosity
 
 !Compute $c_k$ (variable Cee) for the TKE dissipation term following Deardorff (1980)
 
