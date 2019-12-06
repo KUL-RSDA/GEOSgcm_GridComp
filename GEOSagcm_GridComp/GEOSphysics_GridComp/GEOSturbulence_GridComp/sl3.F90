@@ -201,7 +201,7 @@ subroutine run_sl3(IM, JM, LM, &
         qt2t_M(i,j,k)  = -2.*wqt*dqtdz
         hlqtt_M(i,j,k) = -whl*dqtdz - wqt*dhldz
 
-        write(*,*) tke(i,j,k), -Kh(i,j,k)*N2, beta*wthv_mf(i,j,k)
+!        write(*,*) tke(i,j,k), -Kh(i,j,k)*N2, beta*wthv_mf(i,j,k)
      end do
      end do
   end do

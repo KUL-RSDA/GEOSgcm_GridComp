@@ -341,7 +341,7 @@ subroutine run_mynn(IM, JM, LM, &
         wb_test  = 3.*A2*tau*( -w2*N2(i,j,k) + ( 1. - C3 )*goth002*( thv2_25  + thv2_p ) )
         Kh_test  = -( -Kh(i,j,k)*N2(i,j,k) + wb_cg )/N2(i,j,k)
 
-        write(*,*) real(tke(i,j,k),4), real(w2/q2,4), real(qdiv,4), real(ac_half,4)
+!        write(*,*) real(tke(i,j,k),4), real(w2/q2,4), real(qdiv,4), real(ac_half,4)
 
         ! End test
      end do
