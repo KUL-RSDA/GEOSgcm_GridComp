@@ -5,6 +5,7 @@ set (srcs
    GEOS_DataAtmGridComp.F90
    ncar_ocean_fluxes.F90
    GEOS_DataAtmGridComp-pseudoCode.F90
+   ForcingSpecification.F90
   )
 
 esma_add_library (${this}
