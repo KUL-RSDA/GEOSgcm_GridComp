@@ -1917,7 +1917,7 @@ contains
          if (associated(DTDTDYN))   DTDTDYN  = DTDTDYN  - CFMIPRLX * ( T - TOBS )
          if (associated(DQVDTDYN))  DQVDTDYN = DQVDTDYN - CFMIPRLX * ( Q - QOBS )-CFMIPRLX1*(Q-qfloor)*DT
 !      print *,'modified T and Q'   
-   end if
+   end if  ! CFMIP3 switch
 
 
 

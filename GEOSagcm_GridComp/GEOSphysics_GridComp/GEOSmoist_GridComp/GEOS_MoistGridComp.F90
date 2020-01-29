@@ -1281,6 +1281,15 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'WTHV2_RAD',                                                 &
+       LONG_NAME  = 'Buoyancy_flux_from_rad_cooling',                                &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
        SHORT_NAME = 'QT2SHOC',                                               &
        LONG_NAME  = 'Total_water_variance',                                  &
        UNITS      = 'kg2 kg-2',                                              &
@@ -5424,7 +5433,7 @@ contains
                                           WQL,       &
                                           WHL 
 
-    real, dimension(:,:,:),pointer     :: WTHV2
+    real, dimension(:,:,:),pointer     :: WTHV2,WTHV2_RAD
 
 
       real, pointer, dimension(:,:,:) :: CNV_DQLDT            , &
@@ -5755,7 +5764,8 @@ contains
             c2_gw, fcn, cfaux    
 	   
       real, dimension (1, 0:LM) :: pi_gw, rhoi_gw, ni_gw, ti_gw
-      real                      :: maxkhpbl, tausurf_gw, overscale, fracover 
+      real                      :: maxkhpbl, tausurf_gw, overscale, fracover, zcldtop,maxradf,density,E
+ 
       real (ESMF_KIND_R8)       :: tauxr8, fsoot_drop, fdust_drop, sigma_nuc_r8, rh1_r8, frachet_dust, frachet_bc, frachet_org, frachet_ss
       logical                   :: ismarine, is_stable, use_average_v                  
       real                      :: Nct, Wct, DX, ksa1, Xscale
@@ -6125,7 +6135,7 @@ contains
       real, dimension(IM,JM,LM) :: hl,total_water,w3var,w2var,thlsec,qwsec,qwthlsec,wqtsec,whlsec,wqlsec
       real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,qthl_sec
       real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
-      real kd,ku,qt2tune,hl2tune,hlqt2tune
+      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac
 
       real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
@@ -6625,6 +6635,8 @@ contains
      call MAPL_GetPointer(EXPORT, PDF_RQTTH,  'PDF_RQTTH',  ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS) 
      call MAPL_GetPointer(EXPORT,  WTHV2,      'WTHV2',     ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT,  WTHV2_RAD,  'WTHV2_RAD', ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS) 
 
      call MAPL_GetPointer(EXPORT, QT2SHOC,  'QT2SHOC',  RC=STATUS)
@@ -7693,6 +7705,7 @@ contains
       call MAPL_GetResource( STATE, QT2TUNE,   'QT2TUNE:',    DEFAULT= 1.0, RC=STATUS )
       call MAPL_GetResource( STATE, HL2TUNE,   'HL2TUNE:',    DEFAULT= 1.0, RC=STATUS )
       call MAPL_GetResource( STATE, HLQT2TUNE, 'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, RADBUOYFAC,'RADBUOYFAC:', DEFAULT= 1.0, RC=STATUS )
 
 
 
@@ -8936,10 +8949,15 @@ contains
 
           whlsec(:,:,k)  = (1.0-edmf_frc(:,:,k))*0.5*(whl_sec(:,:,kd) + whl_sec(:,:,ku))+edmf_whl(:,:,k)
 
-          ! Restrict QT variance, 5-20% of qstar.
-          qwsec(:,:,k) = min(qwsec(:,:,k),(0.2*QSS(:,:,k))**2)
-!          qwsec(k) = max(min(qwsec(:,:,k),(0.2*QSS(:,:,k))**2),(0.05*QSS(:,:,k))**2)
+          ! Restrict QT variance, 5-25% of qstar.
+!          qwsec(:,:,k) = min(qwsec(:,:,k),(0.25*QSS(:,:,k))**2)
           thlsec(:,:,k) = min(thlsec(:,:,k),4.0) 
+
+!          do i=1,IM
+!            do j=1,JM
+!              qwsec(i,j,k) = max(min(qwsec(i,j,k),(0.25*QSS(i,j,k))**2),(0.04*QSS(i,j,k))**2)
+!            end do
+!          end do
 
        end do  
 
@@ -10388,7 +10406,45 @@ contains
               CONVPAR_OPTION )
 
 
-!         print *,'MoistGC: wthv2=',wthv2(:,:,LM-5:LM)
+!        print *,'RAD_CF after progno=',RAD_CF
+
+       ! Identify cloud top and radiative cooling rate
+       ! For use in radiative buoyancy adjustment
+
+       hl = TEMP*(1.+MAPL_VIREPS*Q1-QLLS-QILS) + (mapl_grav*ZLO - mapl_alhl*QLLS - mapl_alhf*QILS)/mapl_cp
+
+       WTHV2_RAD = 0.
+       do i = 1,IM
+         do j = 1,JM
+           ! Identify cloud top index
+           ! 
+           kcldtop  = LM+1
+           do k = LM,2,-1
+             if ( ( QLLS(i,j,k)+QILS(i,j,k)  .ge. 1.0e-6 ) .and. ( QLLS(i,j,k-1)+QILS(i,j,k-1) .lt. 1.0e-6) .and. (hl(i,j,k-1) .gt. hl(i,j,k)) ) then
+                kcldtop  = k-2   
+                exit
+             end if
+           end do
+!           print *,'kcldtop=',kcldtop
+
+           ! Calculate velocity scale from rad cooling
+!           maxradf = -1.0*minval(RADLW(i,j,kcldtop-1:kcldtop+1))
+           density = 100.*PLO(i,j,kcldtop) / (MAPL_RGAS*TEMP(i,j,kcldtop))
+           maxradf = radbuoyfac*MAX(-1.0*minval(RADLW(i,j,kcldtop-1:kcldtop+1)),0.0)/density
+!           print *,'maxradf=',maxradf            
+
+           ! Set radiatively driven buoyancy perturbation
+           zcldtop = ZLO(i,j,kcldtop)
+!           E = (MAPL_ALHL/MAPL_CP)*(QLLS(i,j,kcldtop+1)+QILS(i,j,kcldtop+1)) &
+!                / (TEMP(i,j,kcldtop)*(1.+0.61*Q1(i,j,kcldtop))-TEMP(i,j,kcldtop+1)*(1.+0.61*Q1(i,j,kcldtop+1)))
+           do k = kcldtop,LM
+             WTHV2_RAD(i,j,k) = maxradf*1.5*max((zcldtop-ZLO(i,j,k))*(1.-(zcldtop-ZLO(i,j,k))/(0.66*zcldtop))**3,0.0)
+!             WTHV2_RAD(i,j,k) = 0.2*(1.+15.*E)*maxradf*(zcldtop-ZLO(i,j,k))*(1.-(zcldtop-ZLO(i,j,k))/zcldtop)**3
+             WTHV2(i,j,k) = WTHV2(i,j,k) + WTHV2_RAD(i,j,k) 
+           end do
+ 
+         end do
+       end do
 
          VERIFY_(STATUS)
 
