@@ -622,20 +622,33 @@ module GEOS_DataAtmGridCompMod
 
   type (MAPL_MetaComp), pointer       :: MAPL => null()
   type (ESMF_Config)                  :: CF
+  type (ESMF_State   )                :: INTERNAL
   type (ESMF_GridComp), pointer       :: GCS(:)
   type (ESMF_State),    pointer       :: GIM(:)
   type (ESMF_State),    pointer       :: GEX(:)
   character(len=ESMF_MAXSTR),pointer  :: GCnames(:)
 
-! pointers to export
+  type (ESMF_Time)                    :: CURRENT_TIME
+  type (ESMF_Time)                    :: MODELSTART
+  type (ESMF_TimeInterval)            :: DELT
 
-! pointers to childrens' export
+  character(len=ESMF_MAXSTR)          :: DATAFILE
+
 
   real, pointer, dimension(:  )  :: LONS  => null()
 
 
+  real                           :: DT
+  integer                        :: NT
 
-  integer                        :: I, N, NT
+! Temporary "forcing" fields
+
+  real, pointer, dimension(:  )  :: rain         => null()
+  real, pointer, dimension(:  )  :: snow         => null()
+
+! pointers to export
+
+! pointers to childrens' export
 
 !=============================================================================
 
@@ -669,13 +682,95 @@ module GEOS_DataAtmGridCompMod
   call MAPL_TimerOn(MAPL,"TOTAL")
   call MAPL_TimerOn(MAPL,"RUN" )
 
-! Pointers to outputs
-!--------------------
+! Get parameters from generic state.
+!-----------------------------------
+
+  call MAPL_Get(MAPL,                          &
+       INTERNAL_ESMF_STATE = INTERNAL,         &
+       RC=STATUS )
+  VERIFY_(STATUS)
+
+! Get the time step
+! -----------------
+
+  call MAPL_Get(MAPL, HEARTBEAT = DT, RC=STATUS)
+  VERIFY_(STATUS)
+  call MAPL_GetResource ( MAPL, DT, Label="DT:", DEFAULT=DT, RC=STATUS)
+  VERIFY_(STATUS)
+
+! Get current time from clock
+!----------------------------
+
+  call ESMF_ClockGet( CLOCK, currTime=CURRENT_TIME, startTime=MODELSTART, TIMESTEP=DELT,  RC=STATUS )
+  VERIFY_(STATUS)
 
 ! The number of tiles we are working on
 !--------------------------------------
 
   NT = size(LONS)
+  if(NT == 0) then
+    call MAPL_TimerOff(MAPL,"RUN" )
+    call MAPL_TimerOff(MAPL,"TOTAL")
+    RETURN_(ESMF_SUCCESS)
+  end if
+
+! Temporary space for reading forcings
+!-------------------------------------
+
+  allocate( rain(NT), STAT=STATUS);  VERIFY_(STATUS)
+  allocate( snow(NT), STAT=STATUS);  VERIFY_(STATUS)
+
+! Read "forcing fields"
+! ---------------------
+
+! !Read sufrace downward fresh water flux from rain rate (mm s-1)
+!----------------------------------------------------------------
+
+  call MAPL_GetResource(MAPL, DATAFILE, LABEL = 'RAIN_FILE:', default = 'none', RC = status)
+  VERIFY_(status)
+  if(trim(DATAFILE) == 'none') then
+    rain = 0.0
+  else
+    call MAPL_ReadForcing( MAPL, 'RAIN', renamefile( DATAFILE, TIME = CURRENT_TIME), CURRENT_TIME, rain, RC=STATUS)
+    VERIFY_(status)
+  endif
+
+! !Read surface downward fresh water flux from snow rate (mm s-1)
+!----------------------------------------------------------------
+
+  call MAPL_GetResource(MAPL, DATAFILE, LABEL = 'SNOW_FILE:', default = 'none', RC = status)
+  VERIFY_(status)
+  if(trim(datafile) == 'none') then
+    snow = 0.0
+  else
+    call MAPL_ReadForcing( MAPL, 'SNOW', renamefile( DATAFILE, TIME = CURRENT_TIME), CURRENT_TIME, snow, RC=STATUS)
+    VERIFY_(status)
+  endif
+
+!
+!SA: help AT. Please put in code so that variables: rain, snow, ... 
+!    can be used by children (GEOS_OpenWaterDataAtmGridCompMod, GEOS_CICE4ColPhysDataAtmGridCompMod)
+!    without having to read them for data file. The idea is parent reads these kind of (atmospheric) data
+!    and ships it out to the children. They compute their local variables using these atmospheric variables and 
+!    produce fields which are then aggregated (over water and ice tiles) by the parent and become exports.
+!
+
+
+! Pointers to outputs
+!--------------------
+!
+! ...
+
+
+
+! Clean up
+!---------
+
+  deallocate(rain)
+  deallocate(snow)
+
+
+
 
 
 
@@ -690,5 +785,29 @@ module GEOS_DataAtmGridCompMod
   end subroutine RUN
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!-------------------------------------------------------------------------
+
+  function renamefile(NAME, TIME) result(NAME0)
+
+    character(len = *), intent(in)    :: NAME
+    character(len = len(name))        :: NAME0
+    type(ESMF_TIME),    intent(inout) :: TIME
+
+    integer :: i, year, month, day
+    integer :: STATUS
+
+    NAME0 = trim( NAME)
+    i = index(string = NAME, substring = "yyyymmdd")
+    if(i == 0) return
+
+    call ESMF_TIMEGET(TIME, yy = year, mm = month, dd = day, RC=STATUS)
+    write(unit = NAME0(i:i + 7), fmt = "(i4,i2.2,i2.2)") year, month, day
+
+  end function
+
+!-------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------
 
 end module GEOS_DataAtmGridCompMod

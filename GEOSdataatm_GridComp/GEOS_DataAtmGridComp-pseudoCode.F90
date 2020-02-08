@@ -114,6 +114,10 @@
 ! Section B
 ! Read following fields from files
 !
+! rain (rain rate)
+! snow (snow rate)
+!
+!
 !  --- if obio, rad --
 ! additionally read and export to the ocean:
 ! -----------------------------------------

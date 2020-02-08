@@ -641,11 +641,6 @@ module GEOS_ObioRadDataAtmGridCompMod
 !--------------------------------------
 
   NT = size(LONS)
-  if(NT == 0) then
-    call MAPL_TimerOff(MAPL,"RUN" )
-    call MAPL_TimerOff(MAPL,"TOTAL")
-    RETURN_(ESMF_SUCCESS)
-  end if
 
 ! Temporary space for reading forcings
 !-------------------------------------
