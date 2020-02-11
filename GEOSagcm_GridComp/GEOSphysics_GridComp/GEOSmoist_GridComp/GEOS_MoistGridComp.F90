@@ -11880,6 +11880,12 @@ do K= 1, LM
 
       RAD_QV   = max( Q1 , 0. )
 
+!      where (ZLO.gt.1200 .and. ZLO.lt.1300) 
+!        RAD_CF = 1.
+!        RAD_QL = 0.0003
+!      end where
+
+
       IF ( INT(CLDPARAMS%DISABLE_RAD)==1 ) THEN
          RAD_QL     = 0.
          RAD_QI     = 0.
