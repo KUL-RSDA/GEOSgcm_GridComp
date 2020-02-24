@@ -826,7 +826,7 @@ module GEOS_CICE4ColPhysDataAtmGridCompMod
 
     ! It is desired to sometimes run the coupled model with prescribed ice. 
     ! 1: prescribe ice, as in AMIP mode.
-    call MAPL_GetResource ( MAPL, PRES_ICE,  Label="PRESCRIBED_ICE:" , DEFAULT=1, RC=STATUS)
+    call MAPL_GetResource ( MAPL, PRES_ICE,  Label="PRESCRIBED_ICE:" , DEFAULT=0, RC=STATUS)
     VERIFY_(STATUS)
 
     if (PRES_ICE == 1) then
