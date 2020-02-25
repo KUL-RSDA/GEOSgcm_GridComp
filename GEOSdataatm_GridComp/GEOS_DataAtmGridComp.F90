@@ -556,10 +556,11 @@ module GEOS_DataAtmGridCompMod
 !------------------------------------------------
 
 !SA: Check AT. Which one of following two (1) or (2)?
-! (1)
-    call MAPL_Get (MAPL, LOCSTREAM=LOCSTREAM, GCS=GCS, RC=STATUS )
-    VERIFY_(STATUS)
-
+!ALT: (2) should be used here
+!! (1)
+!    call MAPL_Get (MAPL, LOCSTREAM=LOCSTREAM, GCS=GCS, RC=STATUS )
+!    VERIFY_(STATUS)
+!
 !(2)
     call MAPL_Get(MAPL, EXCHANGEGRID=EXCH,        RC=STATUS )
     VERIFY_(STATUS)
@@ -717,7 +718,13 @@ module GEOS_DataAtmGridCompMod
 ! Temporary space for reading forcings
 !-------------------------------------
 
-  allocate( rain(NT), STAT=STATUS);  VERIFY_(STATUS)
+!  allocate( rain(NT), STAT=STATUS);  VERIFY_(STATUS)
+!ALT: instead of allocating, we get the pointer directly from the child's import
+! here I picked WATER as example, only one child should be enough,
+! due to pointer sharing
+
+  call MAPL_GetPointer(GIM(WATER), rain, 'RAIN', RC=STATUS);  VERIFY_(STATUS)
+
   allocate( snow(NT), STAT=STATUS);  VERIFY_(STATUS)
 
 ! Read "forcing fields"
@@ -766,7 +773,7 @@ module GEOS_DataAtmGridCompMod
 ! Clean up
 !---------
 
-  deallocate(rain)
+!ALT  deallocate(rain)
   deallocate(snow)
 
 
