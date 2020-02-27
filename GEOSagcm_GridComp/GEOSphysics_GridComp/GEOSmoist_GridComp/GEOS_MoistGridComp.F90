@@ -11977,8 +11977,10 @@ do K= 1, LM
       RAD_QV   = max( Q1 , 0. )
 
       
+      
       do i=1,IM
         do j=1,JM
+          if (TS(i,j).le.293.) then
           do k=1,LM
             if (ZLO(i,j,k)>IMPOSECLD_BOT .and. ZLO(i,j,k)<IMPOSECLD_TOP) then
               if (maxval(RAD_CF(i,j,1:k-1))<0.9) then
@@ -11987,6 +11989,7 @@ do K= 1, LM
               end if
             end if
           end do
+          end if
         end do
       end do
 !      where (ZLO.gt.IMPOSECLD_BOT .and. ZLO.lt.IMPOSECLD_TOP) 
