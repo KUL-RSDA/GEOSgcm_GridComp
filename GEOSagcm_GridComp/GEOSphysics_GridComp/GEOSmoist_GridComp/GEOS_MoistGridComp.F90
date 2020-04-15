@@ -194,6 +194,8 @@ contains
     integer      :: AVRGNINT
     integer      :: IQVAINC
     real         :: DT
+
+    integer ::  DOSHLW, DO_MYNN
     
     character(len=ESMF_MAXSTR) :: FRIENDLIES_NCPL , FRIENDLIES_NCPI , &
                                   FRIENDLIES_NRAIN, FRIENDLIES_NSNOW, FRIENDLIES_NGRAUPEL
@@ -287,6 +289,12 @@ contains
     VERIFY_(STATUS)
     if (adjustl(DIAGNOSE_PRECIP_TYPE)=="TRUE" ) LDIAGNOSE_PRECIP_TYPE=.true.
     if (adjustl(DIAGNOSE_PRECIP_TYPE)=="FALSE") LDIAGNOSE_PRECIP_TYPE=.false.
+
+    call ESMF_ConfigGetAttribute( CF, DOSHLW, Label="DOSHLW:",  default=0, RC=STATUS)
+
+    call ESMF_ConfigGetAttribute( CF, DO_MYNN, Label="TURBULENCE_DO_MYNN:",  default=0, RC=STATUS)
+
+       !call MAPL_GetResource(STATE, DOSHLW,             'DOSHLW:'  ,DEFAULT=0,        RC=STATUS)
 
     FRIENDLIES_NCPI     = trim(COMP_NAME)
     FRIENDLIES_NCPL     = trim(COMP_NAME)
@@ -747,38 +755,40 @@ contains
 
     ! Import prognostic variables representing covariability of heat and moisture
     !
-    call MAPL_AddImportSpec(GC,                                  &
-       SHORT_NAME = 'HL2',                                       &
-       LONG_NAME  = 'variance_of_liquid_water_static_energy',    &
-       UNITS      = 'K+2',                                       &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationEdge,                          &
-       AVERAGING_INTERVAL = AVRGNINT,                            &
-       REFRESH_INTERVAL   = RFRSHINT,                            &
-       RC=STATUS )
-    VERIFY_(STATUS)
+    if ( DO_MYNN /= 0 ) then
+       call MAPL_AddImportSpec(GC,                                  &
+            SHORT_NAME = 'HL2',                                       &
+            LONG_NAME  = 'variance_of_liquid_water_static_energy',    &
+            UNITS      = 'K+2',                                       &
+            DIMS       = MAPL_DimsHorzVert,                           &
+            VLOCATION  = MAPL_VLocationEdge,                          &
+            AVERAGING_INTERVAL = AVRGNINT,                            &
+            REFRESH_INTERVAL   = RFRSHINT,                            &
+            RC=STATUS )
+       VERIFY_(STATUS)
 
-    call MAPL_AddImportSpec(GC,                                  &
-       SHORT_NAME = 'QT2',                                       &
-       LONG_NAME  = 'variance_of_total_water_specific_humidity', &
-       UNITS      = '1',                                         &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationEdge,                          &
-       AVERAGING_INTERVAL = AVRGNINT,                            &
-       REFRESH_INTERVAL   = RFRSHINT,                            &
-       RC=STATUS )
-    VERIFY_(STATUS)
+       call MAPL_AddImportSpec(GC,                                  &
+            SHORT_NAME = 'QT2',                                       &
+            LONG_NAME  = 'variance_of_total_water_specific_humidity', &
+            UNITS      = '1',                                         &
+            DIMS       = MAPL_DimsHorzVert,                           &
+            VLOCATION  = MAPL_VLocationEdge,                          &
+            AVERAGING_INTERVAL = AVRGNINT,                            &
+            REFRESH_INTERVAL   = RFRSHINT,                            &
+            RC=STATUS )
+       VERIFY_(STATUS)
 
-    call MAPL_AddImportSpec(GC,                                  &
-       SHORT_NAME = 'HLQT',                                      &
-       LONG_NAME  = 'covariance_of_liquid_water_static_energy_and_total_water_specific_humidity', &
-       UNITS      = 'K',                                         &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationEdge,                          &
-       AVERAGING_INTERVAL = AVRGNINT,                            &
-       REFRESH_INTERVAL   = RFRSHINT,                            &
-       RC=STATUS )
-    VERIFY_(STATUS)
+       call MAPL_AddImportSpec(GC,                                  &
+            SHORT_NAME = 'HLQT',                                      &
+            LONG_NAME  = 'covariance_of_liquid_water_static_energy_and_total_water_specific_humidity', &
+            UNITS      = 'K',                                         &
+            DIMS       = MAPL_DimsHorzVert,                           &
+            VLOCATION  = MAPL_VLocationEdge,                          &
+            AVERAGING_INTERVAL = AVRGNINT,                            &
+            REFRESH_INTERVAL   = RFRSHINT,                            &
+            RC=STATUS )
+       VERIFY_(STATUS)
+    end if
     !
     ! End import of prognostic variables
 
@@ -5164,7 +5174,7 @@ contains
 ! Coefficients for determining relative contribution of sensible and latent
 ! heat fluxes to bouyancy flux
     call MAPL_AddExportSpec(GC,                                     &
-         SHORT_NAME         = 'A_cloud',                            &
+         SHORT_NAME         = 'A_mynn',                             &
          LONG_NAME          = 'A-coefficient_for_moist_turbulence', & 
          UNITS              = '?',                                  &
          DIMS               = MAPL_DimsHorzVert,                    &
@@ -5172,7 +5182,7 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                                     &
-         SHORT_NAME         = 'B_cloud',                            &
+         SHORT_NAME         = 'B_mynn',                             &
          LONG_NAME          = 'B-coefficient_for_moist_turbulence', & 
          UNITS              = '?',                                  &
          DIMS               = MAPL_DimsHorzVert,                    &
@@ -5180,7 +5190,7 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                                     &
-         SHORT_NAME         = 'qsat',                               &
+         SHORT_NAME         = 'qsat_mynn',                          &
          LONG_NAME          = 'Saturation_specific_humidity',       & 
          UNITS              = 'kg+1kg-1',                           &
          DIMS               = MAPL_DimsHorzVert,                    &
@@ -5864,7 +5874,7 @@ contains
       real, pointer, dimension(:,:,:)       :: NACTL,NACTI
 !--kml--- activation for single-moment uphysics
 
-      real, pointer, dimension(:,:,:)       :: A_cloud, B_cloud, qsat
+      real, pointer, dimension(:,:,:)       :: A_mynn, B_mynn, qsat_mynn
 
       ! Aerosol-Cloud interactions
 
@@ -6048,9 +6058,10 @@ contains
             c2_gw, fcn, cfaux    
 	   
       real, dimension (1, 0:LM) :: pi_gw, rhoi_gw, ni_gw, ti_gw
-      real                      :: maxkhpbl, tausurf_gw, overscale, fracover, zcldtop,maxradf,density,E
- 
-      real (ESMF_KIND_R8)       :: tauxr8, fsoot_drop, fdust_drop, sigma_nuc_r8, rh1_r8, frachet_dust, frachet_bc, frachet_org, frachet_ss
+      real                      :: maxkhpbl, tausurf_gw, overscale, fracover, cfc_aux, zcldtop, maxradf, density, E
+
+      real (ESMF_KIND_R8)       :: tauxr8, fsoot_drop, fdust_drop, sigma_nuc_r8, rh1_r8, frachet_dust, &
+                                   frachet_bc, frachet_org, frachet_ss
       logical                   :: ismarine, is_stable, use_average_v                  
       real                      :: Nct, Wct, DX, ksa1, Xscale
 
@@ -6106,8 +6117,8 @@ contains
       real,    dimension(IM,JM,  LM)  :: KEX, DKEX
       real,    dimension(IM,JM,  LM)  :: Q1, W1, U1, V1, TH1, CNV_PRC3,fQi,CFPBL,CNV_HAIL
 
-      real                            :: IMPOSECLD_TOP,IMPOSECLD_BOT,IMPOSECLD_QCMIN,IMPOSECLD_FRCMIN
-      integer                         :: DOSHLW,SHLWDIAG
+      real                            :: IMPOSECLD_TOP, IMPOSECLD_BOT, IMPOSECLD_QCMIN, IMPOSECLD_FRCMIN
+      integer                         :: SHLWDIAG
       real,    dimension(IM,JM,  LM)  :: SHLW_PRC3,SHLW_SNO3,UFRC_SC
       real,    dimension(IM,JM,0:LM)  :: CNV_PLE,ZLE
       real,    dimension(      0:LM)  :: SIGE
@@ -6430,7 +6441,7 @@ contains
       real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
       real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac
 
-      real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU
+      real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU, CMNI
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
 
       ! MATMAT CUDA Variables
@@ -6703,6 +6714,9 @@ contains
         call MAPL_GetResource(STATE, SHLWPARAMS%FRC_RASN,'FRC_RASN:'   ,DEFAULT=0.0, RC=STATUS)
       endif
 
+      call MAPL_GetResource(STATE, DO_MYNN, 'TURBULENCE_DO_MYNN:', default=0, RC=STATUS)
+      VERIFY_(STATUS)
+
       ! Get the time step from the alarm
       !---------------------------------
 
@@ -6728,13 +6742,12 @@ contains
       call MAPL_GetPointer(INTERNAL, QICN,     'QICN'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(INTERNAL, NCPL,     'NCPL'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       call MAPL_GetPointer(INTERNAL, NCPI,     'NCPI'    , RC=STATUS); VERIFY_(STATUS)
-     call MAPL_GetPointer(INTERNAL,  PDF_AX,   'PDF_AX'  , RC=STATUS); VERIFY_(STATUS) 
-     call MAPL_GetPointer(INTERNAL,  SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
-      
+      call MAPL_GetPointer(INTERNAL, PDF_AX,   'PDF_AX'  , RC=STATUS); VERIFY_(STATUS) 
+      call MAPL_GetPointer(INTERNAL, SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
       call MAPL_GetPointer(INTERNAL, NRAIN,    'NRAIN'    , RC=STATUS); VERIFY_(STATUS)  
       call MAPL_GetPointer(INTERNAL, NSNOW,    'NSNOW'    , RC=STATUS); VERIFY_(STATUS)      
       call MAPL_GetPointer(INTERNAL, NGRAUPEL, 'NGRAUPEL'    , RC=STATUS); VERIFY_(STATUS)
-       
+
       if (DOSHLW /= 0) then
        call MAPL_GetPointer(INTERNAL, CUSH,  'CUSH'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       end if
@@ -6793,9 +6806,11 @@ contains
       call MAPL_GetPointer(IMPORT, T        ,'T'       ,RC=STATUS); VERIFY_(STATUS)
 
       ! Get pointers to prognostics second-order moments
-      call MAPL_GetPointer(IMPORT, HL2 ,   'HL2',    RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT, QT2  ,  'QT2',    RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT, HLQT,   'HLQT',   RC=STATUS); VERIFY_(STATUS)
+      if ( DO_MYNN /= 0 ) then
+         call MAPL_GetPointer(IMPORT, HL2 ,   'HL2',    RC=STATUS); VERIFY_(STATUS)
+         call MAPL_GetPointer(IMPORT, QT2  ,  'QT2',    RC=STATUS); VERIFY_(STATUS)
+         call MAPL_GetPointer(IMPORT, HLQT,   'HLQT',   RC=STATUS); VERIFY_(STATUS)
+      end if
 
       ! Get pointers to sub-environmental properties
       call MAPL_GetPointer(IMPORT,   au,   'au', RC=STATUS); VERIFY_(STATUS)
@@ -7296,9 +7311,9 @@ contains
 !!!      endif
 !--kml-----------------------------------------------------------------------------
 
-      call MAPL_GetPointer(EXPORT, A_cloud, 'A_cloud', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(EXPORT, B_cloud, 'B_cloud', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(EXPORT,    qsat,    'qsat', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT,    A_mynn,    'A_mynn', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT,    B_mynn,    'B_mynn', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, qsat_mynn, 'qsat_mynn', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
 
       ! Count the fields in TR...
       !--------------------------
@@ -9261,10 +9276,6 @@ contains
 
        ! define resolved gradients on edges 
        do k=1,LM-1
-
-          ! Ensure realizibility of HLQT (this should be moved to DIFFUSE in Turbulence in the future)
-          HLQT(:,:,k) = sign( min( abs(HLQT(:,:,k)), sqrt(HL2(:,:,k)*QT2(:,:,k)) ), HLQT(:,:,k) )
-
           if (DO_MYNN == 0) then
              wrk1 = 1.0 / (ZLO(:,:,k)-ZLO(:,:,k+1)) 
              wrk3 = KH(:,:,k) * wrk1
@@ -9289,6 +9300,9 @@ contains
              ! energy.  Eq 5 in BK13
              hlqt_sec(:,:,k) = hlqt2tune * sm * wrk1 * wrk2
           else
+             ! Ensure realizibility of HLQT (this should be moved to DIFFUSE in Turbulence in the future)
+             HLQT(:,:,k) = sign( min( abs(HLQT(:,:,k)), sqrt(HL2(:,:,k)*QT2(:,:,k)) ), HLQT(:,:,k) )
+
              hl2_sec(:,:,k)  = HL2(:,:,k)
              qt2_sec(:,:,k)  = QT2(:,:,k)
              hlqt_sec(:,:,k) = HLQT(:,:,k)
@@ -10785,9 +10799,9 @@ contains
               QDDF3             , &
               CNV_FRACTION      , &
               TROPP             , &
-              A_cloud           , &
-              B_cloud           , &
-              qsat              , &
+              A_mynn            , &
+              B_mynn            , &
+              qsat_mynn         , &
                                 ! Diagnostics
               RHX_X             , &
               REV_LS_X          , &
