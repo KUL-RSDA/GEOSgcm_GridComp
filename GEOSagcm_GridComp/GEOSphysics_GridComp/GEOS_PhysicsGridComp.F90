@@ -110,7 +110,7 @@ contains
     integer                                 :: I
     type (ESMF_Config)                      :: CF
 
-    integer                                 :: DO_OBIO, DO_CO2CNNEE, DO_CO2SC, nCols, NQ, DO_MYNN, MYNN_LEVEL
+    integer                                 :: DO_OBIO, DO_CO2CNNEE, ATM_CO2, nCols, NQ, DO_MYNN, MYNN_LEVEL
 
     real                                    :: SYNCTQ
     character(len=ESMF_MAXSTR), allocatable :: NAMES(:)
