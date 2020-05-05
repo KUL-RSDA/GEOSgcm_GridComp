@@ -1,5 +1,7 @@
 !   $Id$
 
+#define EDMF_DIAG 1
+
 #include "MAPL_Generic.h"
 
 !=============================================================================
@@ -801,6 +803,188 @@ contains
        VLOCATION  = MAPL_VLocationCenter,                                    &
                                                                   RC=STATUS  )
     VERIFY_(STATUS)
+
+#ifdef EDMF_DIAG
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume1',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume1'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume2',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume2'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume3',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume3'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume4',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume4'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume5',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume5'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume6',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume6'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume7',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume7'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume8',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume8'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume9',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume9'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_plume10',                                  &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_qt_plume10'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume1',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume1'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume2',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume2'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume3',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume3'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume4',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume4'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume5',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume5'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume6',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume6'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume7',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume7'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume8',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume8'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume9',                                       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume9'    ,                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_thl_plume10',                                      &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_thl_plume10'    ,                                  &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+#endif
 
     call MAPL_AddExportSpec(GC,                                              &
        LONG_NAME  = 'w3_from_SHOC_canuto',                                  &
@@ -3070,6 +3254,14 @@ contains
                                             edmf_whl, edmf_qt3, w3_canuto, &
                                             hle, qte, &
                                             A_mynn, B_mynn, qsat_mynn
+#ifdef EDMF_DIAG
+   real, dimension(:,:,:), pointer      :: edmf_qt_plume1,edmf_qt_plume2,edmf_qt_plume3,edmf_qt_plume4, &
+                                           edmf_qt_plume5,edmf_qt_plume6,edmf_qt_plume7, &
+                                           edmf_qt_plume8,edmf_qt_plume9,edmf_qt_plume10
+   real, dimension(:,:,:), pointer      :: edmf_thl_plume1,edmf_thl_plume2,edmf_thl_plume3,edmf_thl_plume4, &
+                                           edmf_thl_plume5,edmf_thl_plume6,edmf_thl_plume7, &
+                                           edmf_thl_plume8,edmf_thl_plume9,edmf_thl_plume10
+#endif
    real, dimension(IM,JM,0:LM)          ::  ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
 !   real, dimension(IM,JM,0:LM)          ::  awhl3, awqt3, awthv3 ! for EDMF contribution to MYNN
    real, dimension(IM,JM,0:LM)          ::  ae3_test, aw3_test, aws3_test, awqv3_test, awql3_test, awqi3_test, awu3_test, awv3_test
@@ -3166,6 +3358,14 @@ contains
      real, dimension(im,jm,0:lm) :: RHOE,RHOAW3
      real, dimension(im,jm) :: ZPBLmf,KPBLmf   
      real,dimension(im,jm,lm) :: buoyf,mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfhlqt,mfwhl
+#ifdef EDMF_DIAG
+     real,dimension(im,jm,0:lm) :: qt_plume1,qt_plume2,qt_plume3,qt_plume4, &
+                                   qt_plume5,qt_plume6,qt_plume7, &
+                                   qt_plume8,qt_plume9,qt_plume10
+     real,dimension(im,jm,0:lm) :: thl_plume1,thl_plume2,thl_plume3,thl_plume4, &
+                                   thl_plume5,thl_plume6,thl_plume7, &
+                                   thl_plume8,thl_plume9,thl_plume10
+#endif
      real :: ice_ramp,EntWFac
      integer, dimension(IM,JM)       :: IRAS, JRAS
      real,               dimension(LM+1) :: temparray, htke
@@ -3433,6 +3633,48 @@ contains
      VERIFY_(STATUS)
 !     call MAPL_GetPointer(EXPORT,  edmf_aw,  'edmf_aw',      RC=STATUS)
 !     VERIFY_(STATUS)
+#ifdef EDMF_DIAG
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume1,  'edmf_qt_plume1',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume2,  'edmf_qt_plume2',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume3,  'edmf_qt_plume3',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume4,  'edmf_qt_plume4',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume5,  'edmf_qt_plume5',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume6,  'edmf_qt_plume6',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume7,  'edmf_qt_plume7',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume8,  'edmf_qt_plume8',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume9,  'edmf_qt_plume9',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt_plume10,  'edmf_qt_plume10',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume1, 'edmf_thl_plume1',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume2, 'edmf_thl_plume2',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume3, 'edmf_thl_plume3',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume4, 'edmf_thl_plume4',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume5, 'edmf_thl_plume5',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume6, 'edmf_thl_plume6',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume7, 'edmf_thl_plume7',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume8, 'edmf_thl_plume8',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume9, 'edmf_thl_plume9',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_thl_plume10, 'edmf_thl_plume10',    RC=STATUS)
+     VERIFY_(STATUS)
+#endif
      call MAPL_GetPointer(EXPORT,  edmf_dry_qt,  'edmf_dry_qt',    RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_moist_qt,  'edmf_moist_qt',  RC=STATUS)
@@ -3722,6 +3964,12 @@ if (ETr .eq. 1.) then
              ET,L02,ENT0,EDfac,EntWFac,buoyf,&
              mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfhlqt,mfwhl,iras,jras, &
              au, Mu, E, D, hle, qte, &
+#ifdef EDMF_DIAG
+             qt_plume1,qt_plume2,qt_plume3,qt_plume4,qt_plume5, &
+             qt_plume6,qt_plume7,qt_plume8,qt_plume9,qt_plume10, &
+             thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
+             thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
+#endif
              EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
 
 !!$    call run_edmf(IM, JM, LM, numup, iras, jras, &                                ! in
@@ -3827,6 +4075,12 @@ if (ETr .eq. 1.) then
              ET,L02,ENT0,EDfac,EntWFac,buoyf,&
              mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfhlqt,mfwhl,iras,jras, &
              au, Mu, E, D, hle, qte, &
+#ifdef EDMF_DIAG
+             qt_plume1,qt_plume2,qt_plume3,qt_plume4,qt_plume5, &
+             qt_plume6,qt_plume7,qt_plume8,qt_plume9,qt_plume10, &
+             thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
+             thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
+#endif
              EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
 
 !!$    call run_edmf(IM, JM, LM, 1, iras, jras, &                                    ! in
@@ -3898,6 +4152,12 @@ if (ETr .eq. 1.) then
              ET,L02,ENT0,EDfac,EntWFac,buoyf,&
              mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfhlqt,mfwhl,iras,jras, &
              au, Mu, E, D, hle, qte, &
+#ifdef EDMF_DIAG
+             qt_plume1,qt_plume2,qt_plume3,qt_plume4,qt_plume5, &
+             qt_plume6,qt_plume7,qt_plume8,qt_plume9,qt_plume10, &
+             thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
+             thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
+#endif
              EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
  
 !!$    call run_edmf(IM, JM, LM, numup, iras, jras, &                                ! in
@@ -3971,6 +4231,29 @@ end if
 !     QI_mf=0.
 !end if
 
+#ifdef EDMF_DIAG
+     if (associated(edmf_qt_plume1)) edmf_qt_plume1 = qt_plume1
+     if (associated(edmf_qt_plume2)) edmf_qt_plume2 = qt_plume2
+     if (associated(edmf_qt_plume3)) edmf_qt_plume3 = qt_plume3
+     if (associated(edmf_qt_plume4)) edmf_qt_plume4 = qt_plume4
+     if (associated(edmf_qt_plume5)) edmf_qt_plume5 = qt_plume5
+     if (associated(edmf_qt_plume6)) edmf_qt_plume6 = qt_plume6
+     if (associated(edmf_qt_plume7)) edmf_qt_plume7 = qt_plume7
+     if (associated(edmf_qt_plume8)) edmf_qt_plume8 = qt_plume8
+     if (associated(edmf_qt_plume9)) edmf_qt_plume9 = qt_plume9
+     if (associated(edmf_qt_plume10)) edmf_qt_plume10 = qt_plume10
+
+     if (associated(edmf_thl_plume1)) edmf_thl_plume1 = thl_plume1
+     if (associated(edmf_thl_plume2)) edmf_thl_plume2 = thl_plume2
+     if (associated(edmf_thl_plume3)) edmf_thl_plume3 = thl_plume3
+     if (associated(edmf_thl_plume4)) edmf_thl_plume4 = thl_plume4
+     if (associated(edmf_thl_plume5)) edmf_thl_plume5 = thl_plume5
+     if (associated(edmf_thl_plume6)) edmf_thl_plume6 = thl_plume6
+     if (associated(edmf_thl_plume7)) edmf_thl_plume7 = thl_plume7
+     if (associated(edmf_thl_plume8)) edmf_thl_plume8 = thl_plume8
+     if (associated(edmf_thl_plume9)) edmf_thl_plume9 = thl_plume9
+     if (associated(edmf_thl_plume10)) edmf_thl_plume10 = thl_plume10
+#endif
 !    if (associated(edmf_aw)) edmf_aw=aw3
      if (associated(z_conv_edmf)) z_conv_edmf=edmfzcld
      if (associated(edmf_dry_a)) edmf_dry_a=edmfdrya 
@@ -7028,6 +7311,12 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
              ET,L0,ENT0,EDfac,EntWFac,buoyf,&
              mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfhlqt,mfwhl,iras,jras, &
              au, Mu, E, D, hle, qte, &
+#ifdef EDMF_DIAG
+             qt_plume1,qt_plume2,qt_plume3,qt_plume4,qt_plume5, &
+             qt_plume6,qt_plume7,qt_plume8,qt_plume9,qt_plume10, &
+             thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
+             thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
+#endif
              edmf_discrete_type, edmf_implicit)
 
 
@@ -7078,6 +7367,14 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
   !     REAL,DIMENSION(KTS:KTE), INTENT(OUT) :: DTH,DQV,DQC,DU,DV
        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: dry_a3, moist_a3,dry_w3,moist_w3, &
                dry_qt3,moist_qt3,dry_thl3,moist_thl3,dry_u3,moist_u3,dry_v3,moist_v3,moist_qc3 
+#ifdef EDMF_DIAG
+       REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: qt_plume1,qt_plume2,qt_plume3,qt_plume4, &
+                                                         qt_plume5,qt_plume6,qt_plume7, &
+                                                         qt_plume8,qt_plume9,qt_plume10
+       REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: thl_plume1,thl_plume2,thl_plume3,thl_plume4, &
+                                                         thl_plume5,thl_plume6,thl_plume7, &
+                                                         thl_plume8,thl_plume9,thl_plume10
+#endif
 
   ! outputs - variables needed for solver (s_aw - sum ai*wi, s_awphi - sum ai*wi*phii)
         REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
@@ -7180,6 +7477,30 @@ real, dimension(its:ite) :: L0
    ! this is the environmental area - by default 1.
 
      ae3=EDfac 
+
+#ifdef EDMF_DIAG
+      qt_plume1 = mapl_undef
+      qt_plume2 = mapl_undef
+      qt_plume3 = mapl_undef
+      qt_plume4 = mapl_undef
+      qt_plume5 = mapl_undef
+      qt_plume6 = mapl_undef
+      qt_plume7 = mapl_undef
+      qt_plume8 = mapl_undef
+      qt_plume9 = mapl_undef
+      qt_plume10 = mapl_undef
+      thl_plume1 = mapl_undef
+      thl_plume2 = mapl_undef
+      thl_plume3 = mapl_undef
+      thl_plume4 = mapl_undef
+      thl_plume5 = mapl_undef
+      thl_plume6 = mapl_undef
+      thl_plume7 = mapl_undef
+      thl_plume8 = mapl_undef
+      thl_plume9 = mapl_undef
+      thl_plume10 = mapl_undef
+#endif
+
 
 DO IH=ITS,ITE ! loop over the horizontal dimension
 
@@ -7494,6 +7815,29 @@ end if
       moist_qc=0.     
 
       DO k=KTS-1,KTE  ! loop in vertical 
+#ifdef EDMF_DIAG
+     qt_plume1(IH,k) = upqt(kte+kts-k-1,1) 
+     qt_plume2(IH,k) = upqt(kte+kts-k-1,2) 
+     qt_plume3(IH,k) = upqt(kte+kts-k-1,3) 
+     qt_plume4(IH,k) = upqt(kte+kts-k-1,4) 
+     qt_plume5(IH,k) = upqt(kte+kts-k-1,5) 
+     qt_plume6(IH,k) = upqt(kte+kts-k-1,6) 
+     qt_plume7(IH,k) = upqt(kte+kts-k-1,7) 
+     qt_plume8(IH,k) = upqt(kte+kts-k-1,8) 
+     qt_plume9(IH,k) = upqt(kte+kts-k-1,9) 
+     qt_plume10(IH,k)= upqt(kte+kts-k-1,10) 
+     thl_plume1(IH,k) = upw(kte+kts-k-1,1) 
+     thl_plume2(IH,k) = upw(kte+kts-k-1,2) 
+     thl_plume3(IH,k) = upw(kte+kts-k-1,3) 
+     thl_plume4(IH,k) = upw(kte+kts-k-1,4) 
+     thl_plume5(IH,k) = upw(kte+kts-k-1,5) 
+     thl_plume6(IH,k) = upw(kte+kts-k-1,6) 
+     thl_plume7(IH,k) = upw(kte+kts-k-1,7) 
+     thl_plume8(IH,k) = upw(kte+kts-k-1,8) 
+     thl_plume9(IH,k) = upw(kte+kts-k-1,9) 
+     thl_plume10(IH,k)= upw(kte+kts-k-1,10)
+#endif
+
          DO I=1,NUP ! first sum over all i-updrafts
             IF ((UPQL(K,I)>0.) .OR. UPQI(K,I)>0.)  THEN
                moist_a(K)=moist_a(K)+UPA(K,I)
