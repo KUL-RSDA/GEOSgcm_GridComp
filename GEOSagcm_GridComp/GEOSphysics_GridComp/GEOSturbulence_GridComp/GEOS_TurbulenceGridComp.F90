@@ -7636,8 +7636,8 @@ if (L0(IH) .gt. 0. ) then
    ! entrainent: Ent=Ent0/dz*P(dz/L0)             
    do i=1,Nup   
     do k=kts,kte
-!     ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1))
-     ENT(k,i)=ENTf(k,i)*Ent0/(ZW(k)-ZW(k-1)) ! test
+     ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1))
+!     ENT(k,i)=ENTf(k,i)*Ent0/(ZW(k)-ZW(k-1)) ! test
    enddo
    enddo
 
