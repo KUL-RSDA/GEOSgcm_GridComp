@@ -4010,6 +4010,13 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         integer, save                   :: unit_i=0
         integer                         :: unit
 #endif
+#ifdef WRITE_CATCHOUT
+        ! vars for debugging purposes
+        integer                         :: nt
+        logical, save                   :: firsttime=.true.
+        integer, save                   :: unit_i=0
+        integer                         :: unit
+#endif
         integer :: NT_GLOBAL
 
         ! Offline case
@@ -5629,6 +5636,25 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         if(associated(RMELTBC002)) RMELTBC002 = RMELT(:,7) 
         if(associated(RMELTOC001)) RMELTOC001 = RMELT(:,8) 
         if(associated(RMELTOC002)) RMELTOC002 = RMELT(:,9) 
+
+#ifdef WRITE_CATCHOUT
+        call MAPL_Get(MAPL, LocStream=LOCSTREAM, RC=STATUS)
+        VERIFY_(STATUS)
+        call MAPL_LocStreamGet(LOCSTREAM, TILEGRID=TILEGRID, RC=STATUS)
+        VERIFY_(STATUS)
+
+        call MAPL_TileMaskGet(tilegrid,  mask, rc=status)
+        VERIFY_(STATUS)
+
+         if (UNIT_i == 0) then
+           unit_i = GETFILE( "catch_out.data", form="unformatted", RC=STATUS )
+           VERIFY_(STATUS)
+        endif
+        unit = unit_i
+        print *,'WRITE_CATCHOUT'
+        call MAPL_VarWrite(unit, tilegrid, SHLAND,  mask=mask, rc=status); VERIFY_(STATUS)
+        call MAPL_VarWrite(unit, tilegrid, LHLAND,  mask=mask, rc=status); VERIFY_(STATUS)
+#endif
 
         if(associated(TPSN1)) then
            where(WESNN(1,:)>0.)

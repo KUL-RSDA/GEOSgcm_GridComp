@@ -12,6 +12,7 @@ esma_add_library (${this}
   SRCS ${srcs}
   DEPENDENCIES MAPL GEOS_LandShared)
 target_include_directories (${this} PUBLIC ${INC_ESMF} ${INC_NETCDF})
+target_compile_definitions (${this} PRIVATE WRITE_CATCHOUT)
 
 add_subdirectory(mk_restarts)
 
