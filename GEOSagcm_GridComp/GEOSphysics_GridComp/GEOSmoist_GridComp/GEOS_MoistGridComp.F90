@@ -133,7 +133,7 @@ module GEOS_MoistGridCompMod
   character(len=ESMF_MAXSTR) :: DIAGNOSE_PRECIP_TYPE ! TRUE or FALSE
   logical                    :: LDIAGNOSE_PRECIP_TYPE
 
-  integer :: DOSHLW
+  integer :: DOSHLW,DO_SL3
   real    :: MGVERSION
   integer :: DOGRAUPEL
 
@@ -499,8 +499,26 @@ contains
          VLOCATION  = MAPL_VLocationCenter,             RC=STATUS  )  
     VERIFY_(STATUS)                                                                          
 
+    call MAPL_AddInternalSpec(GC,                                  &
+         SHORT_NAME ='PDF_AX',                                       &
+          LONG_NAME = 'SHOC_PDF_relative_area_fraction',            &
+         UNITS      ='1',                                           &       
+         DIMS      = MAPL_DimsHorzVert,                             &
+         VLOCATION = MAPL_VLocationCenter,                          &
+         DEFAULT= 0.5,                                              &
+         RC=STATUS  )  
+    VERIFY_(STATUS)                         
 
-     
+    call MAPL_AddInternalSpec(GC,                                    &
+         SHORT_NAME ='SKEW_QTX',                                     &
+         LONG_NAME  = 'SHOC_PDF_QT_skewness',                        &
+         UNITS      ='1',                                            &       
+         DIMS       = MAPL_DimsHorzVert,                             &
+         VLOCATION  = MAPL_VLocationCenter,                          &
+         DEFAULT    = 1.0,                                           &
+         RC=STATUS  )  
+    VERIFY_(STATUS)                         
+      
     
   if (DOSHLW /= 0) then
           
@@ -583,6 +601,186 @@ contains
          REFRESH_INTERVAL   = RFRSHINT,                             &
          RC=STATUS  )
     VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'TKESHOC',                                    &
+         LONG_NAME  = 'turbulent_kinetic_energy_from_SHOC',         &
+         UNITS      = 'm+2 s-2',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                         &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_moist_a',                               &
+         LONG_NAME  = 'edmf_moist_a',                               &
+         UNITS      = '1',                                          &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationEdge,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_dry_a',                                 &
+         LONG_NAME  = 'edmf_dry_a',                                 &
+         UNITS      = '1',                                          &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationEdge,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_wqt',                                   &
+         LONG_NAME  = 'edmf_qt_flux',                               &
+         UNITS      = 'kg kg-1 m s-1',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_whl',                                   &
+         LONG_NAME  = 'edmf_hl_flux',                               &
+         UNITS      = 'K m s-1',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_qt2',                                   &
+         LONG_NAME  = 'edmf_qt2_contribution',                               &
+         UNITS      = 'kg2 kg-2',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_hl2',                                   &
+         LONG_NAME  = 'edmf_hl2_contribution',                               &
+         UNITS      = 'K2',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_qthl',                                   &
+         LONG_NAME  = 'edmf_qthl_contribution',                               &
+         UNITS      = 'kg K kg-1',                                  &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_w2',                                   &
+         LONG_NAME  = 'edmf_w2_contribution',                               &
+         UNITS      = 'm2 s-2',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_w3',                                   &
+         LONG_NAME  = 'edmf_w3_contribution',                               &
+         UNITS      = 'm3 s-3',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'edmf_qt3',                                   &
+         LONG_NAME  = 'edmf_qt3_contribution',                               &
+         UNITS      = 'kg3 kg-3',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                              &
+         SHORT_NAME = 'w3_canuto',                                  &
+         LONG_NAME  = 'Canuto_estimate_w_third_moment',             &
+         UNITS      = 'm+3 s-3',                                    &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationEdge,                           &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                     &
+         SHORT_NAME = 'ISOTROPY',                                   &
+         LONG_NAME  = 'return_to_isotropy_timescale',               &
+         UNITS      = 's',                                          &
+         DIMS       = MAPL_DimsHorzVert,                            &
+         VLOCATION  = MAPL_VLocationCenter,                         &
+         AVERAGING_INTERVAL = AVRGNINT,                             &
+         REFRESH_INTERVAL   = RFRSHINT,                             &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    ! Import prognostic variables representing covariability of heat and moisture
+    !
+    call MAPL_AddImportSpec(GC,                                  &
+       SHORT_NAME = 'HL2',                                       &
+       LONG_NAME  = 'variance_of_liquid_water_static_energy',    &
+       UNITS      = 'K+2',                                       &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,                          &
+       AVERAGING_INTERVAL = AVRGNINT,                            &
+       REFRESH_INTERVAL   = RFRSHINT,                            &
+       RC=STATUS )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                  &
+       SHORT_NAME = 'QT2',                                       &
+       LONG_NAME  = 'variance_of_total_water_specific_humidity', &
+       UNITS      = '1',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,                          &
+       AVERAGING_INTERVAL = AVRGNINT,                            &
+       REFRESH_INTERVAL   = RFRSHINT,                            &
+       RC=STATUS )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                  &
+       SHORT_NAME = 'HLQT',                                      &
+       LONG_NAME  = 'covariance_of_liquid_water_static_energy_and_total_water_specific_humidity', &
+       UNITS      = 'K',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,                          &
+       AVERAGING_INTERVAL = AVRGNINT,                            &
+       REFRESH_INTERVAL   = RFRSHINT,                            &
+       RC=STATUS )
+    VERIFY_(STATUS)
+    !
+    ! End import of prognostic variables
 
     call MAPL_AddImportSpec(GC,                             &
          SHORT_NAME = 'TH',                                        &
@@ -1031,6 +1229,214 @@ contains
 !-srf-gf-scheme
 
     ! !EXPORT STATE:
+
+    call MAPL_AddExportSpec(GC,                                   &
+         SHORT_NAME ='SKEW_QT',                                     &
+          LONG_NAME = 'SHOC_PDF_QT_skewness',                       &
+         UNITS      ='1',                                           &       
+         DIMS      = MAPL_DimsHorzVert,                             &
+         VLOCATION = MAPL_VLocationCenter,                          &
+         RC=STATUS  )  
+    VERIFY_(STATUS)                         
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_relative_area_fraction',                       &
+       UNITS      = '1',                                                     &
+       SHORT_NAME = 'PDF_A',                                                 &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_vertical_velocity_standard_deviation',         &
+       UNITS      = '1',                                                     &
+       SHORT_NAME = 'PDF_SIGW',                                              &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_avg_vertical_velocity_of_first_plume',         &
+       UNITS      = 'm s-1',                                                 &
+       SHORT_NAME = 'PDF_W1',                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_avg_vertical_velocity_of_second_plume',        &
+       UNITS      = 'm s-1',                                                 &
+       SHORT_NAME = 'PDF_W2',                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_stddev_liq_wat_pot_temp_of_first_plume',       &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'PDF_SIGTH1',                                            &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_stddev_liq_wat_pot_temp_of_second_plume',      &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'PDF_SIGTH2',                                            &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_avg_liq_wat_pot_temp_of_first_plume',          &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'PDF_TH1',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_avg_liq_wat_pot_temp_of_second_plume',         &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'PDF_TH2',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_stddev_total_water_of_first_plume',            &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'PDF_SIGQT1',                                            &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_stddev_total_water_of_second_plume',           &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'PDF_SIGQT2',                                            &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_avg_total_water_of_first_plume',               &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'PDF_QT1',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_avg_total_water_of_second_plume',              &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'PDF_QT2',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'SHOC_PDF_corr_total_water_liq_wat_pot_temp',            &
+       UNITS      = '1',                                                     &
+       SHORT_NAME = 'PDF_RQTTH',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'WTHV2',                                                 &
+       LONG_NAME  = 'Buoyancy_flux_for_SHOC',                                &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'QT2SHOC',                                               &
+       LONG_NAME  = 'Total_water_variance',                                  &
+       UNITS      = 'kg2 kg-2',                                              &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'W2',                                                    &
+       LONG_NAME  = 'Vertical_velocity_variance',                            &
+       UNITS      = 'm2 s-2',                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'W3',                                                    &
+       LONG_NAME  = 'Vertical_velocity_third_moment',                        &
+       UNITS      = 'm3 s-3',                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'HL2SHOC',                                               &
+       LONG_NAME  = 'Liquid_water_static_energy_variance',                   &
+       UNITS      = 'K2',                                                    &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'HLQTSHOC',                                              &
+       LONG_NAME  = 'Liquid_static_energy_total_water_covariance',           &
+       UNITS      = 'K kg kg-1',                                                    &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'WQT',                                                   &
+       LONG_NAME  = 'Total_water_flux',                                      &
+       UNITS      = 'kg kg-1 m s-1',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'WQL',                                                   &
+       LONG_NAME  = 'Liquid_water_flux',                                     &
+       UNITS      = 'kg kg-1 m s-1',                                         &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+
+    call MAPL_AddExportSpec(GC,                                              &
+       SHORT_NAME = 'WHL',                                                   &
+       LONG_NAME  = 'Liquid_water_static_energy_flux',                       &
+       UNITS      = 'K m s-1',                                               &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                             &
          SHORT_NAME = 'QCTOT',                                      &
@@ -5205,6 +5611,36 @@ contains
                                          THVLSRC_SC, TKEAVG_SC, CLDTOP_SC, CUSH
       real, pointer, dimension(:,:  ) :: CNT_SC, CNB_SC
 
+! DG PDF variables
+    real, dimension(:,:,:),pointer     :: PDF_A,      &
+                                          PDF_AX,     &
+                                          PDF_SIGW,   &
+                                          PDF_W1,     &
+                                          PDF_W2,     &
+                                          PDF_SIGTH1, &
+                                          PDF_SIGTH2, &
+                                          PDF_TH1,    &
+                                          PDF_TH2,    &
+                                          PDF_SIGQT1, &
+                                          PDF_SIGQT2, &
+                                          PDF_QT1,    &
+                                          PDF_QT2,    &
+                                          PDF_RQTTH,  &
+                                          SKEW_QT,    &
+                                          SKEW_QTX
+
+    real, dimension(:,:,:),pointer     :: QT2SHOC,   &
+                                          HL2SHOC,   &
+                                          W2,        &
+                                          W3,        &
+                                          HLQTSHOC,  &
+                                          WQT,       &
+                                          WQL,       &
+                                          WHL 
+
+    real, dimension(:,:,:),pointer     :: WTHV2
+
+
       real, pointer, dimension(:,:,:) :: CNV_DQLDT            , &
            CNV_MF0              , &
            CNV_MFD              , &
@@ -5229,7 +5665,9 @@ contains
 
       real, pointer, dimension(:,:,:) :: T, PLE, U, V, W, TH
       real, pointer, dimension(:,:)   :: TROPP
-      real, pointer, dimension(:,:,:) :: DQDT, UI, VI, WI, TI, KH, TKE
+      real, pointer, dimension(:,:,:) :: DQDT, UI, VI, WI, TI, KH, TKE, TKESHOC
+      real, pointer, dimension(:,:,:) :: ISOTROPY,w3_canuto,edmf_wqt,edmf_whl,edmf_qt2,edmf_hl2,edmf_qthl,edmf_w2,edmf_w3,edmf_qt3,edmf_dry_a,edmf_moist_a
+      real, pointer, dimension(:,:,:) :: HL2, QT2, HLQT
       real, pointer, dimension(    :) :: PREF
       real, pointer, dimension(:,:,:) :: Q, QRAIN, QSNOW, QGRAUPEL, QLLS, QLCN, CLLS, CLCN, BYNCY, QILS, QICN, QCTOT,QITOT,QLTOT
       real, pointer, dimension(:,:,:) :: QPTOTLS, QRTOT, QSTOT,  CFLIQ, CFICE !DONIF
@@ -5957,6 +6395,14 @@ contains
        
       real :: sigmaqt, qcn, cfn, qsatn, dqlls, dqils, qt
 
+      real, dimension(IM,JM,LM)       :: edmf_frc,edmf_mstfrc
+
+      real, dimension(IM,JM,LM) :: hl,total_water,w3var,w2var,thlsec,qwsec,qwthlsec,wqtsec,whlsec,wqlsec
+      real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,qthl_sec, au_full
+      real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
+      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac
+
+
       ! MATMAT CUDA Variables
 #ifdef _CUDA
       type(dim3) :: Grid, Block
@@ -6246,6 +6692,9 @@ contains
       call MAPL_GetPointer(INTERNAL, QICN,     'QICN'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(INTERNAL, NCPL,     'NCPL'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       call MAPL_GetPointer(INTERNAL, NCPI,     'NCPI'    , RC=STATUS); VERIFY_(STATUS)
+     call MAPL_GetPointer(INTERNAL,  PDF_AX,   'PDF_AX'  , RC=STATUS); VERIFY_(STATUS) 
+     call MAPL_GetPointer(INTERNAL,  SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
+      
       call MAPL_GetPointer(INTERNAL, NRAIN,    'NRAIN'    , RC=STATUS); VERIFY_(STATUS)  
       call MAPL_GetPointer(INTERNAL, NSNOW,    'NSNOW'    , RC=STATUS); VERIFY_(STATUS)      
       call MAPL_GetPointer(INTERNAL, NGRAUPEL, 'NGRAUPEL'    , RC=STATUS); VERIFY_(STATUS)
@@ -6274,6 +6723,19 @@ contains
       call MAPL_GetPointer(IMPORT, PREF,    'PREF'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, KH,      'KH'      , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, TKE,     'TKE'     , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, TKESHOC, 'TKESHOC' , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, ISOTROPY,'ISOTROPY', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, w3_canuto,'w3_canuto', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_wqt, 'edmf_wqt', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_whl, 'edmf_whl', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_dry_a, 'edmf_dry_a', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_moist_a, 'edmf_moist_a', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_qt2, 'edmf_qt2', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_hl2, 'edmf_hl2', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_qthl,'edmf_qthl', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_w2,  'edmf_w2', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_w3,  'edmf_w3', RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, edmf_qt3, 'edmf_qt3', RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, TH,      'TH'      , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, U,       'U'       , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, V,       'V'       , RC=STATUS); VERIFY_(STATUS)
@@ -6293,6 +6755,15 @@ contains
       call MAPL_GetPointer(IMPORT, SH       ,'SH   '   ,RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, EVAP     ,'EVAP '   ,RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, T        ,'T'       ,RC=STATUS); VERIFY_(STATUS)
+
+      ! Get pointers to prognostics second-order moments
+      call MAPL_GetPointer(IMPORT, HL2 ,   'HL2',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, QT2  ,  'QT2',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, HLQT,   'HLQT',   RC=STATUS); VERIFY_(STATUS)
+
+      ! define EDMF updraft fraction on full levels
+      edmf_frc = 0.5*(edmf_dry_a(:,:,0:LM-1)+edmf_moist_a(:,:,0:LM-1)+edmf_dry_a(:,:,1:LM)+edmf_moist_a(:,:,1:LM))
+      edmf_mstfrc = 0.5*(edmf_moist_a(:,:,0:LM-1)+edmf_moist_a(:,:,1:LM))
 
       ! Pointers to exports
       !--------------------
@@ -6399,6 +6870,55 @@ contains
       call MAPL_GetPointer(EXPORT, CLDREFFG, 'RG'      , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, CLDNCCN,  'CLDNCCN' , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT,DTDTFRIC, 'DTDTFRIC' , RC=STATUS); VERIFY_(STATUS)
+
+!!! DG PDF diagnostics
+     call MAPL_GetPointer(EXPORT, SKEW_QT,    'SKEW_QT', RC=STATUS)
+     VERIFY_(STATUS)  
+     call MAPL_GetPointer(EXPORT, PDF_A,      'PDF_A',   RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_SIGW,   'PDF_SIGW', ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_W1,     'PDF_W1', ALLOC=.TRUE.,    RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_W2,     'PDF_W2', ALLOC=.TRUE.,    RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_SIGTH1, 'PDF_SIGTH1', ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_SIGTH2, 'PDF_SIGTH2', ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_TH1,    'PDF_TH1',    ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_TH2,    'PDF_TH2',    ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_SIGQT1, 'PDF_SIGQT1', ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_SIGQT2, 'PDF_SIGQT2', ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT, PDF_QT1,    'PDF_QT1',    ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, PDF_QT2,    'PDF_QT2',    ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, PDF_RQTTH,  'PDF_RQTTH',  ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+     call MAPL_GetPointer(EXPORT,  WTHV2,      'WTHV2',     ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS) 
+
+     call MAPL_GetPointer(EXPORT, QT2SHOC,  'QT2SHOC',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, HL2SHOC,  'HL2SHOC',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, W2,       'W2',       RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, W3,       'W3',       RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, HLQTSHOC, 'HLQTSHOC', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, WQT,      'WQT',      RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, WQL,      'WQL',      RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, WHL,      'WHL',      RC=STATUS)
+     VERIFY_(STATUS)
 
 !!! shallow vars
       call MAPL_GetPointer(EXPORT, CBMF_SC,  'CBMF_SC' , RC=STATUS); VERIFY_(STATUS)
@@ -7496,6 +8016,12 @@ contains
         call MAPL_GetResource(STATE,STOCHASTIC_CNV, 'STOCHASTIC_CNV:', DEFAULT= 0, RC=STATUS)
         VERIFY_(STATUS)
       endif
+
+      call MAPL_GetResource( STATE, QT2TUNE,   'QT2TUNE:',    DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, HL2TUNE,   'HL2TUNE:',    DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, HLQT2TUNE, 'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
+
+
 
       if( CNV_FRACTION_MAX > CNV_FRACTION_MIN ) then
          if (CNV_FRACTION_MAX < 1.0) then
@@ -8754,6 +9280,119 @@ contains
             enddo
          enddo
       endif
+
+
+!=== Calculate higher moments for double-gaussian cloud PDF ===!
+
+       call MAPL_GetResource(STATE, DO_SL3, 'TURBULENCE_DO_SL3:', default=0, RC=STATUS)
+       VERIFY_(STATUS)      
+
+       ! Liquid water static energy (over cp)
+       hl = TEMP + (mapl_grav*ZLO - mapl_alhl*QLLS - mapl_alhf*QILS)/mapl_cp
+
+       total_water = max(0.0, Q1 + QLLS + QILS )
+
+       ! define resolved gradients on edges 
+       do k=1,LM-1
+
+	  wrk1 = 1.0 / (ZLO(:,:,k)-ZLO(:,:,k+1)) 
+          wrk3 = KH(:,:,k) * wrk1
+
+	  sm   = 0.5*(isotropy(:,:,k)+isotropy(:,:,k+1))*wrk1*wrk3 !Tau*Kh/dz^2
+
+	! SGS vertical flux liquid/ice water static energy. Eq 1 in BK13 
+          wrk1 = hl(:,:,k) - hl(:,:,k+1) 
+          whl_sec(:,:,k) = - wrk3 * wrk1
+
+	! SGS vertical flux of total water. Eq 2 in BK13 
+          wrk2        = total_water(:,:,k) - total_water(:,:,k+1) 
+          wqt_sec(:,:,k) = - wrk3 * wrk2
+
+          if (DO_SL3 == 1) then
+             ! Ensure realizibility
+             do j = 1,JM
+             do i = 1,IM
+                HLQT(i,j,k) = sign( min( abs(HLQT(i,j,k)), sqrt(HL2(i,j,k)*QT2(i,j,k)) ), HLQT(i,j,k) )
+             end do
+             end do
+
+             ! Ensure realizibility
+             hl2_sec(:,:,k)  = HL2(:,:,k)
+             qt2_sec(:,:,k)  = QT2(:,:,k)
+             qthl_sec(:,:,k) = HLQT(:,:,k)
+          else
+             ! Second moment of liquid/ice water static energy. Eq 4 in BK13
+             hl2_sec(:,:,k) = hl2tune * sm * wrk1 * wrk1
+
+             ! Second moment of total water mixing ratio.  Eq 3 in BK13 
+             qt2_sec(:,:,k) = qt2tune * sm * wrk2 * wrk2 
+
+             ! Covariance of total water mixing ratio and liquid/ice water static
+             ! energy.  Eq 5 in BK13
+
+             qthl_sec(:,:,k) = hlqt2tune * sm * wrk1 * wrk2
+         end if
+
+       end do   
+
+       ! set values at bottom edge
+       whl_sec(:,:,LM)  = SH(:,:)/mapl_cp    ! set to surface fluxes
+       wqt_sec(:,:,LM)  = EVAP(:,:)          !
+       hl2_sec(:,:,LM)  = hl2_sec(:,:,LM-1) 
+       qt2_sec(:,:,LM)  = qt2_sec(:,:,LM-1) 
+       qthl_sec(:,:,LM) = qthl_sec(:,:,LM-1)
+
+
+
+       ! average edge-values onto centers, add MF contribution 
+       w3var = 0.
+       thlsec = 0.  
+       qwsec = 0.  
+       qwthlsec = 0.   
+       wqtsec = 0.  
+       whlsec = 0.  
+       do k=1,LM 
+          kd = k-1 
+          ku = k 
+          if (k==1) kd = k 
+
+          w3var(:,:,k)    = edmf_w3(:,:,k)    ! assume 0 skewness in environment 
+
+          w2var(:,:,k)    = (1.0-edmf_frc(:,:,k))*(0.667*tkeshoc(:,:,k))+edmf_w2(:,:,k) 
+
+          thlsec(:,:,k)   = max(0.,(1.0-edmf_frc(:,:,k))*0.5*(hl2_sec(:,:,kd)+hl2_sec(:,:,ku))+edmf_hl2(:,:,k))
+
+          qwsec(:,:,k)    = max(0.,(1.0-edmf_frc(:,:,k))*0.5*(qt2_sec(:,:,kd)+qt2_sec(:,:,ku))+edmf_qt2(:,:,k))
+
+          qwthlsec(:,:,k) = (1.0-edmf_frc(:,:,k))*0.5*(qthl_sec(:,:,kd) + qthl_sec(:,:,ku))+edmf_qthl(:,:,k) 
+
+          wqtsec(:,:,k)   = (1.0-edmf_frc(:,:,k))*0.5*(wqt_sec(:,:,kd)  + wqt_sec(:,:,ku))+edmf_wqt(:,:,k)
+
+          whlsec(:,:,k)  = (1.0-edmf_frc(:,:,k))*0.5*(whl_sec(:,:,kd) + whl_sec(:,:,ku))+edmf_whl(:,:,k)
+
+          ! Restrict QT variance, 5-20% of qstar.
+          qwsec(:,:,k) = min(qwsec(:,:,k),(0.2*QSS(:,:,k))**2)
+!          qwsec(k) = max(min(qwsec(:,:,k),(0.2*QSS(:,:,k))**2),(0.05*QSS(:,:,k))**2)
+          thlsec(:,:,k) = min(thlsec(:,:,k),4.0) 
+
+       end do  
+
+       ! Fill the exports
+       if (associated(QT2SHOC))  QT2SHOC  = qwsec
+       if (associated(HL2SHOC))  HL2SHOC  = thlsec
+       if (associated(W2))       W2       = w2var
+       if (associated(W3))       W3       = w3var
+       if (associated(HLQTSHOC)) HLQTSHOC = qwthlsec
+       if (associated(WQT))      WQT      = wqtsec
+       if (associated(WHL))      WHL      = whlsec
+
+
+
+!==============================================================!
+
+
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!AER_CLOOUD
 
@@ -10071,12 +10710,24 @@ contains
               DT_MOIST          , &
               LATS              , &
               PLO               , &
+              ZLO               , &
               CNV_PLE           , &
               PK                , &
               SNOMAS            , &   ! <- surf
               FRLANDICE         , &   ! <- surf
               FRLAND            , &   ! <- surf
               KH                , &   ! <- turb
+              ISOTROPY          , &   ! <- turb
+              edmf_frc          , &   ! <- turb
+              wqtsec            , &   ! <- turb
+              whlsec            , &   ! <- turb
+              qwsec             , &   ! <- turb
+              thlsec            , &   ! <- turb
+              qwthlsec          , &   ! <- turb
+              w2var             , &   ! <- turb
+              w3var             , &   ! <- turb
+              edmf_qt3          , &   ! <- turb
+              TKESHOC           , &   ! <- turb
               DTS               , &
               CNV_MFD           , &   ! <- ras
               CNV_DQLDT         , &   ! <- ras              
@@ -10154,6 +10805,10 @@ contains
               VFALLWAT_AN_X,VFALLWAT_LS_X,    &
               VFALLSN_AN_X,VFALLSN_LS_X,VFALLSN_CN_X,VFALLSN_SC_X,  &
               VFALLRN_AN_X,VFALLRN_LS_X,VFALLRN_CN_X,VFALLRN_SC_X,  &
+              PDF_AX, PDF_SIGW, PDF_W1, PDF_W2, & 
+              PDF_SIGTH1, PDF_SIGTH2, PDF_TH1, PDF_TH2, &
+              PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
+              PDF_RQTTH, WTHV2, wqlsec, SKEW_QTX, &
               TEMPOR2D, &
               DOSHLW,   &
               NACTL,    &
@@ -10161,6 +10816,10 @@ contains
               CONVPAR_OPTION )
 
          VERIFY_(STATUS)
+
+         if (associated(PDF_A)) PDF_A = PDF_AX
+         if (associated(SKEW_QT)) SKEW_QT = SKEW_QTX
+         if (associated(WQL)) WQL = wqlsec
 
          call MAPL_TimerOff(STATE,"--CLOUD_RUN",RC=STATUS)
          VERIFY_(STATUS)

@@ -17,6 +17,7 @@ module GEOS_TurbulenceGridCompMod
   use MAPL
   use LockEntrain
   use shoc
+  use mynn, only : run_mynn, B1, B2
 
 #ifdef _CUDA
   use cudafor
@@ -520,19 +521,261 @@ contains
                                                        RC=STATUS  )
      VERIFY_(STATUS)
 
-     call MAPL_AddImportSpec(GC,                             &
-        SHORT_NAME         = 'SH',                            &
-        LONG_NAME          = 'surface_sensible_heat_flux',   &
-        UNITS              = 'W m-2',                               &
-        DIMS               = MAPL_DimsHorzOnly,                   &
-        VLOCATION          = MAPL_VLocationNone,                  &
-        RESTART    = MAPL_RestartSkip,                            &
-                                                       RC=STATUS  )
-     VERIFY_(STATUS)
+    call MAPL_AddImportSpec(GC,                                              &
+       SHORT_NAME = 'SH',                                                    &
+       LONG_NAME  = 'surface_sensible_heat_flux',                            &
+       UNITS      = 'W m-2',                                                 &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                                    &
+       SHORT_NAME = 'WTHV2',                                       &
+       LONG_NAME  = 'Buoyancy_flux_for_SHOC_TKE',                  &
+       UNITS      = '1',                                           &
+       DEFAULT    = 0.0,                                           &
+       DIMS       = MAPL_DimsHorzVert,                             &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
 
 
 
 ! !EXPORT STATE:
+
+!
+! mass-flux export states
+! 
+ 
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_dry_a',                                            &
+       UNITS      = '1',                                                     &
+       SHORT_NAME = 'edmf_dry_a',                                            &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+    
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'z_conv_edmf',                                 &
+       UNITS      = 'm',                                                     &
+       SHORT_NAME = 'z_conv_edmf',                                                &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+    
+    
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_a',                                          &
+       UNITS      = '1',                                                     &
+       SHORT_NAME = 'edmf_moist_a',                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                   RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_dry_w',                                            &
+       UNITS      = 'm s-1',                                                 &
+       SHORT_NAME = 'edmf_dry_w',                                            &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_w',                                          &
+       UNITS      = 'm s-1',                                                 &
+       SHORT_NAME = 'edmf_moist_w',                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_dry_qt',                                           &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_dry_qt',                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_qt',                                         &
+       UNITS      = 'kg kg-1',                                                  &
+       SHORT_NAME = 'edmf_moist_qt',                                         &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_qc',                                         &
+       UNITS      = 'kg kg-1',                                               &
+       SHORT_NAME = 'edmf_moist_qc',                                         &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_dry_thl',                                          &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_dry_thl',                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_thl',                                        &
+       UNITS      = 'K',                                                     &
+       SHORT_NAME = 'edmf_moist_thl',                                        &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+   call MAPL_AddExportSpec(GC,                                               &
+       LONG_NAME  = 'edmf_dry_u',                                          &
+       UNITS      = 'm s-1',                                                    &
+       SHORT_NAME = 'edmf_dry_u',                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_u',                                        &
+       UNITS      = 'm s-1',                                                   &
+       SHORT_NAME = 'edmf_moist_u',                                        &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+   call MAPL_AddExportSpec(GC,                                               &
+       LONG_NAME  = 'edmf_dry_v',                                          &
+       UNITS      = 'm s-1',                                                    &
+       SHORT_NAME = 'edmf_dry_v',                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_moist_v',                                        &
+       UNITS      = 'm s-1',                                                   &
+       SHORT_NAME = 'edmf_moist_v',                                        &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_buoyf',                                            &
+       UNITS      = 'K m s-1',                                               &
+       SHORT_NAME = 'edmf_buoyf'    ,                                        &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_mf',                                            &
+       UNITS      = 'kg m-2 s-1',                                            &
+       SHORT_NAME = 'edmf_mf'    ,                                        &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt_flux',                                            &
+       UNITS      = 'kg m-2 s-1',                                            &
+       SHORT_NAME = 'edmf_wqt'    ,                                        &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+    
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt2_contribution',                                 &
+       UNITS      = 'kg2 kg-2',                                               &
+       SHORT_NAME = 'edmf_qt2'    ,                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_hl2_contribution',                                 &
+       UNITS      = 'K2',                                               &
+       SHORT_NAME = 'edmf_hl2'    ,                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_liquid_static_energy_flux',                        &
+       UNITS      = 'K s-1',                                                 &
+       SHORT_NAME = 'edmf_whl'    ,                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qthl_contribution',                                 &
+       UNITS      = 'kg K kg-1',                                               &
+       SHORT_NAME = 'edmf_qthl'    ,                                          &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+    
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_w2_contribution',                                  &
+       UNITS      = 'm2 s-2',                                               &
+       SHORT_NAME = 'edmf_w2'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_w3_contribution',                                  &
+       UNITS      = 'm3 s-3',                                               &
+       SHORT_NAME = 'edmf_w3'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edmf_qt3_contribution',                                  &
+       UNITS      = 'kg3 kg-3',                                               &
+       SHORT_NAME = 'edmf_qt3'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'w3_from_SHOC_canuto',                                  &
+       UNITS      = 'm3 s-3',                                               &
+       SHORT_NAME = 'w3_canuto'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+
 
      call MAPL_AddExportSpec(GC,                                  &
         SHORT_NAME = 'TRI',                                       &
@@ -1133,9 +1376,422 @@ contains
                                                                   RC=STATUS  )
     VERIFY_(STATUS)
 
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_relative_area_fraction',                       &
+!       UNITS      = '1',                                                     &
+!       SHORT_NAME = 'PDF_A',                                                 &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_vertical_velocity_standard_deviation',         &
+!       UNITS      = '1',                                                     &
+!       SHORT_NAME = 'PDF_SIGW',                                              &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_avg_vertical_velocity_of_first_plume',         &
+!       UNITS      = 'm s-1',                                                 &
+!       SHORT_NAME = 'PDF_W1',                                                &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_avg_vertical_velocity_of_second_plume',        &
+!       UNITS      = 'm s-1',                                                 &
+!       SHORT_NAME = 'PDF_W2',                                                &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_stddev_liq_wat_pot_temp_of_first_plume',       &
+!       UNITS      = 'K',                                                     &
+!       SHORT_NAME = 'PDF_SIGTH1',                                            &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_stddev_liq_wat_pot_temp_of_second_plume',      &
+!       UNITS      = 'K',                                                     &
+!       SHORT_NAME = 'PDF_SIGTH2',                                            &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_avg_liq_wat_pot_temp_of_first_plume',          &
+!       UNITS      = 'K',                                                     &
+!       SHORT_NAME = 'PDF_TH1',                                               &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_avg_liq_wat_pot_temp_of_second_plume',         &
+!       UNITS      = 'K',                                                     &
+!       SHORT_NAME = 'PDF_TH2',                                               &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_stddev_total_water_of_first_plume',            &
+!       UNITS      = 'kg kg-1',                                               &
+!       SHORT_NAME = 'PDF_SIGQT1',                                            &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_stddev_total_water_of_second_plume',           &
+!       UNITS      = 'kg kg-1',                                               &
+!       SHORT_NAME = 'PDF_SIGQT2',                                            &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_avg_total_water_of_first_plume',               &
+!       UNITS      = 'kg kg-1',                                               &
+!       SHORT_NAME = 'PDF_QT1',                                               &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!   VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_avg_total_water_of_second_plume',              &
+!       UNITS      = 'kg kg-1',                                               &
+!       SHORT_NAME = 'PDF_QT2',                                               &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+!    call MAPL_AddExportSpec(GC,                                              &
+!       LONG_NAME  = 'SHOC_PDF_corr_total_water_liq_wat_pot_temp',            &
+!       UNITS      = '1',                                                     &
+!       SHORT_NAME = 'PDF_RQTTH',                                               &
+!       DIMS       = MAPL_DimsHorzVert,                                       &
+!       VLOCATION  = MAPL_VLocationCenter,                                    &
+!                                                                  RC=STATUS  )
+!    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'TKEDISS',                                   &
+       LONG_NAME  = 'tke_dissipation_from_SHOC',        &
+       UNITS      = 'm+2 s-3',                                   &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'TKEBUOY',                                   &
+       LONG_NAME  = 'tke_buoyancy_production_from_SHOC',        &
+       UNITS      = 'm+2 s-3',                                   &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'TKESHEAR',                                   &
+       LONG_NAME  = 'tke_shear_production_from_SHOC',        &
+       UNITS      = 'm+2 s-3',                                   &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'TKETRANS',                                  &
+       LONG_NAME  = 'tke_transport_from_SHOC',                   &
+       UNITS      = 'm+2 s-3',                                   &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'ISOTROPY',                                  &
+       LONG_NAME  = 'return_to_isotropy_timescale',              &
+       UNITS      = 's',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'LSHOC',                                     &
+       LONG_NAME  = 'eddy_dissipation_length_from_SHOC',        &
+       UNITS      = 'm',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'LSHOC1',                                    &
+       LONG_NAME  = 'dissipation_length_term1_from_SHOC',        &
+       UNITS      = 'm',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'LSHOC2',                                    &
+       LONG_NAME  = 'dissipation_length_term2_from_SHOC',        &
+       UNITS      = 'm',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'LSHOC3',                                    &
+       LONG_NAME  = 'dissipation_length_term3_from_SHOC',        &
+       UNITS      = 'm',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'LSHOC_CLR',                                 &
+       LONG_NAME  = 'eddy_dissipation_length_from_SHOC_clearsky',&
+       UNITS      = 'm',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'LSHOC_CLD',                                 &
+       LONG_NAME  = 'eddy_dissipation_length_from_SHOC_incloud', &
+       UNITS      = 'm',                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'BRUNTSHOC',                                 &
+       LONG_NAME  = 'Brunt_Vaisala_frequency_from_SHOC',         &
+       UNITS      = 's-1',                                       &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'SHEARSHOC',                                 &
+       LONG_NAME  = 'Shear_from_SHOC',                           &
+       UNITS      = 's-1',                                       &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+
 
 
 ! !INTERNAL STATE:
+
+!
+! new internals needed because of the MF
+!
+
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_ahat_for_s',                      &
+       SHORT_NAME = 'AKSS',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_bhat_for_s',                      &
+       SHORT_NAME = 'BKSS',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_c_for_s',                         &
+       SHORT_NAME = 'CKSS',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_s',                                            &
+       SHORT_NAME = 'YS',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_ahat_for_qq',                      &
+       SHORT_NAME = 'AKQQ',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_bhat_for_qq',                      &
+       SHORT_NAME = 'BKQQ',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_c_for_qq',                         &
+       SHORT_NAME = 'CKQQ',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_qv',                                            &
+       SHORT_NAME = 'YQV',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_ql',                                            &
+       SHORT_NAME = 'YQL',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_qi',                                            &
+       SHORT_NAME = 'YQI',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_ahat_for_uu',                      &
+       SHORT_NAME = 'AKUU',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_bhat_for_uu',                      &
+       SHORT_NAME = 'BKUU',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_c_for_uu',                         &
+       SHORT_NAME = 'CKUU',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_u',                                            &
+       SHORT_NAME = 'YU',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_v',                                            &
+       SHORT_NAME = 'YV',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'sensitivity_of_tendency_to_surface_value_for_s',        &
+       SHORT_NAME = 'DKSS',                                                  &
+       UNITS      = 's-1',                                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'sensitivity_of_tendency_to_surface_value_for_q',        &
+       SHORT_NAME = 'DKQQ',                                                  &
+       UNITS      = 's-1',                                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+    
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'sensitivity_of_tendency_to_surface_value_for_u',        &
+       SHORT_NAME = 'DKUU',                                                  &
+       UNITS      = 's-1',                                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+!
+! end of new internal states for the mass-flux
+!
 
     call MAPL_AddInternalSpec(GC,                                            &
        LONG_NAME  = 'matrix_diagonal_ahat_for_scalars',                      &
@@ -1311,47 +1967,7 @@ contains
        LONG_NAME  = 'turbulent_kinetic_energy_from_SHOC',        &
        UNITS      = 'm+2 s-2',                                   &
        DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'TKEDISS',                                   &
-       LONG_NAME  = 'tke_dissipation_from_SHOC',        &
-       UNITS      = 'm+2 s-3',                                   &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'TKEBUOY',                                   &
-       LONG_NAME  = 'tke_buoyancy_production_from_SHOC',        &
-       UNITS      = 'm+2 s-3',                                   &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'TKESHEAR',                                   &
-       LONG_NAME  = 'tke_shear_production_from_SHOC',        &
-       UNITS      = 'm+2 s-3',                                   &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'TKETRANS',                                  &
-       LONG_NAME  = 'tke_transport_from_SHOC',                   &
-       UNITS      = 'm+2 s-3',                                   &
-       DEFAULT    = 0.0,                                         &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       FRIENDLYTO = 'TURBULENCE:DYNAMICS',                             &
        DIMS       = MAPL_DimsHorzVert,                           &
        VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
     VERIFY_(STATUS)
@@ -1363,104 +1979,341 @@ contains
        DEFAULT    = 0.0,                                          &
        FRIENDLYTO = trim(COMP_NAME),                             &
        DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
+    ! Start MYNN-related variables
+    !
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'LSHOC',                                     &
-       LONG_NAME  = 'eddy_dissipation_length_from_SHOC',        &
-       UNITS      = 'm',                                         &
-       DEFAULT    = 0.0,                                         &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       SHORT_NAME = 'TKE_NEW',                                   &
+       LONG_NAME  = 'turbulent_kinetic_energy_new',              &
+       UNITS      = 'm+2 s-2',                                   &
+       DEFAULT    = 0.,                                          &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'BRUNTSHOC',                                 &
-       LONG_NAME  = 'Brunt_Vaisala_frequency_from_SHOC',         &
+       SHORT_NAME = 'HL2',                                       &
+       LONG_NAME  = 'variance_of_liquid_water_static_energy',    &
+       UNITS      = 'K+2',                                       &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'QT2',                                       &
+       LONG_NAME  = 'variance_of_total_water_specific_humidity', &
+       UNITS      = '1',                                         &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'HLQT',                                      &
+       LONG_NAME  = 'covariance_of_liquid_water_static_energy_and_total_water_specific_humidity_from_SHOC', &
+       UNITS      = 'K',                                         &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'BETA_HL',                                      &
+       LONG_NAME  = '', &
+       UNITS      = '',                                         &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'BETA_QT',                                      &
+       LONG_NAME  = '', &
+       UNITS      = '',                                         &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'TKET_M',                                    &
+       LONG_NAME  = 'shear_production_of_tke',                   &
+       UNITS      = 'm+2 s-3',                                   &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'TKET_B',                                    &
+       LONG_NAME  = 'buoyancy_production_of_tke',                &
+       UNITS      = 'm+2 s-3',                                   &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'TKET_D',                                    &
+       LONG_NAME  = 'dissipation_of_tke',                   &
+       UNITS      = 'm+2 s-3',                                   &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'TKET_T',                                    &
+       LONG_NAME  = 'turbulent_transport_of_tke',                &
+       UNITS      = 'm+2 s-3',                                   &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'HL2T_M',                                    &
+       LONG_NAME  = 'mean-gradient_production_of_liquid_water_static_energy_variance', &
+       UNITS      = 'K+2s-1',                                    &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'HL2T_D',                                    &
+       LONG_NAME  = 'dissipation_of_liquid_water_static_energy_variance', &
+       UNITS      = 'K+2s-1',                                    &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'QT2T_M',                                    &
+       LONG_NAME  = 'mean-gradient_production_of_total_water_specific_humidity_variance', &
        UNITS      = 's-1',                                       &
        DEFAULT    = 0.0,                                         &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'SHEARSHOC',                                 &
-       LONG_NAME  = 'Shear_from_SHOC',                           &
+       SHORT_NAME = 'QT2T_D',                                    &
+       LONG_NAME  = 'dissipation_of_total_water_specific_humidity_variance', &
        UNITS      = 's-1',                                       &
        DEFAULT    = 0.0,                                         &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'HLQTT_M',                                   &
+       LONG_NAME  = 'mean-gradient_production_of_liquid_water_static_energy-total_water_specific_humidity_covariance', &
+       UNITS      = 'Ks-1',                                      &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'HLQTT_D',                                   &
+       LONG_NAME  = 'dissipation_of_liquid_water_static_energy-total_water_specific_humidity_covariance', &
+       UNITS      = 'Ks-1',                                      &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'ITAU_TURB',                                 &
+       LONG_NAME  = 'inverse_of_turbulence_time_scale_for_tke',  &
+       UNITS      = 's-1',                                       &
+       DEFAULT    = 0.,                                          &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'K_TKE',                                        &
+       LONG_NAME  = 'turbulent_tke_diffusivity',                 &
+       UNITS      = 'm+2 s-1',                                   &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
        VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
     VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'CLD',                                       &
-       LONG_NAME  = 'cloud_fraction_diagnosed_by_SHOC',          &
-       UNITS      = '1',                                         &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       SHORT_NAME = 'K_TPE',                                        &
+       LONG_NAME  = 'turbulent_tpe_diffusivity',                 &
+       UNITS      = 'm+2 s-1',                                   &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
        VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
     VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'WTHV2',                               &
-       LONG_NAME  = 'Buoyancy_flux_diagnosed_by_SHOC',           &
-       UNITS      = '1',                                         &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       SHORT_NAME = 'WS_CG',                                     &
+       LONG_NAME  = '(potentially)_counter-gradient_dry_static_energy_flux', &
+       UNITS      = 'Jms-1',                                     &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'DTDT_SHC',                               &
-       LONG_NAME  = 'Temperature_tendency_diagnosed_by_SHOC',           &
-       UNITS      = 'K s-1',                                         &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       SHORT_NAME = 'WQV_CG',                                    &
+       LONG_NAME  = '(potentially)_counter-gradient_total_water_specific_humidity_flux', &
+       UNITS      = 'kg kg-1 m s-1',                                     &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'DQDT_SHC',                               &
-       LONG_NAME  = 'Water_vapor_tendency_diagnosed_by_SHOC',           &
-       UNITS      = 'kg kg-1 s-1',                                         &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
+       SHORT_NAME = 'WQL_CG',                                    &
+       LONG_NAME  = '(potentially)_counter-gradient_liquid_water_specific_humidity_flux', &
+       UNITS      = 'kg kg-1 m s-1',                             &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
        DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+       VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
-    call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'DQLDT_SHC',                               &
-       LONG_NAME  = 'Liquid_water_tendency_diagnosed_by_SHOC',           &
-       UNITS      = 'kg kg-1 s-1',                                         &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_ahat_for_tke',                          &
+       SHORT_NAME = 'AKTKE',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
     VERIFY_(STATUS)
 
-    call MAPL_AddInternalSpec(GC,                                &
-       SHORT_NAME = 'DQIDT_SHC',                               &
-       LONG_NAME  = 'Ice_water_tendency_diagnosed_by_SHOC',           &
-       UNITS      = 'kg kg-1 s-1',                                         &
-       DEFAULT    = 0.0,                                           &
-       FRIENDLYTO = trim(COMP_NAME),                             &
-       DIMS       = MAPL_DimsHorzVert,                           &
-       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_bhat_for_tke',                          &
+       SHORT_NAME = 'BKTKE',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
     VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_c_for_tke',                             &
+       SHORT_NAME = 'CKTKE',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_ahat_for_tke',                          &
+       SHORT_NAME = 'AKTPE',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_bhat_for_tpe',                          &
+       SHORT_NAME = 'BKTPE',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'matrix_diagonal_c_for_tpe',                             &
+       SHORT_NAME = 'CKTPE',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_tke',                                           &
+       SHORT_NAME = 'YTKE',                                                  &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_hl2',                                           &
+       SHORT_NAME = 'YHL2',                                                  &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_qt2',                                           &
+       SHORT_NAME = 'YQT2',                                                  &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'rhs_for_hlqt',                                          &
+       SHORT_NAME = 'YHLQT',                                                 &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+       RESTART    = MAPL_RestartSkip,                                        &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+    !
+    ! End MYNN-related variables
+
 !EOS
 
 ! Set the Profiling timers
 ! ------------------------
 
     call MAPL_TimerAdd(GC,   name="-RUN1"       ,RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_TimerAdd(GC,   name="---MASSFLUX" ,RC=STATUS)
     VERIFY_(STATUS)
     call MAPL_TimerAdd(GC,   name="--DIFFUSE"   ,RC=STATUS)
     VERIFY_(STATUS)
@@ -1577,12 +2430,30 @@ contains
     integer                             :: IM, JM, LM
     real                                :: DT
  
+! EDMF-related variables
+    real, dimension(:,:,:), pointer    :: AKSS, BKSS, CKSS, YS
+    real, dimension(:,:,:), pointer    :: AKQQ, BKQQ, CKQQ, YQV,YQL,YQI
+    real, dimension(:,:,:), pointer    :: AKUU, BKUU, CKUU, YU,YV
+    real, dimension(:,:,:), pointer     ::DKSS, DKQQ, DKUU
+    real, pointer, dimension(:,:)   :: LONS
+    real, pointer, dimension(:,:)   :: LATS
+
 ! SHOC-related variables
-    real, dimension(:,:,:), pointer     :: TKESHOC,TKH,LSHOC,BRUNTSHOC, & 
-                                           SHEARSHOC,CLD, WTHV2,        &
-                                           TKEBUOY,TKESHEAR,TKEDISS,TKETRANS,&
-                                           DTDT_SHC,DQDT_SHC,DQLDT_SHC, &
-                                           DQIDT_SHC
+    real, dimension(:,:,:), pointer     :: TKESHOC,TKH,LSHOC,LSHOC_CLR, &
+                                           LSHOC_CLD,BRUNTSHOC,ISOTROPY, &
+                                           LSHOC1,LSHOC2,LSHOC3, & 
+                                           SHEARSHOC,WTHV2,&
+                                           TKEBUOY,TKESHEAR,TKEDISS,TKETRANS
+
+! MYNN-related variables
+    real, dimension(:,:,:), pointer :: TKE_NEW, HL2, QT2, HLQT, &
+                                       BETA_HL, BETA_QT, &
+                                       TKET_M, TKET_B, TKET_D, TKET_T, &
+                                       HL2T_M, HL2T_D, QT2T_M, QT2T_D, HLQTT_M, HLQTT_D, &
+                                       ITAU_TURB, K_TKE, K_TPE, WS_CG, WQV_CG, WQL_CG, &
+                                       AKTKE, BKTKE, CKTKE, AKTPE, BKTPE, CKTPE, &
+                                       YTKE, YHL2, YQT2, YHLQT
+
     real, dimension(:,:), pointer       :: EVAP, SH
 
 ! Begin... 
@@ -1609,6 +2480,7 @@ contains
 
     call MAPL_Get(MAPL,        &
          IM=IM, JM=JM, LM=LM,               &
+         LONS=LONS,LATS=LATS,      &
          RUNALARM=ALARM,                    &
          INTERNAL_ESMF_STATE=INTERNAL,      &
                                   RC=STATUS )
@@ -1643,6 +2515,75 @@ contains
     call MAPL_GetPointer(IMPORT, SH,   'SH',    RC=STATUS)
     VERIFY_(STATUS)
     call MAPL_GetPointer(IMPORT, EVAP, 'EVAP',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(IMPORT, WTHV2, 'WTHV2',    RC=STATUS)
+    VERIFY_(STATUS)
+
+! MYNN-related variables
+!----------------------
+    call MAPL_GetPointer(INTERNAL, TKE_NEW,   'TKE_NEW',   RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, HL2,       'HL2',       RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, QT2,       'QT2',       RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, HLQT,      'HLQT',      RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, BETA_HL,   'BETA_HL',   RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, BETA_QT,   'BETA_QT',   RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, TKET_M,    'TKET_M',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, TKET_B,    'TKET_B',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, TKET_D,    'TKET_D',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, TKET_T,    'TKET_T',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, HL2T_M,    'HL2T_M',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, HL2T_D,    'HL2T_D',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, QT2T_M,    'QT2T_M',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, QT2T_D,    'QT2T_D',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, HLQTT_M,   'HLQTT_M',   RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, HLQTT_D,   'HLQTT_D',   RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, ITAU_TURB, 'ITAU_TURB', RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, K_TKE,     'K_TKE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, K_TPE,     'K_TPE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, AKTKE,     'AKTKE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, BKTKE,     'BKTKE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, CKTKE,     'CKTKE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, AKTPE,     'AKTPE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, BKTPE,     'BKTPE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, CKTPE,     'CKTPE',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YTKE,      'YTKE',      RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YHL2,      'YHL2',      RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YQT2,      'YQT2',      RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YHLQT,     'YHLQT',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, WS_CG,     'WS_CG',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, WQV_CG,    'WQV_CG',    RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, WQL_CG,    'WQL_CG',    RC=STATUS)
     VERIFY_(STATUS)
 
 ! Get pointers from internal state
@@ -1686,35 +2627,50 @@ contains
 !----- SHOC-related variables -----
     call MAPL_GetPointer(INTERNAL, TKESHOC,'TKESHOC',    RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, TKEDISS,'TKEDISS',    RC=STATUS)
-    VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, TKEBUOY,'TKEBUOY',    RC=STATUS)
-    VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, TKESHEAR,'TKESHEAR',    RC=STATUS)
-    VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, TKETRANS,'TKETRANS',    RC=STATUS)
-    VERIFY_(STATUS)
     call MAPL_GetPointer(INTERNAL, TKH,   'TKH',    RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, LSHOC,   'LSHOC',    RC=STATUS)
+!
+! edmf variables
+!
+ call MAPL_GetPointer(INTERNAL, DKSS,   'DKSS',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, BRUNTSHOC,'BRUNTSHOC',    RC=STATUS)
+    call MAPL_GetPointer(INTERNAL, DKQQ,   'DKQQ',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, SHEARSHOC,'SHEARSHOC',    RC=STATUS)
+    call MAPL_GetPointer(INTERNAL, DKUU,   'DKUU',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, CLD,   'CLD',    RC=STATUS)
+! a,b,c and rhs for s
+    call MAPL_GetPointer(INTERNAL, AKSS,   'AKSS',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, WTHV2, 'WTHV2',    RC=STATUS)
+    call MAPL_GetPointer(INTERNAL, BKSS,   'BKSS',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, DTDT_SHC, 'DTDT_SHC',    RC=STATUS)
+    call MAPL_GetPointer(INTERNAL, CKSS,   'CKSS',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, DQDT_SHC, 'DQDT_SHC',    RC=STATUS)
+    call MAPL_GetPointer(INTERNAL, YS,   'YS',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, DQLDT_SHC, 'DQLDT_SHC',    RC=STATUS)
+! a,b,c for moisture and rhs for qv,ql,qi    
+    call MAPL_GetPointer(INTERNAL, AKQQ,   'AKQQ',     RC=STATUS)
     VERIFY_(STATUS)
-    call MAPL_GetPointer(INTERNAL, DQIDT_SHC, 'DQIDT_SHC',    RC=STATUS)
+    call MAPL_GetPointer(INTERNAL, BKQQ,   'BKQQ',     RC=STATUS)
     VERIFY_(STATUS)
-
+    call MAPL_GetPointer(INTERNAL, CKQQ,   'CKQQ',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YQV,   'YQV',     RC=STATUS)
+    VERIFY_(STATUS)  
+    call MAPL_GetPointer(INTERNAL, YQL,   'YQL',     RC=STATUS)
+    VERIFY_(STATUS)  
+    call MAPL_GetPointer(INTERNAL, YQI,   'YQI',     RC=STATUS)
+    VERIFY_(STATUS)   
+! a,b,c and rhs for wind speed    
+    call MAPL_GetPointer(INTERNAL, AKUU,   'AKUU',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, BKUU,   'BKUU',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, CKUU,   'CKUU',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YU,   'YU',     RC=STATUS)
+    VERIFY_(STATUS)
+    call MAPL_GetPointer(INTERNAL, YV,   'YV',     RC=STATUS)
+    VERIFY_(STATUS)
 
 ! Get application's timestep from configuration
 !----------------------------------------------
@@ -1842,6 +2798,10 @@ contains
      real, dimension(IM,JM,LM)           :: THV, TV, Z, DMI, PLO, QL, QI, QA
      real, dimension(IM,JM,0:LM)         :: PKE
 
+     ! Quantities for solving at half levels
+     real, dimension(IM,JM,LM)           :: RDZ_HALF
+     real, dimension(IM,JM,0:LM)         :: DMI_HALF
+
      real, dimension(:,:,:), pointer     :: EKH, EKM, KHLS, KMLS, KHRAD, KHSFC
      real, dimension(:,:  ), pointer     :: BSTAR, USTAR, PPBL, WERAD, WESFC,VSCRAD,KERAD,DBUOY,ZSML,ZCLD,ZRADML,FRLAND
      real, dimension(:,:  ), pointer     :: TCZPBL => null()
@@ -1860,6 +2820,38 @@ contains
      real, dimension(:,:,:), pointer     :: AKQODT, CKQODT
      real, dimension(:,:,:), pointer     :: AKVODT, CKVODT
 
+! EDMF variables
+     real, dimension(:,:,:), pointer     :: edmf_dry_a,edmf_moist_a, edmf_dry_w,edmf_moist_w, &
+                                            edmf_dry_qt,edmf_moist_qt, &
+                                            edmf_dry_thl,edmf_moist_thl, &
+                                            edmf_dry_u,edmf_moist_u,  &
+                                            edmf_dry_v,edmf_moist_v,  &
+                                            edmf_moist_qc,edmf_buoyf,edmf_mf, &
+                                            edmf_w2, edmf_qt2, edmf_hl2, & 
+                                            edmf_w3, edmf_wqt, edmf_qthl, & 
+                                            edmf_whl, edmf_qt3, w3_canuto  
+   real, dimension(IM,JM,0:LM)          ::  ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
+   real, dimension(IM,JM,0:LM)          ::  awhl3, awqt3, awthv3 ! for EDMF contribution to MYNN
+   real, dimension(IM,JM)               :: tke_surf, hl2_surf, qt2_surf, hlqt_surf ! LBCs for MYNN
+
+   real, dimension(:,:), pointer        :: z_conv_edmf
+
+   integer :: DO_MYNN
+
+! SHOC PDF variables
+!    real, dimension(:,:,:),pointer     :: PDF_A,      &
+!                                          PDF_SIGW,   &
+!                                          PDF_W1,     &
+!                                          PDF_W2,     &
+!                                          PDF_SIGTH1, &
+!                                          PDF_SIGTH2, &
+!                                          PDF_TH1,    &
+!                                          PDF_TH2,    &
+!                                          PDF_SIGQT1, &
+!                                          PDF_SIGQT2, &
+!                                          PDF_QT1,    &
+!                                          PDF_QT2,    &
+!                                          PDF_RQTTH
 
      logical, dimension(IM,JM     )      :: CONVECT
      logical                             :: ALLOC_TCZPBL, CALC_TCZPBL
@@ -1880,15 +2872,45 @@ contains
      integer                             :: I,J,L,LOCK_ON
      integer                             :: KPBLMIN,PBLHT_OPTION
 
+     ! mass-flux constants/parameters
+     real :: NumUpR,ETr
+     integer :: NumUp,ET
+     real :: pwmin,pwmax,AlphaW,AlphaQT,AlphaTH,L0,L0fac,ENT0,EDfac
+     real                            :: DOMF,DOMFCOND 
+     integer :: EDMF_IMPLICIT      ! 0: explicit, 1: implicit discretization of mass flux terms  
+     integer :: EDMF_DISCRETE_TYPE ! 0: centered, 1: upwind   discretization of mass flux terms 
+     integer :: MYNN_LEVEL         ! 2: Level-2.5 3: Level-3
+     integer :: WQL_TYPE           ! 0: no counter-gradient liquid water flux (level-3) 1: else
+     integer :: WRF_CG_FLAG        ! 1: do not allow positive counter-gradient fluxes (like WRF-MYNN) 0: else
+     real,dimension(IM,JM) :: L02
+     
+
+     real,dimension(IM,JM,LM)           :: QT,THL,EXF
+     real    :: alfac
+
+! local mass-flux variables
+     real, dimension(im,jm,0:lm)     :: edmfdrya,edmfmoista, edmfdryw,edmfmoistw, &
+                                        edmfdryqt,edmfmoistqt, &
+                                        edmfdrythl,edmfmoistthl, &
+                                        edmfdryu,edmfmoistu,  &
+                                        edmfdryv,edmfmoistv,  &
+                                        edmfmoistqc 
+     real, dimension(im,jm,lm) :: sdry,sdrya,sdryb,sdryc
+     real, dimension(im,jm,lm) :: zlo,zlot,pk
+     real, dimension(im,jm)    :: rhodz,edmfZCLD
+     real, dimension(im,jm,0:lm) :: RHOE,RHOAW3
+     real, dimension(im,jm) :: ZPBLmf,KPBLmf   
+     real,dimension(im,jm,lm) :: buoyf,mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfqthl,mfwhl
+     real :: ice_ramp,EntWFac
+     integer, dimension(IM,JM)       :: IRAS, JRAS
      real,               dimension(LM+1) :: temparray, htke
      real,               dimension(IM,JM,LM  ) :: tcrib !TransCom bulk Ri
      real,               dimension(LM+1) :: thetav
 
-     ! variables associated with SHOC
-!     real, dimension( IM, JM )           :: HFLX,EVAP
-     real, dimension( IM, JM, LM )       :: PRANDTLSHOC,QPL,QPI,TDUM,QDUM, &
-                                            QIDUM,QLDUM
-     integer                             :: DO_SHOC,SHC_DO_COND,SHC_DO_TRANS
+! variables associated with SHOC
+     real, dimension( IM, JM, LM )       :: PRANDTLSHOC,QPL,QPI
+     integer                             :: DO_SHOC
+     integer                             :: SHC_DO_TRANS, SHC_DO_CLDLEN, SHC_USE_MF_PDF,SHC_USE_MF_BUOY,SHC_BUOY_OPTION !,PDFSHAPE
      real                                :: SHC_LAMBDA,SHC_TSCALE,SHC_VONK,SHC_CK, &
                                             SHC_CEFAC,SHC_CESFAC,SHC_THL2TUNE,    &
                                             SHC_QW2TUNE,SHC_QWTHL2TUNE
@@ -1907,6 +2929,9 @@ contains
      real, parameter :: ri_crit2 = 0.20
 
      real(kind=MAPL_R8), dimension(IM,JM,LM) :: AKX, BKX
+     real(kind=MAPL_R8), dimension(IM,JM,0:LM) :: AKIX, BKIX ! Coefficients for solving at half levels
+
+     real, dimension(IM,JM,LM) :: DZ, DTM, TM
 
 #ifdef _CUDA
      type(dim3) :: Grid, Block
@@ -1983,17 +3008,27 @@ contains
 
      call MAPL_GetResource (MAPL, DO_SHOC,      trim(COMP_NAME)//"_DO_SHOC:",      default=0,            RC=STATUS)
      if (DO_SHOC /= 0) then
+       call MAPL_GetResource (MAPL, DO_MYNN,      trim(COMP_NAME)//"_DO_SL3:",       default=0,          RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_LAMBDA,   trim(COMP_NAME)//"_SHC_LAMBDA:",   default=0.04,       RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_TSCALE,   trim(COMP_NAME)//"_SHC_TSCALE:",   default=400.,       RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_VONK,     trim(COMP_NAME)//"_SHC_VONK:",     default=0.4,        RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_CK,       trim(COMP_NAME)//"_SHC_CK:",       default=0.1,        RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_CEFAC,    trim(COMP_NAME)//"_SHC_CEFAC:",    default=1.,         RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_CESFAC,   trim(COMP_NAME)//"_SHC_CESFAC:",   default=4.29,        RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_CESFAC,   trim(COMP_NAME)//"_SHC_CESFAC:",   default=4.,        RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_THL2TUNE, trim(COMP_NAME)//"_SHC_THL2TUNE:", default=1.,         RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_QW2TUNE,  trim(COMP_NAME)//"_SHC_QW2TUNE:",  default=1.,         RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_QWTHL2TUNE, trim(COMP_NAME)//"_SHC_QWTHL2TUNE:", default=1.,     RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_DO_COND, trim(COMP_NAME)//"_SHC_DO_COND:", default=0,     RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_DO_TRANS, trim(COMP_NAME)//"_SHC_DO_TRANS:", default=1,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_DO_CLDLEN, trim(COMP_NAME)//"_SHC_DO_CLDLEN:", default=1,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_USE_MF_PDF, trim(COMP_NAME)//"_SHC_USE_MF_PDF:", default=1,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_USE_MF_BUOY, trim(COMP_NAME)//"_SHC_USE_MF_BUOY:", default=0,     RC=STATUS)
+!       call MAPL_GetResource (MAPL, PDFSHAPE,  'PDFSHAPE:',   DEFAULT=     1.0    )
+!       if (PDFSHAPE/=5) then
+!         call MAPL_GetResource (MAPL, SHC_BUOY_OPTION, trim(COMP_NAME)//"_SHC_BUOY_OPTION:", default=0,     RC=STATUS)
+!       else
+         call MAPL_GetResource (MAPL, SHC_BUOY_OPTION, trim(COMP_NAME)//"_SHC_BUOY_OPTION:", default=2,     RC=STATUS)
+!       end if
+!       if (SHC_BUOY_OPTION==2 .and. PDFSHAPE/=5) print *,'*** SHOC using inactive DG PDF for buoyancy!!! ***'
      end if
 
 ! Get pointers from export state...
@@ -2095,6 +3130,87 @@ contains
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  CKVODT,  'CKVODT',               RC=STATUS)
      VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_buoyf,  'edmf_buoyf',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_hl2,  'edmf_hl2', ALLOC=.TRUE.,  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qthl, 'edmf_qthl', ALLOC=.TRUE.,  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt2,  'edmf_qt2', ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_w2,  'edmf_w2',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_w3,  'edmf_w3',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_qt3,  'edmf_qt3',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  w3_canuto, 'w3_canuto',ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_wqt,'edmf_wqt', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_whl,'edmf_whl', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_mf,  'edmf_mf',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_dry_a,  'edmf_dry_a',       RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  z_conv_edmf,  'z_conv_edmf',       RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_a,  'edmf_moist_a',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_dry_u,  'edmf_dry_u',      RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_u,  'edmf_moist_u',  RC=STATUS)
+     VERIFY_(STATUS)
+    call MAPL_GetPointer(EXPORT,  edmf_dry_v,  'edmf_dry_v',       RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_v,  'edmf_moist_v',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_dry_w,  'edmf_dry_w',      RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_w,  'edmf_moist_w',  RC=STATUS)
+     VERIFY_(STATUS)
+!     call MAPL_GetPointer(EXPORT,  edmf_aw,  'edmf_aw',      RC=STATUS)
+!     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_dry_qt,  'edmf_dry_qt',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_qt,  'edmf_moist_qt',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_dry_thl,  'edmf_dry_thl',     RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_thl,  'edmf_moist_thl',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  edmf_moist_qc,  'edmf_moist_qc',    RC=STATUS)
+     VERIFY_(STATUS)
+
+!========== SHOC ===========
+     call MAPL_GetPointer(EXPORT, TKEDISS, 'TKEDISS',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, TKEBUOY, 'TKEBUOY',  RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, TKESHEAR,'TKESHEAR', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, TKETRANS,'TKETRANS', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, ISOTROPY,'ISOTROPY', ALLOC=.TRUE., RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, LSHOC,   'LSHOC',    RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, LSHOC1,  'LSHOC1',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, LSHOC2,  'LSHOC2',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, LSHOC3,  'LSHOC3',   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, LSHOC_CLR,'LSHOC_CLR', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, LSHOC_CLD,'LSHOC_CLD', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, BRUNTSHOC,'BRUNTSHOC', RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT, SHEARSHOC,'SHEARSHOC', RC=STATUS)
+     VERIFY_(STATUS)
+
 
 ! Initialize some arrays
 
@@ -2172,17 +3288,324 @@ contains
       RDZ = RDZ(:,:,1:LM-1) / (Z(:,:,1:LM-1)-Z(:,:,2:LM))
       DMI = (MAPL_GRAV*DT)/(PLE(:,:,1:LM)-PLE(:,:,0:LM-1))
 
+      RHOE(:,:,1:LM-1)=PLE(:,:,1:LM-1)/(MAPL_RGAS*TVE) 
+      RHOE(:,:,0)=PLE(:,:,0)/(MAPL_RGAS*TV(:,:,1))
+      RHOE(:,:,LM)=PLE(:,:,LM)/(MAPL_RGAS*TV(:,:,LM))
+
       !===> Running 1-2-1 smooth of bottom 5 levels of Virtual Pot. Temp.
-      if (LM .eq. 72) then
       THV(:,:,LM  ) = THV(:,:,LM-1)*0.25 + THV(:,:,LM  )*0.75
       THV(:,:,LM-1) = THV(:,:,LM-2)*0.25 + THV(:,:,LM-1)*0.50 + THV(:,:,LM  )*0.25 
       THV(:,:,LM-2) = THV(:,:,LM-3)*0.25 + THV(:,:,LM-2)*0.50 + THV(:,:,LM-1)*0.25 
       THV(:,:,LM-3) = THV(:,:,LM-4)*0.25 + THV(:,:,LM-3)*0.50 + THV(:,:,LM-2)*0.25 
       THV(:,:,LM-4) = THV(:,:,LM-5)*0.25 + THV(:,:,LM-4)*0.50 + THV(:,:,LM-3)*0.25 
       THV(:,:,LM-5) = THV(:,:,LM-6)*0.25 + THV(:,:,LM-5)*0.50 + THV(:,:,LM-4)*0.25 
-      endif
 
       call MAPL_TimerOff(MAPL,"---PRELIMS")
+
+
+   ! get thl and qt
+    
+    EXF=T/TH 
+    THL=TH-(mapl_alhl*QL+mapl_alhs*QI)/(mapl_cp*EXF)
+    QT=Q+QL+QI
+
+! get updraft constants
+
+
+! number of updrafts
+  call MAPL_GetResource (MAPL, NumUpR, "EDMF_NumUp:", default=10.,     RC=STATUS)
+       NumUp=nint(NumUpR)
+
+! (1):  boundaries for the updraft area
+      call MAPL_GetResource (MAPL, pwmin, "EDMF_pwmin:", default=1.,     RC=STATUS)
+      call MAPL_GetResource (MAPL, pwmax, "EDMF_pwmax:", default=3.,     RC=STATUS)
+! (2): coefficients for surface forcing
+      call MAPL_GetResource (MAPL, AlphaW, "EDMF_AlphaW:", default=0.572,     RC=STATUS)
+      call MAPL_GetResource (MAPL, AlphaQT, "EDMF_AlphaQT:", default=2.89,     RC=STATUS)
+      call MAPL_GetResource (MAPL, AlphaTH, "EDMF_AlphaTH:", default=2.89,     RC=STATUS)
+
+!  get info on how ent. rate is to be computed
+       call MAPL_GetResource (MAPL, ETr, "EDMF_ET:", default=1.,     RC=STATUS)
+       ET=nint(ETr)
+ ! constant entrainment rate   
+      call MAPL_GetResource (MAPL, ENT0, "EDMF_ENT0:", default=0.3,     RC=STATUS)
+      ! L0 if ET==1
+      call MAPL_GetResource (MAPL, L0, "EDMF_L0:", default=100.,     RC=STATUS)
+      ! L0fac if ET==2
+      call MAPL_GetResource (MAPL, L0fac, "EDMF_L0fac:", default=10.,     RC=STATUS)
+     ! factor to multiply the eddy-diffusivity with
+    call MAPL_GetResource (MAPL, EDfac, "EDMF_EDfac:", default=1.,     RC=STATUS)
+  ! if true then 
+    call MAPL_GetResource (MAPL, DOMF, "EDMF_DOMF:", default=0.,  RC=STATUS)
+    call MAPL_GetResource (MAPL, DOMFCOND, "EDMF_COND:", default=0.,  RC=STATUS)
+    call MAPL_GetResource (MAPL,EntWFac,"EDMF_ENTWFAC:",default=0.3333, RC=STATUS)  
+    call MAPL_GetResource (MAPL, EDMF_DISCRETE_TYPE, "EDMF_DISCRETE_TYPE:", default=0,  RC=STATUS)
+    call MAPL_GetResource (MAPL, EDMF_IMPLICIT, "EDMF_IMPLICIT:", default=1,  RC=STATUS)
+    call MAPL_GetResource (MAPL, MYNN_LEVEL, "TURBULENCE_MYNN_LEVEL:", default=2,  RC=STATUS)
+    call MAPL_GetResource (MAPL, WQL_TYPE, "TURBULENCE_WQL_TYPE:", default=1,  RC=STATUS)
+    call MAPL_GetResource (MAPL, WRF_CG_FLAG, "TURBULENCE_WRF_CG_FLAG:", default=0,  RC=STATUS)
+
+! get ice ramp
+   call MAPL_GetResource(MAPL,ICE_RAMP,'ICE_RAMP:',DEFAULT= -40.0   )
+
+
+     call MAPL_TimerOn(MAPL,"---MASSFLUX")
+
+mfhl2 = 0.0
+mfqthl = 0.0
+mfqt2 = 0.0
+mfw2 = 0.0
+mfw3 = 0.0
+mfqt3 = 0.0
+mfwqt = 0.0
+mfwhl = 0.0
+
+edmf_hl2 = 0.0
+edmf_qt2 = 0.0
+edmf_qthl = 0.0
+
+IF(DoMF .eq. 1.) then
+    
+    aw3 = 0.0
+     
+      IRAS       = nint(LONS*100)
+      JRAS       = nint(LATS*100)
+
+if (ETr .eq. 1.) then
+
+! use the L0 to be constant
+
+    L02=L0
+
+    call EDMF(1,IM*JM,1,LM,DT,Z,ZLE,PLE,NumUp,U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,ZPBL,ice_ramp, &   
+             edmfdrya,edmfmoista, &
+             edmfdryw,edmfmoistw, &
+             edmfdryqt,edmfmoistqt, &
+             edmfdrythl,edmfmoistthl, &
+             edmfdryu,edmfmoistu,  &
+             edmfdryv,edmfmoistv,  &
+             edmfmoistqc,             &
+             ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3, &
+             awhl3,awqt3,awthv3, & ! for MYNN
+             pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
+             ET,L02,ENT0,EDfac,EntWFac,buoyf,&
+             mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfqthl,mfwhl,iras,jras, &
+             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
+    
+    edmfZCLD=0.
+  
+      DO I=1,IM
+       DO J=1,JM
+        L02(I,J)=max(min(edmfZCLD(I,J),5000.),500.)/L0fac
+      ENDDO
+     ENDDO
+
+      
+ elseif (ETr .eq. 2.) then
+ 
+ ! L0 is a function of the cloud depth
+ ! compute the depth of the cloud layer for a single non-entraining plume
+ 
+! negative L02 means no entrainment for the updrafts
+     L02=-9.
+ 
+     call EDMF(1,IM*JM,1,LM,DT,Z,ZLE,PLE,1,U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,ZPBL,ice_ramp, &   
+             edmfdrya,edmfmoista, &
+             edmfdryw,edmfmoistw, &
+             edmfdryqt,edmfmoistqt, &
+             edmfdrythl,edmfmoistthl, &
+             edmfdryu,edmfmoistu,  &
+             edmfdryv,edmfmoistv,  &
+             edmfmoistqc,             &
+             ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3, &
+             awhl3,awqt3,awthv3, & ! for MYNN
+             pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
+             ET,L02,ENT0,EDfac,EntWFac,buoyf,&
+             mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfqthl,mfwhl,iras,jras, &
+             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
+ 
+ 
+    ! compute the depth of the convective layer  
+    ! the height where the convective mass-flux is zero
+    
+    edmfZCLD=0.
+    
+     DO I=1,IM
+       DO J=1,JM
+        DO L=LM,0,-1
+           IF (AW3(I,J,L) .gt. 0.) then
+              edmfZCLD(I,J)=ZLE(I,J,L)
+           ENDIF  
+       ENDDO
+    ENDDO
+  ENDDO 
+ 
+! print *,'edmf-cloudtop',edmfZCLD 
+ 
+ 
+ ! compute the L0 assuming reasonable limits
+     DO I=1,IM
+       DO J=1,JM
+        L02(I,J)=max(min(edmfZCLD(I,J),5000.),500.)/L0fac
+    ENDDO
+  ENDDO 
+ 
+ 
+ 
+ !
+ ! now the real call to the mass-flux
+ !
+ 
+     call EDMF(1,IM*JM,1,LM,DT,Z,ZLE,PLE,NumUp,U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,ZPBL,ice_ramp, &   
+             edmfdrya,edmfmoista, &
+             edmfdryw,edmfmoistw, &
+             edmfdryqt,edmfmoistqt, &
+             edmfdrythl,edmfmoistthl, &
+             edmfdryu,edmfmoistu,  &
+             edmfdryv,edmfmoistv,  &
+             edmfmoistqc,             &
+             ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3, &
+             awhl3,awqt3,awthv3, & ! for MYNN
+             pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
+             ET,L02,ENT0,EDfac,EntWFac,buoyf,&
+             mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfqthl,mfwhl,iras,jras, &
+             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
+  
+ else
+    write (*,*) "Error: wrong EDMF_ET "
+end if
+      
+      
+   !    print *,'edmfdrya',edmfdrya
+   !   print *,'edmfdryw',edmfdryw    
+   !    print *,'edmfmoista',edmfmoista
+   !   print *,'edmfmoistw',edmfmoistw
+   !   print *,'aw3',aw3
+   !   print *,'buoyf',buoyf
+      
+     
+
+  !  Sdry=mapl_cp*T+0.5*mapl_grav*(ZLE(:,:,1:LM)+ZLE(:,:,0:LM-1))
+
+
+   ! exner function on half-model levels
+  !  PK = (0.5*(PLE(:,:,0:LM-1)+PLE(:,:,1:LM))/mapl_p00)**(MAPL_RGAS/MAPL_CP)   
+  
+
+  !do L=LM,1,-1
+  !     ZLO(:,:,L)=ZLE(:,:,L)+(MAPL_CP/MAPL_GRAV)*( PKE(:,:,L)-PK (:,:,L))*TH(:,:,L)*(1.+MAPL_VIREPS*Q(:,:,L))
+  !     ZLOt(:,:,L)=ZLE(:,:,L)-(MAPL_CP/MAPL_GRAV)*(PKE(:,:,L-1)-PK(:,:,L))*TH(:,:,L)*(1.+MAPL_VIREPS*Q(:,:,L))  
+ !end do
+
+
+!    SdryA=mapl_cp*T+mapl_grav*ZLO
+!    SdryB=mapl_cp*T+mapl_grav*ZLOt
+
+
+ !  print *,'SdryC',SdryC  
+
+!  print *,'SdryB',SdryB
+
+ !   call  ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw3,aws3,Sdry,S_mf)
+ !   call  ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw3,awqv3,Q,QV_mf)
+ !   call  ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw3,awql3,QLLS,QL_mf)
+ !   call  ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw3,awqi3,QILS,QI_mf)
+ !   call  ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw3,awu3,U,U_mf)
+ !   call  ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw3,awv3,V,V_mf)
+
+
+! Evaporate/sublimate all condensate
+!if (DOMFCOND.ne.1) then
+!     S_mf=S_mf-mapl_alhl*QL_mf-mapl_alhs*QI_mf
+!     QV_mf=QV_mf+QI_mf+QL_mf
+!     QL_mf=0.
+!     QI_mf=0.
+!end if
+
+!    if (associated(edmf_aw)) edmf_aw=aw3
+     if (associated(z_conv_edmf)) z_conv_edmf=edmfzcld
+     if (associated(edmf_dry_a)) edmf_dry_a=edmfdrya 
+     if (associated(edmf_moist_a)) edmf_moist_a=edmfmoista 
+     if (associated(edmf_dry_w)) edmf_dry_w=edmfdryw 
+     if (associated(edmf_moist_w)) edmf_moist_w=edmfmoistw 
+     if (associated(edmf_dry_qt)) edmf_dry_qt=edmfdryqt 
+     if (associated(edmf_moist_qt)) edmf_moist_qt=edmfmoistqt 
+     if (associated(edmf_dry_thl)) edmf_dry_thl=edmfdrythl 
+     if (associated(edmf_moist_thl)) edmf_moist_thl=edmfmoistthl 
+     if (associated(edmf_dry_u)) edmf_dry_u=edmfdryu 
+     if (associated(edmf_moist_u)) edmf_moist_u=edmfmoistu 
+     if (associated(edmf_dry_v)) edmf_dry_v=edmfdryv 
+     if (associated(edmf_moist_v)) edmf_moist_v=edmfmoistv 
+     if (associated(edmf_moist_qc)) edmf_moist_qc=edmfmoistqc 
+     if (associated(edmf_buoyf)) edmf_buoyf=buoyf 
+
+!     mfhl2 = 0.
+!     mfqt2 = 0.
+!     mfw2 = 0.
+!     mfw3 = 0.
+!     mfwqt = 0.
+
+     if (associated(edmf_hl2)) edmf_hl2=mfhl2 
+     if (associated(edmf_qt2)) edmf_qt2=mfqt2 
+     if (associated(edmf_w2)) edmf_w2=mfw2
+     if (associated(edmf_w3)) edmf_w3=mfw3
+     if (associated(edmf_qt3)) edmf_qt3=mfqt3
+     if (associated(edmf_wqt)) edmf_wqt=mfwqt
+     if (associated(edmf_qthl)) edmf_qthl=mfqthl
+     if (associated(edmf_whl)) edmf_whl=mfwhl
+     if (associated(edmf_mf)) edmf_mf=edmfmoista*edmfmoistw+edmfdrya*edmfdryw 
+
+
+     call ComputeZPBL(IM*JM,LM,ZLE,aw3,ZPBLmf,KPBLmf)
+
+ELSE
+! if there is no mass-flux
+!
+    ae3=1.
+    aw3=0.0
+    aws3=0.0
+    awqv3=0.0
+    awql3=0.0
+    awqi3=0.0
+    awu3=0.0
+    awv3=0.0
+    buoyf=0.0
+
+    awhl3  = 0.
+    awqt3  = 0.
+    awthv3 = 0.
+  
+    if (associated(z_conv_edmf))    z_conv_edmf=mapl_undef
+    if (associated(edmf_dry_a))     edmf_dry_a    =0.0
+    if (associated(edmf_moist_a))   edmf_moist_a  =0.0
+    if (associated(edmf_dry_w))     edmf_dry_w    =mapl_undef
+    if (associated(edmf_moist_w))   edmf_moist_w  =mapl_undef 
+    if (associated(edmf_dry_qt))    edmf_dry_qt   =mapl_undef
+    if (associated(edmf_moist_qt))  edmf_moist_qt =mapl_undef 
+    if (associated(edmf_dry_thl))   edmf_dry_thl  =mapl_undef 
+    if (associated(edmf_moist_thl)) edmf_moist_thl=mapl_undef 
+    if (associated(edmf_dry_u))     edmf_dry_u    =mapl_undef 
+    if (associated(edmf_moist_u))   edmf_moist_u  =mapl_undef 
+    if (associated(edmf_dry_v))     edmf_dry_v    =mapl_undef 
+    if (associated(edmf_moist_v))   edmf_moist_v  =mapl_undef 
+    if (associated(edmf_moist_qc))  edmf_moist_qc =mapl_undef 
+    if (associated(edmf_buoyf))     edmf_buoyf    =0.0
+    if (associated(edmf_mf))        edmf_mf       =0.0 
+    if (associated(edmf_hl2))       edmf_hl2      =mfhl2 
+    if (associated(edmf_qt2))       edmf_qt2      =mfqt2 
+    if (associated(edmf_w2))        edmf_w2       =mfw2
+    if (associated(edmf_w3))        edmf_w3       =mfw3
+    if (associated(edmf_qt3))       edmf_qt3      =mfqt3
+    if (associated(edmf_wqt))       edmf_wqt      =mfwqt
+    if (associated(edmf_qthl))      edmf_qthl     =mfqthl
+    if (associated(edmf_whl))       edmf_whl      =mfwhl
+
+    ZPBLmf=0.
+    KPBLmf=float(LM)
+     
+ENDIF
+
+ call MAPL_TimerOff(MAPL,"---MASSFLUX")
 
 
 !!!=================================================================
@@ -2194,94 +3617,105 @@ contains
 !
 !!!=================================================================
 
+      ISOTROPY = 600.   ! set default isotropy timescale,
+                        ! will be overwritten
+
       if (DO_SHOC /= 0) then
+
+!        print *,'DO_SHOC=1'
 
         LOCK_ON = 0
 
         call MAPL_TimerOn (MAPL,name="---SHOC" ,RC=STATUS)
         VERIFY_(STATUS)
 
-        ! for now just use fixed values
-        QPI = 0.
-        QPL = 0.
-        PRANDTLSHOC = 0.9
+        if (DO_MYNN == 0) then
+           ! for now just use fixed values
+           QPI = 0.
+           QPL = 0.
+           PRANDTLSHOC = 0.9
+           w3_canuto  = 0.0
 
-        TDUM = T
-        QDUM = Q
-        QIDUM = QI
-        QLDUM = QL
+           call RUN_SHOC( IM, JM, LM, LM+1, DT, &
+                         !== Inputs ==
+                         DT/DMI(:,:,1:LM),      &
+                         PLO(:,:,1:LM),         &
+                         ZLE(:,:,0:LM),         &
+                         Z(:,:,1:LM),           &
+                         U(:,:,1:LM),           &
+                         V(:,:,1:LM),           &
+                         OMEGA(:,:,1:LM),       &
+                         SH(:,:),               &
+                         EVAP(:,:),             &
+                         BUOYF(:,:,1:LM),       &
+                         T(:,:,1:LM),           &
+                         Q(:,:,1:LM),           &
+                         QI(:,:,1:LM),          &
+                         QL(:,:,1:LM),          &
+                         QPI(:,:,1:LM),         &
+                         QPL(:,:,1:LM),         &
+                         QA(:,:,1:LM),          &
+                         WTHV2(:,:,1:LM),       &
+                         PRANDTLSHOC(:,:,1:LM), &
+                         !== Input-Outputs ==
+                         TKESHOC(:,:,1:LM),     &
+                         TKH(:,:,1:LM),         &
+                         !== Outputs ==
+                         ISOTROPY(:,:,1:LM),    &
+                         W3_CANUTO(:,:,1:LM),   &
+                         !== Diagnostics ==  ! not used elsewhere
+                         TKEDISS,               &
+                         TKEBUOY,               &
+                         TKESHEAR,              &
+                         TKETRANS,              &
+                         LSHOC,                 &
+                         LSHOC_CLR,             &
+                         LSHOC_CLD,             &
+                         LSHOC1,                &
+                         LSHOC2,                &
+                         LSHOC3,                &
+                         BRUNTSHOC,             &
+                         SHEARSHOC,             &
+                         !== Tuning params ==
+                         SHC_LAMBDA,            &
+                         SHC_TSCALE,            &
+                         SHC_VONK,              &
+                         SHC_CK,                &
+                         SHC_CEFAC,             &
+                         SHC_CESFAC,            &
+                         SHC_THL2TUNE,          &
+                         SHC_QW2TUNE,           &
+                         SHC_QWTHL2TUNE,        &
+                         SHC_DO_TRANS,          &
+                         SHC_DO_CLDLEN,         &
+                         SHC_USE_MF_PDF,        &
+                         SHC_USE_MF_BUOY,       &
+                         SHC_BUOY_OPTION  )
 
-!        print *,'QT before=',Q+QI+QL
-!        print *,'HL before=',MAPL_CP*T+MAPL_GRAV*Z-MAPL_ALHL*QL-MAPL_ALHS*QI
+           TKH = max(0.,TKH)
 
-        call RUN_SHOC( IM, JM, LM, LM+1, DT, &
-                   ! Inputs
-                   PLO(:,:,1:LM),         &
-                   ZLE(:,:,0:LM),         &
-                   Z(:,:,1:LM),           &
-                   U(:,:,1:LM),           &
-                   V(:,:,1:LM),           &
-                   OMEGA(:,:,1:LM),       &
-                   SH(:,:),               &
-                   EVAP(:,:),             &
-                   ! Input-Outputs
-                   TDUM(:,:,1:LM),        &
-                   QDUM(:,:,1:LM),        &
-                   QIDUM(:,:,1:LM),       &
-                   QLDUM(:,:,1:LM),       &
-                   QPI(:,:,1:LM),         &
-                   QPL(:,:,1:LM),         &
-                   CLD(:,:,1:LM),         &
-                   TKESHOC(:,:,1:LM),     &
-                   PRANDTLSHOC(:,:,1:LM), &
-                   TKH(:,:,1:LM),         &
-                   ! Diagnostics
-                   WTHV2(:,:,1:LM),       &
-                   TKEDISS(:,:,1:LM),     &
-                   TKEBUOY(:,:,1:LM),     &
-                   TKESHEAR(:,:,1:LM),    &
-                   TKETRANS(:,:,1:LM),    &
-                   LSHOC(:,:,1:LM),       &
-                   BRUNTSHOC(:,:,1:LM),   &
-                   SHEARSHOC(:,:,1:LM),   &
-                   ! Tuning params
-                   SHC_LAMBDA,            &
-                   SHC_TSCALE,            &
-                   SHC_VONK,              &
-                   SHC_CK,                &
-                   SHC_CEFAC,             &
-                   SHC_CESFAC,            &
-                   SHC_THL2TUNE,          &
-                   SHC_QW2TUNE,           &
-                   SHC_QWTHL2TUNE,        &
-                   SHC_DO_TRANS )
+           KH(:,:,1:LM) = TKH(:,:,1:LM)
+           KM(:,:,1:LM) = TKH(:,:,1:LM)*PRANDTLSHOC(:,:,1:LM)
 
-        TKH = max(0.,TKH)
-
-        DTDT_SHC = (TDUM-T)/DT
-        DQDT_SHC = (QDUM-Q)/DT
-        DQLDT_SHC = (QLDUM-QL)/DT
-        DQIDT_SHC = (QIDUM-QI)/DT
-
-        if (SHC_DO_COND /= 0) then
-           print *,'SHOC: Applying condensatation tendencies'
-           T(:,:,:)  = TDUM
-           Q(:,:,:)  = QDUM
-           QL(:,:,:) = QLDUM
-           QI(:,:,:) = QIDUM
+        else ! MYNN
+           call write_parallel( "Running MYNN..." )
+           call run_mynn(IM, JM, LM, &
+                         PLE, ZLE, Z, &
+                         U, V, T, Q, QL, QI, TKE_NEW, HL2, QT2, HLQT, &
+                         USTAR, SH, EVAP, THV, QA, awhl3, awqt3, awthv3, &
+                         KH, KM, K_TKE, K_TPE, ITAU_TURB, WS_CG, WQV_CG, WQL_CG, &
+                         BETA_HL, BETA_QT, &
+                         TKET_M, TKET_B, HL2T_M, QT2T_M, HLQTT_M, &
+                         TKE_SURF, HL2_SURF, QT2_SURF, HLQT_SURF, &
+                         DOMF, MYNN_LEVEL, WQL_TYPE, WRF_CG_FLAG)
+           call write_parallel( "  MYNN completed!" )
         end if
-
-        KH(:,:,1:LM) = TKH(:,:,1:LM)
-        KM(:,:,1:LM) = TKH(:,:,1:LM)*PRANDTLSHOC(:,:,1:LM)
-
-!        print *,'QT after=',Q+QI+QL
-!        print *,'HL after=',MAPL_CP*T+MAPL_GRAV*Z-MAPL_ALHL*QL-MAPL_ALHS*QI
 
         call MAPL_TimerOff (MAPL,name="---SHOC" ,RC=STATUS)
         VERIFY_(STATUS)
 
+      end if  ! DOSHOC condition
 
-      end if
 
 !   Refresh diffusivities: First compute Louis...
 !   ---------------------------------------------
@@ -2300,6 +3734,19 @@ contains
             ALHFAC, ALMFAC,                 &
             ZKMENV, ZKHENV, AKHMMAX,        &
             ALH, KMLS, KHLS                 )
+      else
+        RI = 0.0
+        DZ = MINTHICK
+        DZ(:,:,1:LM-1) = (Z(:,:,1:LM-1) - Z(:,:,2:LM))
+        TM(:,:,1:LM-1) = (THV(:,:,1:LM-1) + THV(:,:,2:LM))*0.5
+        DTM(:,:,1:LM-1) = (THV(:,:,1:LM-1) - THV(:,:,2:LM))
+        DU(:,:,1:LM-1) = (U(:,:,1:LM-1) - U(:,:,2:LM))**2 + &
+                         (V(:,:,1:LM-1) - V(:,:,2:LM))**2
+
+        DZ =  max(DZ, MINTHICK)
+        DU = sqrt(DU)/DZ
+
+        RI(:,:,1:LM-1) = MAPL_GRAV*(DTM/DZ)/(TM*( max(DU, MINSHEAR)**2)) 
       end if
 
       call MAPL_TimerOff(MAPL,name="---LOUIS" ,RC=STATUS)
@@ -2784,7 +4231,11 @@ contains
 
       do I = 1, IM
          do J = 1, JM
-            temparray(1:LM+1) = KHSFC(I,J,0:LM)
+            if (DO_SHOC==0) then
+              temparray(1:LM+1) = KHSFC(I,J,0:LM)
+            else
+              temparray(1:LM+1) = KH(I,J,0:LM)
+            end if
 
             maxkh = maxval(temparray)
             do L=LM-1,2,-1
@@ -2807,7 +4258,8 @@ contains
             do J = 1, JM
                temparray(1:LM+1) = KH(I,J,0:LM)
                do L = LM,2,-1
-                  locmax = maxloc(temparray,1)
+                  locmax = min(maxloc(temparray,1),LM)
+!                  locmax = maxloc(temparray,1)
                   minlval = max(0.001,0.0001*maxval(temparray))
                   if(temparray(locmax-1)<minlval.and.temparray(locmax+1)<minlval) temparray(locmax) = minlval
                enddo
@@ -2841,8 +4293,10 @@ contains
 
       ! TKE 
       if (associated(TKE)) then         ! Reminder: TKE is on model edges
-        if (DO_SHOC /= 0) then
-          TKE = TKESHOC
+        if (DO_SHOC /= 0) then          !           TKESHOC is not.
+          TKE(:,:,1:LM-1) = 0.5*(TKESHOC(:,:,1:LM-1)+TKESHOC(:,:,2:LM))
+          TKE(:,:,0) = 0.
+          TKE(:,:,LM) = 0.
         else
           TKE = MAPL_UNDEF
           do L = 1,LM-1
@@ -2852,6 +4306,18 @@ contains
             (KM(:,:,L)*((V(:,:,L) - V(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))*((V(:,:,L) - V(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))) )) ** 2
             TKE(:,:,L) = TKE(:,:,L) ** (1./3.)
           enddo
+
+          ! If not running SHOC, estimate ISOTROPY from KH and TKE,
+          ! based on Eq. 7 from Bogenschutz and Krueger (2013).
+          ! This is a placeholder to allow use of the double-gaussian
+          ! PDF without SHOC, but should be tested and revised!!!
+          ISOTROPY(:,:,LM) = KH(:,:,LM-1) / (0.1*TKE(:,:,LM-1))
+          ISOTROPY(:,:,1) = KH(:,:,1) / (0.1*TKE(:,:,1))
+          do L = 2,LM-1
+            ISOTROPY(:,:,L) = (KH(:,:,L)+KH(:,:,L-1)) / (0.1*(TKE(:,:,L)+TKE(:,:,L-1)))
+          end do
+          ISOTROPY = max(10.,min(2000.,ISOTROPY))
+
         end if
       end if ! TKE
 
@@ -2961,6 +4427,10 @@ contains
          PPBL = MAX(PPBL,PLO(:,:,KPBLMIN))
       end if
 
+           call write_parallel( "ZPBL calculated" )
+
+           call write_parallel( "Setting up matrices..." )
+
       ! Second difference coefficients for scalars; RDZ is RHO/DZ, DMI is (G DT)/DP
       ! ---------------------------------------------------------------------------
 
@@ -2974,6 +4444,8 @@ contains
       ! ---------------------------------------------------------
 
       KH(:,:,LM) = CT * (PLE(:,:,LM)/(MAPL_RGAS * TV(:,:,LM))) / Z(:,:,LM)
+      TKH(:,:,LM) = KH(:,:,LM)
+
 
       ! Water vapor can differ at the surface
       !--------------------------------------
@@ -3006,6 +4478,138 @@ contains
       BKS = 1.00 - (AKS+CKS)
       BKQ = 1.00 - (AKQ+CKQ)
       BKV = 1.00 - (AKV+CKV)
+
+    !
+    ! A,B,C,D-s for mass flux
+    !
+        
+
+  AKSS(:,:,1)=0.0
+!  AKQQ(:,:,1)=0.0
+  AKUU(:,:,1)=0.0
+
+
+  RHOAW3=RHOE*AW3
+
+! print *,'rhoaw3',rhoaw3
+
+  if (EDMF_IMPLICIT == 1 .and. EDMF_DISCRETE_TYPE == 0) then
+     AKSS(:,:,2:LM) = - KH(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,2:LM) - 0.5*DMI(:,:,2:LM)*RHOAW3(:,:,1:LM-1)
+     AKUU(:,:,2:LM) = -KM(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,2:LM) - 0.5*DMI(:,:,2:LM)*RHOAW3(:,:,1:LM-1)
+  else
+     AKSS(:,:,2:LM) = -KH(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,2:LM)
+     AKUU(:,:,2:LM) = -KM(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,2:LM)
+  end if
+  AKQQ = AKSS
+
+  CKSS(:,:,LM)=-CT*DMI(:,:,LM)
+  CKQQ(:,:,LM)=-CQ*DMI(:,:,LM)
+  CKUU(:,:,LM)=-CU*DMI(:,:,LM)
+  
+  if (EDMF_IMPLICIT == 1 .and. EDMF_DISCRETE_TYPE == 0) then
+     CKSS(:,:,1:LM-1) = -KH(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,1:LM-1) + 0.5*DMI(:,:,1:LM-1)*RHOAW3(:,:,1:LM-1)
+     CKUU(:,:,1:LM-1) = -KM(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,1:LM-1) + 0.5*DMI(:,:,1:LM-1)*RHOAW3(:,:,1:LM-1)
+  else
+     CKSS(:,:,1:LM-1) = -KH(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,1:LM-1)
+     CKUU(:,:,1:LM-1) = -KM(:,:,1:LM-1)*RDZ(:,:,1:LM-1)*AE3(:,:,1:LM-1)*DMI(:,:,1:LM-1)
+  end if
+  CKQQ(:,:,1:LM-1) = CKSS(:,:,1:LM-1)  
+ 
+  BKSS = 1.0 - (CKSS+AKSS)
+  BKQQ = 1.0 - (CKQQ+AKQQ)
+  BKUU = 1.0 - (CKUU+AKUU)
+
+! Add mass flux contribution
+  
+  if (EDMF_IMPLICIT == 1) then
+     if (EDMF_DISCRETE_TYPE == 0) then
+        BKSS(:,:,LM) = BKSS(:,:,LM) - DMI(:,:,LM)*RHOAW3(:,:,LM-1)
+        BKQQ(:,:,LM) = BKQQ(:,:,LM) - DMI(:,:,LM)*RHOAW3(:,:,LM-1)
+        BKUU(:,:,LM) = BKUU(:,:,LM) - DMI(:,:,LM)*RHOAW3(:,:,LM-1)
+
+        BKSS(:,:,1:LM-1) = BKSS(:,:,1:LM-1) + DMI(:,:,1:LM-1)*(RHOAW3(:,:,1:LM-1) - RHOAW3(:,:,0:LM-2))
+        BKQQ(:,:,1:LM-1) = BKQQ(:,:,1:LM-1) + DMI(:,:,1:LM-1)*(RHOAW3(:,:,1:LM-1) - RHOAW3(:,:,0:LM-2))
+        BKUU(:,:,1:LM-1) = BKUU(:,:,1:LM-1) + DMI(:,:,1:LM-1)*(RHOAW3(:,:,1:LM-1) - RHOAW3(:,:,0:LM-2))
+     else if (EDMF_DISCRETE_TYPE == 1) then
+        AKSS(:,:,2:LM) = AKSS(:,:,2:LM) - DMI(:,:,2:LM)*RHOAW3(:,:,1:LM-1)
+        AKQQ(:,:,2:LM) = AKQQ(:,:,2:LM) - DMI(:,:,2:LM)*RHOAW3(:,:,1:LM-1)
+        AKUU(:,:,2:LM) = AKUU(:,:,2:LM) - DMI(:,:,2:LM)*RHOAW3(:,:,1:LM-1)
+
+        BKSS(:,:,2:LM-1) = BKSS(:,:,2:LM-1) + DMI(:,:,2:LM-1)*RHOAW3(:,:,2:LM-1)
+        BKQQ(:,:,2:LM-1) = BKQQ(:,:,2:LM-1) + DMI(:,:,2:LM-1)*RHOAW3(:,:,2:LM-1)
+        BKUU(:,:,2:LM-1) = BKUU(:,:,2:LM-1) + DMI(:,:,2:LM-1)*RHOAW3(:,:,2:LM-1)
+     end if
+  end if
+
+! Y-s ... these are rhs - mean value - surface flux 
+! (these are added in the diffuse and vrtisolve)
+
+   YS(:,:,LM)  = -DMI(:,:,LM)*RHOE(:,:,LM-1)*( AWS3(:,:,LM-1)  + WS_CG(:,:,LM-1) )
+   YQV(:,:,LM) = -DMI(:,:,LM)*RHOE(:,:,LM-1)*( AWQV3(:,:,LM-1) + WQV_CG(:,:,LM-1) )
+   YQL(:,:,LM) = -DMI(:,:,LM)*RHOE(:,:,LM-1)*( AWQL3(:,:,LM-1) + WQL_CG(:,:,LM-1) )
+   YQI(:,:,LM)=-DMI(:,:,LM)*AWQI3(:,:,LM-1)*RHOE(:,:,LM-1)
+   YU(:,:,LM)=-DMI(:,:,LM)*AWU3(:,:,LM-1)*RHOE(:,:,LM-1)
+   YV(:,:,LM)=-DMI(:,:,LM)*AWV3(:,:,LM-1)*RHOE(:,:,LM-1)
+
+
+!
+! 2:LM -> 1:LM-1, 1:LM-1 -> 0:LM-2
+!
+   YS(:,:,1:LM-1)  = DMI(:,:,1:LM-1)*(  RHOE(:,:,1:LM-1)*( AWS3(:,:,1:LM-1)  + WS_CG(:,:,1:LM-1) ) &
+                                      - RHOE(:,:,0:LM-2)*( AWS3(:,:,0:LM-2)  + WS_CG(:,:,0:LM-2) ))
+   YQV(:,:,1:LM-1) = DMI(:,:,1:LM-1)*(  RHOE(:,:,1:LM-1)*( AWQV3(:,:,1:LM-1) + WQV_CG(:,:,1:LM-1) ) &
+                                      - RHOE(:,:,0:LM-2)*( AWQV3(:,:,0:LM-2) + WQV_CG(:,:,0:LM-2) ))
+   YQL(:,:,1:LM-1) = DMI(:,:,1:LM-1)*(  RHOE(:,:,1:LM-1)*( AWQL3(:,:,1:LM-1) + WQL_CG(:,:,1:LM-1) ) &
+                                      - RHOE(:,:,0:LM-2)*( AWQL3(:,:,0:LM-2) + WQL_CG(:,:,0:LM-2) ))
+   YQI(:,:,1:LM-1)=DMI(:,:,1:LM-1)*(AWQI3(:,:,1:LM-1)*RHOE(:,:,1:LM-1)-RHOE(:,:,0:LM-2)*AWQI3(:,:,0:LM-2))
+   YU(:,:,1:LM-1)=DMI(:,:,1:LM-1)*(AWU3(:,:,1:LM-1)*RHOE(:,:,1:LM-1)-RHOE(:,:,0:LM-2)*AWU3(:,:,0:LM-2))
+   YV(:,:,1:LM-1)=DMI(:,:,1:LM-1)*(AWV3(:,:,1:LM-1)*RHOE(:,:,1:LM-1)-RHOE(:,:,0:LM-2)*AWV3(:,:,0:LM-2))
+
+! Setup solver for variables at half levels
+   RDZ_HALF(:,:,1:LM)   = PLO(:,:,1:LM)/(MAPL_RGAS*TV(:,:,1:LM)*(ZLE(:,:,0:LM-1) - ZLE(:,:,1:LM)))
+   DMI_HALF(:,:,1:LM-1) = MAPL_GRAV*DT/(PLO(:,:,2:LM) - PLO(:,:,1:LM-1))
+
+   AKTKE(:,:,0)      = 0.
+   AKTKE(:,:,1:LM-1) = -K_TKE(:,:,1:LM-1)*RDZ_HALF(:,:,1:LM-1)*DMI_HALF(:,:,1:LM-1)
+   AKTKE(:,:,LM)     = 0.
+
+   CKTKE(:,:,0)      = 0.
+   CKTKE(:,:,1:LM-1) = -K_TKE(:,:,2:LM)*RDZ_HALF(:,:,2:LM)*DMI_HALF(:,:,1:LM-1)
+   CKTKE(:,:,LM)     = 0.
+
+   AKTPE(:,:,0)      = 0.
+   AKTPE(:,:,1:LM-1) = -K_TPE(:,:,1:LM-1)*RDZ_HALF(:,:,1:LM-1)*DMI_HALF(:,:,1:LM-1)
+   AKTPE(:,:,LM)     = 0.
+
+   CKTPE(:,:,0)      = 0.
+   CKTPE(:,:,1:LM-1) = -K_TPE(:,:,2:LM)*RDZ_HALF(:,:,2:LM)*DMI_HALF(:,:,1:LM-1)
+   CKTPE(:,:,LM)     = 0.
+
+   BKTKE(:,:,0)      = 1.
+   BKTKE(:,:,1:LM-1) = 1. + DT*ITAU_TURB(:,:,1:LM-1)/B1 - (CKTKE(:,:,1:LM-1) + AKTKE(:,:,1:LM-1))
+   BKTKE(:,:,LM)     = 1.
+
+   BKTPE(:,:,0)      = 1.
+   BKTPE(:,:,1:LM-1) = 1. + DT*ITAU_TURB(:,:,1:LM-1)/B2 - (CKTPE(:,:,1:LM-1) + AKTPE(:,:,1:LM-1))
+   BKTPE(:,:,LM)     = 1.
+
+   YTKE(:,:,0)      = 0.
+   YTKE(:,:,1:LM-1) = DT*( TKET_M(:,:,1:LM-1) + TKET_B(:,:,1:LM-1) )
+   YTKE(:,:,LM)     = TKE_SURF(:,:)
+
+   YHL2(:,:,0)      = 0.
+   YHL2(:,:,1:LM-1) = DT*HL2T_M(:,:,1:LM-1)
+   YHL2(:,:,LM)     = HL2_SURF(:,:)
+
+   YQT2(:,:,0)      = 0.
+   YQT2(:,:,1:LM-1) = DT*QT2T_M(:,:,1:LM-1)
+   YQT2(:,:,LM)     = QT2_SURF(:,:)
+
+   YHLQT(:,:,0)      = 0.
+   YHLQT(:,:,1:LM-1) = DT*HLQTT_M(:,:,1:LM-1)
+   YHLQT(:,:,LM)     = HLQT_SURF(:,:)
+
+           call write_parallel( "  Matrices done!" )
 
       ! Add the topographic roughness term
       ! ----------------------------------
@@ -3057,7 +4661,7 @@ contains
                     LAMBDA_B, C_B,  &
                     U, V, Z,        &
                     VARFLT, PLE,    &
-                    BKV, FKV        )
+                    BKV, BKUU, FKV  )
 
       call MAPL_TimerOff(MAPL,"---BELJAARS")
 
@@ -3067,6 +4671,8 @@ contains
 ! On exit, B is the main diagonals of the LU
 ! decomposition, and A is the r.h.s multiplier.
 !----------------------------------------------
+
+      call write_parallel( "Doing LU decomp..." )
 
       AKX = AKS
       BKX = BKS
@@ -3086,6 +4692,45 @@ contains
       AKV = AKX
       BKV = BKX
 
+ !
+ ! LU decomposition for the mass-flux variables
+ !     
+     AKX=AKSS
+     BKX=BKSS
+     call VTRILU(AKX,BKX,CKSS)
+     BKSS=BKX
+     AKSS=AKX
+     
+     AKX=AKQQ
+     BKX=BKQQ
+     call VTRILU(AKX,BKX,CKQQ)
+     BKQQ=BKX
+     AKQQ=AKX  
+
+     AKX=AKUU
+     BKX=BKUU
+     call VTRILU(AKX,BKX,CKUU)
+     BKUU=BKX
+     AKUU=AKX  
+
+!
+! LU decomposition for variables at half levels
+!
+     AKIX = AKTKE
+     BKIX = BKTKE
+     call VTRILU(AKIX, BKIX, CKTKE)
+     BKTKE = BKIX
+     AKTKE = AKIX
+
+     AKIX = AKTPE
+     BKIX = BKTPE
+     call VTRILU(AKIX, BKIX, CKTPE)
+     BKTPE = BKIX
+     AKTPE = AKIX
+
+      call write_parallel( "  LU decomp complete." )
+
+
 ! Get the sensitivity of solution to a unit
 ! change in the surface value. B and C are
 ! not modified.
@@ -3094,6 +4739,10 @@ contains
       call VTRISOLVESURF(BKS,CKS,DKS)
       call VTRISOLVESURF(BKQ,CKQ,DKQ)
       call VTRISOLVESURF(BKV,CKV,DKV)
+
+      call VTRISOLVESURF(BKSS,CKSS,DKSS)
+      call VTRISOLVESURF(BKQQ,CKQQ,DKQQ)
+      call VTRISOLVESURF(BKUU,CKUU,DKUU)
 
       call MAPL_TimerOff(MAPL,"---DECOMP")
 
@@ -3155,6 +4804,9 @@ contains
 
     real,               dimension(IM,JM,LM) :: DP
     real(kind=MAPL_R8), dimension(IM,JM,LM) :: SX
+    real(kind=MAPL_R8), dimension(IM,JM,0:LM) :: SX_HALF ! pointer for solving at half levels
+
+    integer :: i, j, ll
 
 ! AMM pointer to export of S after diffuse
     real, dimension(:,:,:), pointer     :: SAFDIFFUSE
@@ -3204,6 +4856,8 @@ contains
 
 ! Loop over all quantities to be diffused.
 !----------------------------------------
+
+    call write_parallel( "Looping over diffuse bundle..." )
 
     do K=1,KM
 
@@ -3270,6 +4924,11 @@ contains
 ! Pick the right exchange coefficients
 !-------------------------------------
 
+if ((trim(name) /= 'S') .and. (trim(name) /= 'Q') .and. (trim(name) /= 'QLLS') & 
+     .and. (trim(name) /= 'QILS') .and.  (trim(name) /= 'U') .and. (trim(name) /= 'V') &
+     .and. (trim(name) /= 'TKE_NEW') .and.  (trim(name) /= 'HL2') .and. (trim(name) /= 'QT2') .and. (trim(name) /= 'HLQT')) then
+    
+
        if     ( TYPE=='U' ) then ! Momentum
           CX => CU
           DX => DKV
@@ -3291,10 +4950,70 @@ contains
        
        SX = S
 
+ elseif (trim(name) =='S') then
+          CX => CT
+          DX => DKSS
+          AK => AKSS; BK => BKSS; CK => CKSS
+          SX=S+YS      
+ elseif (trim(name)=='Q') then
+          CX => CQ
+          DX => DKQQ
+          AK => AKQQ; BK => BKQQ; CK => CKQQ
+          SX=S+YQV
+ elseif (trim(name)=='QLLS') then
+          CX => CQ
+          DX => DKQQ
+          AK => AKQQ; BK => BKQQ; CK => CKQQ
+          SX=S+YQL
+ elseif (trim(name)=='QILS') then
+          CX => CQ
+          DX => DKQQ
+          AK => AKQQ; BK => BKQQ; CK => CKQQ
+          SX=S+YQI
+ elseif (trim(name)=='U') then       
+         CX => CU
+         DX => DKUU
+         AK => AKUU; BK => BKUU; CK => CKUU
+         SX=S+YU
+ elseif (trim(name)=='V') then       
+         CX => CU
+         DX => DKUU
+         AK => AKUU; BK => BKUU; CK => CKUU
+         SX=S+YV        
+ elseif (trim(name)=='TKE_NEW') then
+         AK => AKTKE; BK => BKTKE; CK => CKTKE
+         SX_HALF(:,:,0)      = 0.
+         SX_HALF(:,:,1:LM-1) = S(:,:,1:LM-1) + YTKE(:,:,1:LM-1)
+         SX_HALF(:,:,LM)     = 0.
+ elseif (trim(name)=='HL2') then
+         AK => AKTPE; BK => BKTPE; CK => CKTPE
+         SX_HALF(:,:,0)      = 0.
+         SX_HALF(:,:,1:LM-1) = S(:,:,1:LM-1) + YHL2(:,:,1:LM-1)
+         SX_HALF(:,:,LM)     = 0.
+ elseif (trim(name)=='QT2') then
+         AK => AKTPE; BK => BKTPE; CK => CKTPE
+         SX_HALF(:,:,0)      = 0.
+         SX_HALF(:,:,1:LM-1) = S(:,:,1:LM-1) + YQT2(:,:,1:LM-1)
+         SX_HALF(:,:,LM)     = 0.
+ elseif (trim(name)=='HLQT') then
+         AK => AKTPE; BK => BKTPE; CK => CKTPE
+         SX_HALF(:,:,0)      = 0.
+         SX_HALF(:,:,1:LM-1) = S(:,:,1:LM-1) + YHLQT(:,:,1:LM-1)
+         SX_HALF(:,:,LM)     = 0.
+ endif
+
+
 ! Solve for semi-implicit changes. This modifies SX
 ! -------------------------------------------------
 
-       call VTRISOLVE(AK,BK,CK,SX,SG)
+       if (trim(name) == 'TKE_NEW' .or. trim(name) == 'HL2' .or. trim(name) == 'QT2' .or. trim(name) == 'HLQT') then
+          call VTRISOLVE(AK,BK,CK,SX_HALF,SG)
+          if (trim(name) /= 'HLQT') then
+             SX_HALF = max(0., SX_HALF)
+          end if
+       else
+          call VTRISOLVE(AK,BK,CK,SX,SG)
+       end if
 
 ! Compute the surface fluxes
 !---------------------------
@@ -3314,7 +5033,11 @@ contains
           if( WEIGHTED ) then
              SOI = ( (SX - S)/DT )*DP
           else
-             SOI = ( (SX - S)/DT )
+             if (trim(name) == 'TKE_NEW' .or. trim(name) == 'HL2' .or. trim(name) == 'QT2' .or. trim(name) == 'HLQT') then
+                SOI = ( (SX_HALF - S)/DT )
+             else
+                SOI = ( (SX - S)/DT )
+             end if
           endif
        end if
 
@@ -3322,11 +5045,26 @@ contains
           SINC = ( (SX - S)/DT )
        end if
 
+       ! Compute dissipation tendencies of second-order moments
+       if (trim(name) == 'TKE_NEW') then
+          TKET_D(:,:,1:LM-1) = -ITAU_TURB(:,:,1:LM-1)*SX_HALF(:,:,1:LM-1)/24.
+       else if (trim(name) == 'HL2') then
+          HL2T_D(:,:,1:LM-1) = -ITAU_TURB(:,:,1:LM-1)*SX_HALF(:,:,1:LM-1)/15.
+       else if (trim(name) == 'QT2') then
+          QT2T_D(:,:,1:LM-1) = -ITAU_TURB(:,:,1:LM-1)*SX_HALF(:,:,1:LM-1)/15.
+       else if (trim(name) == 'HLQT') then
+          HLQTT_D(:,:,1:LM-1) = -ITAU_TURB(:,:,1:LM-1)*SX_HALF(:,:,1:LM-1)/15.
+       end if
+
 ! Update friendlies
 !------------------
 
        if(FRIENDLY) then
-          S = SX
+          if (trim(name) == 'TKE_NEW' .or. trim(name) == 'HL2' .or. trim(name) == 'QT2' .or. trim(name) == 'HLQT') then
+             S = SX_HALF
+          else
+             S = SX
+          end if
        end if
 !AMM sync up T and Q - so write on S after diffusion
        if( TYPE=='S' ) then 
@@ -3346,6 +5084,9 @@ contains
 
     enddo ! End loop over all quantities to be diffused
 ! -----------------------------------------------------
+
+    call write_parallel( "  diffusion loop complete!" )
+
 
     RETURN_(ESMF_SUCCESS)
   end subroutine DIFFUSE
@@ -3785,6 +5526,9 @@ end subroutine RUN1
 
          call ESMF_FieldGet(FIELD, name=NAME, RC=STATUS)
          VERIFY_(STATUS)
+
+         ! Skip "TRACERS" loop if variable defined at half-level
+         if (trim(name) == 'TKE_NEW' .or. trim(name) == 'HL2' .or. trim(name) == 'QT2' .or. trim(name) == 'HLQT') cycle TRACERS
 
 ! Get item's diffusion type (U, S or Q; default is Q)
 !----------------------------------------------------
@@ -4301,7 +6045,7 @@ end subroutine RUN1
                        LAMBDA_B, C_B,  &
                        U, V, Z,        &
                        VARFLT, PLE,    &
-                       BKV, FKV        )
+                       BKV, BKVV, FKV  )
 
 !BOP
 !
@@ -4330,7 +6074,7 @@ end subroutine RUN1
       real,    intent(IN   ), dimension(:,:   ) :: VARFLT
       real,    intent(IN   ), dimension(:,:,0:) :: PLE
 
-      real,    intent(INOUT), dimension(:,:,: ) :: BKV
+      real,    intent(INOUT), dimension(:,:,: ) :: BKV,BKVV
 
       real,    intent(  OUT), dimension(:,:,: ) :: FKV
 
@@ -4348,6 +6092,7 @@ end subroutine RUN1
                   FKV_temp = (C_B/LAMBDA_B)*min( sqrt(U(I,J,L)**2+V(I,J,L)**2),5.0 )*FKV_temp
 
                   BKV(I,J,L) = BKV(I,J,L) + DT*FKV_temp
+                  BKVV(I,J,L) = BKVV(I,J,L) + DT*FKV_temp
                   FKV(I,J,L) = FKV_temp * (PLE(I,J,L)-PLE(I,J,L-1))
                end if
             end do
@@ -4546,6 +6291,973 @@ end subroutine RUN1
 
     return
   end subroutine VTRISOLVE
+
+subroutine   ComputeTendencies(IM,JM,LM,PLE,ZLE,T,aw,awX,MX,X_mf)
+
+
+	integer, intent(in) :: IM,JM,LM
+    real,dimension(im,jm,lm+1),intent(in) :: ple,zle,aw,awX
+    real,dimension(im,jm,lm), intent(in) :: t,mx
+    
+    real,dimension(im,jm,lm),intent(out) :: X_mf
+
+! internals
+  real,dimension(im,jm,lm) :: rho
+  real,dimension(im,jm,lm+1) :: rhoe,aw3,awX3
+  real,dimension(im,jm)  :: rhodz
+   integer :: l
+
+   RHO=0.5*(PLE(:,:,2:lm)+PLE(:,:,1:lm-1))/(mapl_rgas*T)
+
+   RHOE(:,:,1)=PLE(:,:,1)/(mapl_rgas*T(:,:,1))
+   RHOE(:,:,LM+1)=PLE(:,:,LM+1)/(mapl_rgas*T(:,:,LM))
+   RHOE(:,:,2:LM)=0.5*(RHO(:,:,1:LM-1)+RHO(:,:,2:LM))
+
+   aw3=aw*rhoe
+   awX3=awX*rhoe
+
+  X_mf(:,:,1)=0.
+
+ do l=2,lm-1
+    RHOdZ=1./(RHO(:,:,l)*(ZLE(:,:,l+1)-ZLE(:,:,l)))
+
+   X_mf(:,:,l)=RHOdz*(awX3(:,:,l)-awX3(:,:,l+1)-MX(:,:,l-1)*aw3(:,:,l)+ &
+        MX(:,:,l)*aw3(:,:,l+1))
+ 
+! central
+!   X_mf(:,:,l)=RHOdz*(awX3(:,:,l)-awX3(:,:,l+1)+0.5*MX(:,:,l)*(aw3(:,:,l+1)-aw3(:,:,l))+ &
+!        0.5*MX(:,:,l+1)*aw3(:,:,l+1)-0.5*MX(:,:,l-1)*aw3(:,:,l))
+ 
+!   X_mf(:,:,l)=RHOdz*(awX3(:,:,l)-awX3(:,:,l+1)-MX(:,:,l)*aw3(:,:,l)+ &
+!        MX(:,:,l+1)*aw3(:,:,l+1))
+
+ enddo
+
+RHOdz=1./(RHO(:,:,LM)*(ZLE(:,:,LM+1)-ZLE(:,:,LM)))
+
+! central  
+! X_mf(:,:,lm)=RHOdz*(awX3(:,:,lm)-0.5*(MX(:,:,lm)+MX(:,:,lm-1))*aw3(:,:,lm)) 
+
+X_mf(:,:,lm)=RHOdz*(awX3(:,:,lm)-MX(:,:,lm-1)*aw3(:,:,lm))
+
+!X_mf(:,:,lm)=RHOdz*(awX3(:,:,lm)-MX(:,:,lm)*aw3(:,:,lm))
+X_mf(:,:,1)=0.
+
+end subroutine ComputeTendencies
+
+
+subroutine  ComputeZPBL(IRUN,LM,ZLE,AW,ZPBLmf,KPBLmf)
+
+integer, intent(in) :: IRUN,LM
+real, intent(in),dimension(IRUN,LM+1) :: ZLE,AW
+real, intent(out),dimension(IRUN) :: ZPBLmf,KPBLmf
+integer :: i,k
+! maximum pbl height
+real  :: zmax
+
+zmax=3000.
+
+
+do i=1,irun
+     ZPBLmf(i)=0.
+     KPBLmf(i)=real(LM)
+
+  do k=lm+1,1,-1
+   if ((AW(i,k) .ne. 0.) .and. (ZLE(i,k) .lt. zmax))  then
+       KPBLmf(i)=real(k)
+       ZPBLmf(i)=ZLE(i,k)
+    endif
+   enddo
+
+enddo
+
+
+end subroutine ComputeZPBL
+
+SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,nup,&
+              u3,v3,thl3,thv3,qt3,qv3,ql3,qi3,&
+              ust2,wthl2,wqt2,pblh2,ice_ramp, &
+            ! outputs - tendencies
+           !  &dth,dqv,dqc,du,dv,&
+             ! outputs - updraft properties   
+             dry_a3,moist_a3, &
+              dry_w3,moist_w3, &
+             dry_qt3,moist_qt3, &
+             dry_thl3,moist_thl3, &
+             dry_u3,moist_u3, &
+             dry_v3,moist_v3, &
+             moist_qc3, &
+            ! outputs - variables needed for solver 
+             ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3, &
+             awhl3,awqt3,awthv3, & ! for MYNN
+             pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
+             ET,L0,ENT0,EDfac,EntWFac,buoyf,&
+             mfw2,mfw3,mfqt3,mfwqt,mfqt2,mfhl2,mfqthl,mfwhl,iras,jras, &
+             edmf_discrete_type, edmf_implicit)
+
+
+
+
+! Variables needed for solver:
+! ae = sum_i (1-a_i)
+! aw3 = sum (a_i w_i)
+! aws3 = sum (a_i w_i*s_i); s=thl*cp
+! aws3,awqt3,awu3,awv3 similar as above except for different variables
+!
+!
+!Mass flux variables - diagnostic outputs (on edges): 
+!   UPA,UPW,UPQT,... KTS:KTE+1
+!  dry_a,moist_a,dry_w,moist_w, ... KTS:KTE+1
+!
+!Higher-order moments (needed for shock, on mid-points): 
+!  buoyf= sum_i  a_i*w_i*(thv_i-<thv)*pi
+!  mfw2=sum_i a_i w_i^2       
+!  mfw3=sum_i a_i w_i^3
+!  mfwqt=sum_i a_i w_i qt_i
+!  mfqt2=sum_i a_i qt_i^2
+!  mfhl2=sum_i a_i h_i^2
+!
+
+
+
+
+
+
+! three dimensional outputs are on edges as well, but turned around
+! dry_a3,moist_a3,dry_thl3, ... (ITS:ITE,KTS-1:KTE)
+! s_aw3,s_awthl3 ... (ITS:ITE,KTS-1:KTE)
+
+
+       INTEGER, INTENT(IN) :: ITS,ITE,KTS,KTE,NUP
+       REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(IN) :: U3,V3,THL3,QT3,THV3,QV3,QL3,QI3,ZLO3
+       ! zw .. heights of the updraft levels (edges of boxes)
+      ! REAL,DIMENSION(ITS:ITE,KTS:KTE+1), INTENT(IN) :: ZW
+       REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(IN) :: ZW3,PW3
+       REAL,DIMENSION(ITS:ITE), INTENT(IN) :: UST2,WTHL2,WQT2,PBLH2
+       INTEGER, INTENT(IN) :: edmf_discrete_type, edmf_implicit
+       REAL, INTENT(IN)                     :: ICE_RAMP  
+       REAL :: DT,EntWFac
+       INTEGER,DIMENSION(ITS:ITE) :: iras,jras
+
+! outputs
+  !     REAL,DIMENSION(KTS:KTE), INTENT(OUT) :: DTH,DQV,DQC,DU,DV
+       REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: dry_a3, moist_a3,dry_w3,moist_w3, &
+               dry_qt3,moist_qt3,dry_thl3,moist_thl3,dry_u3,moist_u3,dry_v3,moist_v3,moist_qc3 
+
+  ! outputs - variables needed for solver (s_aw - sum ai*wi, s_awphi - sum ai*wi*phii)
+        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
+        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: awhl3, awqt3, awthv3
+   ! output - buoyancy flux: sum_i a_i*w_i*(thv_i-<thv>) ... for TKE equation
+         REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(OUT) :: buoyf,mfw2,mfw3,mfqt3,mfqt2,mfwqt,mfhl2,mfqthl,mfwhl     
+! updraft properties
+      REAL,DIMENSION(KTS-1:KTE,1:NUP) :: UPW,UPTHL,UPQT,UPQL,UPQI,UPA,UPU,UPV,UPTHV
+ ! entrainment variables     
+      REAl,DIMENSION(KTS:KTE,1:NUP) :: ENT,ENTf
+      INTEGER,DIMENSION(KTS:KTE,1:NUP) :: ENTi
+! internal variables
+       INTEGER :: K,I,IH
+       REAL :: wthv,wstar,qstar,thstar,sigmaW,sigmaQT,sigmaTH,z0, &
+               wmin,wmax,wlv,wtv,wp
+       REAL :: B,QTn,THLn,THVn,QCn,Un,Vn,Wn2,EntEXP,EntEXPU,EntW,wf
+
+! internal flipped variables (GEOS5)
+
+       REAL,DIMENSION(KTS:KTE) :: U,V,THL,QT,THV,QV,QL,QI,ZLO
+       REAL,DIMENSION(KTS-1:KTE)  :: ZW,P,THLI,QTI
+       REAL,DIMENSION(KTS-1:KTE) :: UI, VI, THVI, QVI, QLI, QII ! for MYNN               
+
+! internal surface cont
+      REAL :: UST,WTHL,WQT,PBLH
+       REAL,DIMENSION(KTS-1:KTE) :: dry_a, moist_a,dry_w,moist_w, &
+               dry_qt,moist_qt,dry_thl,moist_thl,dry_u,moist_u,dry_v,moist_v, moist_qc 
+        REAL,DIMENSION(KTS-1:KTE) :: s_aw,s_aws,s_awqv,s_awql,s_awqi,s_awu,s_awv
+        REAL,DIMENSION(KTS:KTE) ::  s_buoyf
+        REAL,DIMENSION(KTS-1:KTE) :: s_aw2,s_aw3,s_aqt3,s_aqt2,s_aqthl,s_awqt,s_ahl2,s_awhl
+        REAL,DIMENSION(KTS-1:KTE) :: s_awthv ! for MYNN
+! exner function
+        REAL,DIMENSION(KTS:KTE) :: exf 
+        REAL,DIMENSION(KTS-1:KTE) :: exfh
+!  
+        REAL :: stmp,ltm,QTsrfF,THVsrfF,mft,mfthvt
+        INTEGER, DIMENSION(2) :: seedmf,the_seed
+         
+
+
+! constants get from resources
+ real :: ENT0,pwmin,pwmax,AlphaW,AlphaQT,AlphaTH,EDfac
+ integer,intent(IN) :: ET
+
+real, dimension(its:ite) :: L0
+
+! w parameters
+ REAL,PARAMETER :: &
+        Wa=1., &
+        Wb=1.5
+     
+! min values to avoid singularities
+  REAL,PARAMETER :: &
+     WSTARmin=1.e-3, &
+     PBLHmin=100.
+
+
+
+     ! set updraft properties to zero/undef
+      dry_a3=0.
+      moist_a3=0.
+      dry_w3=mapl_undef
+      moist_w3=mapl_undef
+      dry_qt3=mapl_undef
+      moist_qt3=mapl_undef
+      dry_thl3=mapl_undef
+      moist_thl3=mapl_undef
+      dry_u3=mapl_undef
+      moist_u3=mapl_undef
+      dry_v3=mapl_undef
+      moist_v3=mapl_undef
+      moist_qc3=mapl_undef
+      ! outputs - variables needed for solver 
+      aw3=0.
+      aws3=0.
+      awqv3=0.
+      awql3=0.
+      awqi3=0.
+      awu3=0.
+      awv3=0.
+      awhl3=0.
+      awqt3=0.
+      awthv3=0.
+      buoyf=0.
+      mfw2=0.
+      mfw3=0.
+      mfqt3=0.
+      mfqt2=0.
+      mfwqt=0.
+      mfhl2=0.
+      mfqthl=0.
+      mfwhl=0.
+
+   ! this is the environmental area - by default 1.
+
+     ae3=EDfac 
+
+
+
+DO IH=ITS,ITE ! loop over the horizontal dimension
+
+
+wthl=wthl2(IH)/mapl_cp
+wqt=wqt2(IH)
+ust=ust2(IH)
+pblh=pblh2(IH)
+
+pblh=max(pblh,pblhmin)
+wthv=wthl+mapl_epsilon*thv3(IH,kte)*wqt
+
+! if surface buoyancy is positive then mass-flux, otherwise not
+  IF ( wthv > 0.0 ) then
+
+
+ UPW=0.
+ UPTHL=0.
+ UPTHV=0.
+ UPQT=0.
+ UPA=0.
+ UPU=0.
+ UPV=0.
+ UPQI=0.
+ UPQL=0. 
+ ENT=0.
+ 
+!
+! flipping variables (GEOS5)
+!
+
+  DO k=kts,kte
+      zlo(k)=zlo3(IH,kte-k+kts)
+      u(k)=u3(IH,kte-k+kts)
+      v(k)=v3(IH,kte-k+kts)
+      thl(k)=thl3(IH,kte-k+kts)
+      thv(k)=thv3(IH,kte-k+kts)
+      qt(k)=qt3(IH,kte-k+kts)
+      qv(k)=qv3(IH,kte-k+kts)
+      ql(k)=ql3(IH,kte-k+kts)
+      qi(k)=qi3(IH,kte-k+kts)
+      if (k<kte) then
+         if (edmf_discrete_type == 0) then
+            ui(k)   = 0.5*( u3(IH,kte-k+kts)   + u3(IH,kte-k+kts-1) )
+            vi(k)   = 0.5*( v3(IH,kte-k+kts)   + v3(IH,kte-k+kts-1) )
+            thli(k) = 0.5*( thl3(IH,kte-k+kts) + thl3(IH,kte-k+kts-1) )
+            qti(k)  = 0.5*( qt3(IH,kte-k+kts)  + qt3(IH,kte-k+kts-1) )
+            qvi(k)  = 0.5*( qv3(IH,kte-k+kts)  + qv3(IH,kte-k+kts-1) )
+            qli(k)  = 0.5*( ql3(IH,kte-k+kts)  + ql3(IH,kte-k+kts-1) )
+            qii(k)  = 0.5*( qi3(IH,kte-k+kts)  + qi3(IH,kte-k+kts-1) )
+            thvi(k) = 0.5*( thv3(IH,kte-k+kts) + thv3(IH,kte-k+kts-1) )
+         else
+            ui(k)   = u3(IH,kte-k+kts-1)
+            vi(k)   = v3(IH,kte-k+kts-1)
+            thli(k) = thl3(IH,kte-k+kts-1)
+            qti(k)  = qt3(IH,kte-k+kts-1)
+            qvi(k)  = qv3(IH,kte-k+kts-1)
+            qli(k)  = ql3(IH,kte-k+kts-1)
+            qii(k)  = qi3(IH,kte-k+kts-1)
+            thvi(k) = thv3(IH,kte-k+kts-1)
+         end if
+!        thli(k) = 0.5*( thl(k) + thl(k+1) )  ! avg neighboring levels
+!        qti(k)  = 0.5*( qt(k)  + qt(k+1)  )
+      end if
+  ENDDO
+  ui(kte)     = u(kte)
+  vi(kte)     = v(kte)
+  thli(kte)   = thl(kte)
+  qti(kte)    = qt(kte)
+  qvi(kte)    = qv(kte)
+  qli(kte)    = ql(kte)
+  qii(kte)    = qi(kte)
+  thvi(kte)   = thvi(kte)
+  ui(kts-1)   = u(kts)
+  vi(kts-1)   = v(kts)
+  thli(kts-1) = thl(kts)  ! approximate
+  qti(kts-1)  = qt(kts)
+  qvi(kts-1)  = qv(kts)
+  qli(kts-1)  = ql(kts)
+  qii(kts-1)  = qi(kts)
+  thvi(kts-1) = thvi(kts)
+
+DO k=kts-1,kte
+   zw(k)=zw3(IH,kte-k+kts-1)
+   p(k)=pw3(IH,kte-k+kts-1)
+ENDDO
+
+  !
+  ! compute entrainment coefficient
+  !    
+  
+  
+  !
+  ! get entrainment type 
+  !   1 ... probability of entrainment is constant
+  !   2 ... probability of entrainment is a function of dTHVdz
+ 
+  ! get dz/L0  
+    do i=1,Nup
+      do k=kts,kte
+         ENTf(k,i)=(ZW(k)-ZW(k-1))/L0(IH)
+      enddo
+    enddo
+   
+   ! get Poisson P(dz/L0)
+
+
+
+seedmf(1) = 1000000 * ( 100*thl(kte) - INT(100*thl(kte)))
+seedmf(2) = 1000000 * ( 100*thl(kte-1) - INT(100*thl(kte-1))) 
+
+
+
+THE_SEED(1)=seedmf(1)*IRAS(IH) + seedmf(2)*JRAS(IH)
+THE_SEED(2)=seedmf(1)*JRAS(IH) + seedmf(2)*IRAS(IH)
+THE_SEED(1)=THE_SEED(1)*seedmf(1)/( seedmf(2) + 10)
+THE_SEED(2)=THE_SEED(2)*seedmf(1)/( seedmf(2) + 10)
+if(THE_SEED(1) == 0) THE_SEED(1) =  5
+if(THE_SEED(2) == 0) THE_SEED(2) = -5
+
+
+
+call Poisson(1,Nup,kts,kte,ENTf,ENTi,the_seed)    
+ 
+if (L0(IH) .gt. 0. ) then
+
+   ! entrainent: Ent=Ent0/dz*P(dz/L0)             
+   do i=1,Nup   
+    do k=kts,kte
+     ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1))
+    ! ENT(k,i)=ENTf(k,i)*Ent0/(ZW(k)-ZW(k-1)) 
+   enddo
+   enddo
+
+
+! increase entrainment if local minimum of THV
+
+  do k=kts+1,kte-1
+    if ( (THV(k) .lt. THV(k-1)) .and. (THV(k) .lt. THV(k+1)) ) then
+           ENT(k,:)=ENT(k,:)+5.*ENT0/L0(IH)
+!          print *,'increasing entrainment, THVs are',THV(k-1:k+1)
+     endif
+  enddo
+
+else
+! negative L0 means 0 entrainment
+   ENT=0.
+end if       
+
+
+! exner function
+ exfh=(p/mapl_p00)**mapl_kappa
+ exf=(0.5*(p(1:kte)+p(0:kte-1))/mapl_p00)**mapl_kappa 
+
+
+
+
+  
+ !
+ ! surface conditions
+ !      
+   wstar=max(wstarmin,(mapl_grav/thv(1)*wthv*pblh)**(1./3.))
+   qstar=wqt/wstar
+   thstar=wthv/wstar
+
+!   sigmaW=0.572*wstar  
+!   sigmaQT=2.89*abs(qstar)
+!   sigmaTH=2.89*abs(thstar)
+   
+   sigmaW=AlphaW*wstar
+   sigmaQT=AlphaQT*max(qstar,0.)
+   sigmaTH=AlphaTH*max(thstar,0.)
+
+   wmin=sigmaW*pwmin
+   wmax=sigmaW*pwmax
+      
+       ! define surface conditions   
+       DO I=1,NUP
+       
+        wlv=wmin+(wmax-wmin)/(real(NUP))*(real(i)-1.)
+        wtv=wmin+(wmax-wmin)/(real(NUP))*real(i)
+       
+        UPW(kts-1,I)=min(0.5*(wlv+wtv), 5.)  ! npa
+
+        UPW(kts-1,I)=0.5*(wlv+wtv) 
+        UPA(kts-1,I)=0.5*ERF(wtv/(sqrt(2.)*sigmaW))-0.5*ERF(wlv/(sqrt(2.)*sigmaW))
+       
+        UPU(kts-1,I)=U(kts)
+        UPV(kts-1,I)=V(kts)
+       
+        UPQT(kts-1,I)=QT(kts)+0.32*UPW(kts-1,I)*sigmaQT/sigmaW
+        UPTHV(kts-1,I)=THV(kts)+0.58*UPW(kts-1,I)*sigmaTH/sigmaW
+        
+
+
+       ENDDO
+         
+   
+   !
+   ! for stability make sure that the surface mass-fluxes are not more than their values computed from the surface scheme
+   !
+   
+   QTsrfF=0.
+   THVsrfF=0.
+   
+   DO I=1,NUP
+     QTsrfF=QTsrfF+UPW(kts-1,I)*UPA(kts-1,I)*(UPQT(kts-1,I)-QT(kts))
+     THVsrfF=THVsrfF+UPW(kts-1,I)*UPA(kts-1,I)*(UPTHV(kts-1,I)-THV(kts))   
+   ENDDO
+  
+   
+   if (THVsrfF .gt. wthv) then
+   ! change surface THV so that the fluxes from the mass flux equal prescribed values
+        UPTHV(kts-1,:)=(UPTHV(kts-1,:)-THV(kts))*wthv/THVsrfF+THV(kts)
+ !        print *,'adjusting surface THV for a factor',wthv/THVsrfF
+  endif     
+      
+   IF ( (QTsrfF .gt. wqt) .and. (wqt .gt. 0.) )  then
+   ! change surface QT so that the fluxes from the mass flux equal prescribed values
+   ! - we do not need to worry about the negative values as they should not exist -
+        UPQT(kts-1,:)=(UPQT(kts-1,:)-QT(kts))*wthv/QTsrfF+QT(kts)
+  !      print *,'adjusting surface QT for a factor',wthv/QTsrfF
+
+    ENDIF     
+     
+      
+         
+      DO I=1,NUP
+       ! compute condensation and THL,QL,QI     
+        call condensation_edmfA(UPTHV(kts-1,i),UPQT(kts-1,I),P(kts-1), & 
+        UPTHL(kts-1,I),UPQL(kts-1,i),UPQI(kts-1,i),ice_ramp)
+     ENDDO
+
+  !   
+  ! integrate updrafts 
+  !      
+        
+         DO I=1,NUP  ! loop over updrafts  
+         ! loop over vertical 
+         vertint:   DO k=KTS,KTE       
+
+ 
+               EntExp=exp(-ENT(K,I)*(ZW(k)-ZW(k-1)))
+               EntExpU=exp(-ENT(K,I)*(ZW(k)-ZW(k-1))*EntWFac)
+               
+               ! thermo-dynamic variables in updraft
+               QTn=QT(K)*(1-EntExp)+UPQT(K-1,I)*EntExp
+               THLn=THL(K)*(1-EntExp)+UPTHL(K-1,I)*EntExp
+               Un=U(K)*(1-EntExpU)+UPU(K-1,I)*EntExpU
+               Vn=V(K)*(1-EntExpU)+UPV(K-1,I)*EntExpU
+      
+              ! condensation 
+               call condensation_edmf(QTn,THLn,P(K),THVn,QCn,wf,ice_ramp) 
+
+             ! vertical velocity
+              B=mapl_grav*(0.5*(THVn+UPTHV(k-1,I))/THV(k)-1.)
+              WP=Wb*ENT(K,I)
+              IF (WP==0.) THEN
+                Wn2=UPW(K-1,I)**2+2.*Wa*B*(ZW(k)-ZW(k-1))
+              ELSE
+                EntW=exp(-2.*WP*(ZW(k)-ZW(k-1)))
+                Wn2=EntW*UPW(k-1,I)**2+Wa*B/WP*(1.-EntW)
+              END IF
+
+              IF (Wn2>0.) THEN
+                 UPW(K,I)=sqrt(Wn2)   
+                 UPW(K,I)=min( sqrt(Wn2), 5. ) ! npa
+                 UPTHV(K,I)=THVn
+                 UPTHL(K,I)=THLn
+                 UPQT(K,I)=QTn
+                 UPQL(K,I)=QCn*wf
+                 UPQI(K,I)=QCn*(1.-wf)
+                 UPU(K,I)=Un
+                 UPV(K,I)=Vn
+                 UPA(K,I)=UPA(K-1,I)
+              ELSE
+                  EXIT vertint
+              END IF
+             ! loop over vertical 
+            ENDDO vertint
+         ENDDO   ! loop over updrafts
+         
+ 
+ 
+ 
+          
+       
+  !     
+  ! writing updraft properties for output
+  ! all variables, except Areas are now multipled by the area  
+  ! to confirm with WRF grid setup we do not save the first and the last row   
+  !     
+  
+      dry_a=0.
+      moist_a=0. 
+      dry_w=0.
+      moist_w=0.
+      dry_qt=0.
+      moist_qt=0. 
+      dry_thl=0.
+      moist_thl=0.   
+      dry_u=0.
+      moist_u=0.
+      dry_v=0.
+      moist_v=0.
+      moist_qc=0.     
+
+   DO k=KTS-1,KTE  ! loop in vertical 
+     DO I=1,NUP ! first sum over all i-updrafts
+      IF ((UPQL(K,I)>0.) .OR. UPQI(K,I)>0.)  THEN
+        moist_a(K)=moist_a(K)+UPA(K,I)
+        moist_w(K)=moist_w(K)+UPA(K,I)*UPW(K,I)
+        moist_qt(K)=moist_qt(K)+UPA(K,I)*UPQT(K,I)
+        moist_thl(K)=moist_thl(K)+UPA(K,I)*UPTHL(K,I)  
+        moist_u(K)=moist_u(K)+UPA(K,I)*UPU(K,I)
+        moist_v(K)=moist_v(K)+UPA(K,I)*UPV(K,I)
+        moist_qc(K)=moist_qc(K)+UPA(K,I)*(UPQL(K,I)+UPQI(K,I))
+     ELSE
+        dry_a(K)=dry_a(K)+UPA(K,I)
+        dry_w(K)=dry_w(K)+UPA(K,I)*UPW(K,I)
+        dry_qt(K)=dry_qt(K)+UPA(K,I)*UPQT(K,I)
+        dry_thl(K)=dry_thl(K)+UPA(K,I)*UPTHL(K,I) 
+        dry_u(K)=dry_u(K)+UPA(K,I)*UPU(K,I) 
+        dry_v(K)=dry_v(K)+UPA(K,I)*UPV(K,I) 
+   ENDIF
+   
+   ENDDO  ! first sum over all i-updrafts
+   
+       IF (dry_a(k)>0.) THEN
+         dry_w(k)=dry_w(k)/dry_a(k)
+         dry_qt(k)=dry_qt(k)/dry_a(k)
+         dry_thl(k)=dry_thl(k)/dry_a(k)
+         dry_u(k)=dry_u(k)/dry_a(k)
+         dry_v(k)=dry_v(k)/dry_a(k)
+      ELSE
+         dry_w(k)=mapl_undef
+         dry_qt(k)=mapl_undef
+         dry_thl(k)=mapl_undef
+         dry_u(k)=mapl_undef
+         dry_v(k)=mapl_undef
+      ENDIF
+
+      IF (moist_a(k)>0.) THEN
+         moist_w(k)=moist_w(k)/moist_a(k)
+         moist_qt(k)=moist_qt(k)/moist_a(k)
+         moist_thl(k)=moist_thl(k)/moist_a(k)
+         moist_u(k)=moist_u(k)/moist_a(k)
+         moist_v(k)=moist_v(k)/moist_a(k)
+         moist_qc(k)=moist_qc(k)/moist_a(k)
+     ELSE
+         moist_w(k)=mapl_undef
+         moist_qt(k)=mapl_undef
+         moist_thl(k)=mapl_undef
+         moist_u(k)=mapl_undef
+         moist_v(k)=mapl_undef
+         moist_qc(k)=mapl_undef
+     ENDIF
+   
+   
+   ENDDO     ! loop in vertical       
+    
+  !
+  ! computing variables needed for solver
+  !   
+     
+     s_aw=0.
+     s_aws=0.
+     s_awqv=0.
+     s_awql=0.
+     s_awqi=0.
+     s_awu=0.
+     s_awv=0.
+     
+     s_buoyf=0.
+     s_aqt2=0.
+     s_awqt=0.
+     s_aw2=0.
+     s_aw3=0.
+     s_aqt3=0.
+     s_ahl2=0.
+     s_awhl=0.
+     s_aqthl=0.
+
+     s_awthv=0.
+
+    DO I=1,NUP
+     
+          DO k=KTS-1,KTE
+          s_aw(K)=s_aw(K)+UPA(K,I)*UPW(K,I)
+          s_aw2(K)=s_aw2(K)+UPA(K,I)*UPW(K,I)*UPW(K,I)
+          s_aw3(K)=s_aw3(K)+UPA(K,I)*UPW(K,I)*UPW(K,I)*UPW(K,I)
+          s_aqt2(K)=s_aqt2(K)+UPA(K,I)*(UPQT(K,I)-QTI(K))*(UPQT(K,I)-QTI(K))
+          s_aqt3(K)=s_aqt3(K)+UPA(K,I)*(UPQT(K,I)-QTI(K))**3
+          s_aqthl(K)=s_aqthl(K)+UPA(K,I)*(UPQT(K,I)-QTI(K))*(UPTHL(K,i)-THLI(K))
+          if (edmf_implicit == 1) then
+             stmp=exfh(k)*mapl_cp*UPTHL(K,i)+UPQI(K,I)*mapl_alhs+UPQL(K,i)*mapl_alhl+mapl_grav*zw(k)
+          else
+             stmp = exfh(k)*mapl_cp*UPTHL(K,i) + UPQI(K,I)*mapl_alhs + UPQL(K,i)*mapl_alhl + mapl_grav*zw(k) - exf(k)*mapl_cp*THLI(K) - QII(K)*mapl_alhs - QLI(K)*mapl_alhl - mapl_grav*zlo(K)
+          end if
+          ltm=exfh(k)*(UPTHL(K,i)-THLI(K)) !+mapl_grav*zw(k)/mapl_cp
+          s_aws(k)=s_aws(K)+UPA(K,i)*UPW(K,i)*stmp
+          s_ahl2(k)=s_ahl2(K)+UPA(K,i)*ltm*ltm
+          s_awhl(k)=s_awhl(K)+UPA(K,i)*UPW(K,I)*ltm
+          if (edmf_implicit == 1) then
+             s_awu(k)  = s_awu(K)  + UPA(K,i)*UPW(K,I)*UPU(K,I)
+             s_awv(k)  = s_awv(K)  + UPA(K,i)*UPW(K,I)*UPV(K,I)
+             s_awqv(k) = s_awqv(K) + UPA(K,i)*UPW(K,I)*(UPQT(K,I) - UPQI(K,I) - UPQL(K,I))
+             s_awql(k) = s_awql(K) + UPA(K,i)*UPW(K,I)*UPQL(K,I)
+             s_awqi(k) = s_awqi(K) + UPA(K,i)*UPW(K,I)*UPQI(K,I)
+          else
+             s_awu(k)  = s_awu(K)  + UPA(K,i)*UPW(K,I)*(UPU(K,I) - UI(K))
+             s_awv(k)  = s_awv(K)  + UPA(K,i)*UPW(K,I)*(UPV(K,I) - VI(K))
+             s_awqv(k) = s_awqv(K) + UPA(K,i)*UPW(K,I)*(UPQT(K,I) - UPQI(K,I) - UPQL(K,I) - QVI(K))
+             s_awql(k) = s_awql(K) + UPA(K,i)*UPW(K,I)*(UPQL(K,I) - QLI(K))
+             s_awqi(k) = s_awqi(K) + UPA(K,i)*UPW(K,I)*(UPQI(K,I) - QII(K))
+          end if
+          s_awqt(k)  = s_awqt(K)  + UPA(K,i)*UPW(K,I)*(UPQT(K,I) - QTI(K))
+          s_awthv(K) = s_awthv(K) + UPA(K,I)*UPW(K,I)*(UPTHV(K,I) - THVI(K))
+         ENDDO  
+   
+       DO k=KTS,KTE
+       ! mass-flux on half levels
+       ! need to be careful to treat properly zeros in the UPTHV
+           mfthvt=0.5*(UPA(k-1,I)*UPW(k-1,I)*UPTHV(k-1,I)+UPA(k,I)*UPW(k,I)*UPTHV(k,I))
+           mft=0.5*(UPA(k-1,I)*UPW(k-1,I)+UPA(k,I)*UPW(k,I))
+           
+           s_buoyf(k)=s_buoyf(k)+(mfthvt-mft*THV(k))*exf(k)
+           
+       ENDDO
+     
+    ENDDO
+
+
+!
+! turn around the outputs and fill them in the 3d fields
+!
+   DO K=KTS-1,KTE
+      ! mass-flux diagnostic variables
+      dry_a3(IH,K)=dry_a(KTE+KTS-K-1)
+      moist_a3(IH,K)=moist_a(KTE+KTS-K-1)
+      dry_w3(IH,K)=dry_w(KTE+KTS-K-1)
+      moist_w3(IH,K)=moist_w(KTE+KTS-K-1)
+      dry_qt3(IH,K)=dry_qt(KTE+KTS-K-1)
+      moist_qt3(IH,K)=moist_qt(KTE+KTS-K-1)
+      dry_thl3(IH,K)= dry_thl(KTE+KTS-K-1)
+      moist_thl3(IH,K)=moist_thl(KTE+KTS-K-1)
+      dry_u3(IH,K)=dry_u(KTE+KTS-K-1)
+      moist_u3(IH,K)=moist_u(KTE+KTS-K-1)
+      dry_v3(IH,K)=dry_v(KTE+KTS-K-1)
+      moist_v3(IH,K)=moist_v(KTE+KTS-K-1)
+      moist_qc3(IH,K)=moist_qc(KTE+KTS-K-1)
+      ! outputs - variables needed for solver 
+      aw3(IH,K)=s_aw(KTE+KTS-K-1)
+      aws3(IH,K)=s_aws(KTE+KTS-K-1)
+      awqv3(IH,K)=s_awqv(KTE+KTS-K-1)
+      awql3(IH,K)=s_awql(KTE+KTS-K-1)
+      awqi3(IH,K)=s_awqi(KTE+KTS-K-1)
+      awu3(IH,K)=s_awu(KTE+KTS-K-1)
+      awv3(IH,K)=s_awv(KTE+KTS-K-1)
+      ae3(IH,K)=(1.-dry_a(KTE+KTS-K-1)-moist_a(KTE+KTS-K-1))*EDfac
+      awhl3(IH,K)=s_awhl(KTE+KTS-K-1)
+      awqt3(IH,K)=s_awqt(KTE+KTS-K-1)
+      awthv3(IH,K)=s_awthv(KTE+KTS-K-1)
+    ENDDO
+    
+! buoyancy is defined on full levels    
+  DO k=kts,kte
+       buoyf(IH,K)=s_buoyf(KTE+KTS-K)
+
+      mfw2(IH,K)=0.5*(s_aw2(KTE+KTS-K-1)+s_aw2(KTE+KTS-K))
+      mfw3(IH,K)=0.5*(s_aw3(KTE+KTS-K-1)+s_aw3(KTE+KTS-K))
+      mfhl2(IH,K)=0.5*(s_ahl2(KTE+KTS-K-1)+s_ahl2(KTE+KTS-K))
+      mfqt2(IH,K)=0.5*(s_aqt2(KTE+KTS-K-1)+s_aqt2(KTE+KTS-K))
+      mfqt3(IH,K)=0.5*(s_aqt3(KTE+KTS-K-1)+s_aqt3(KTE+KTS-K))
+      mfwqt(IH,K)=0.5*(s_awqt(KTE+KTS-K-1)+s_awqt(KTE+KTS-K))
+      mfqthl(IH,K)=0.5*(s_aqthl(KTE+KTS-K-1)+s_aqthl(KTE+KTS-K))
+      mfwhl(IH,K)=0.5*(s_awhl(KTE+KTS-K-1)+s_awhl(KTE+KTS-K))
+
+  ENDDO  
+    
+!   print *,'buoyf',buoyf 
+    
+    
+ END IF   !  IF ( wthv > 0.0 ) then  
+ENDDO ! loop over horizontal area  
+
+
+END SUBROUTINE edmf
+
+
+subroutine condensation_edmf(QT,THL,P,THV,QC,wf,ice_ramp)
+!
+! zero or one condensation for edmf: calculates THV and QC
+!
+use GEOS_UtilsMod, only : GEOS_Qsat
+
+real,intent(in) :: QT,THL,P
+real,intent(in) :: ice_ramp
+real,intent(out):: THV,QC,wf
+
+
+integer :: niter,i
+real :: diff,exn,t,qs,qcold
+ 
+! max number of iterations
+niter=50
+! minimum difference
+diff=2.e-5
+
+EXN=(P/mapl_p00)**mapl_kappa
+QC=0. 
+
+T=EXN*THL
+
+do i=1,NITER
+  T=EXN*THL+get_alhl(T,ice_ramp)/mapl_cp*QC
+! qsat, p is in pascal
+  QS=geos_qsat(T,P,pascals=.true.,ramp=ice_ramp)
+  QCOLD=QC
+  QC=max(0.5*QC+0.5*(QT-QS),0.)
+if (abs(QC-QCOLD)<Diff) exit
+enddo
+
+T=EXN*THL+get_alhl(T,ice_ramp)/mapl_cp*QC
+QS=geos_qsat(T,P,pascals=.true.,ramp=ice_ramp)
+QC=max(QT-QS,0.)
+THV=(THL+get_alhl(T,ice_ramp)/mapl_cp*QC/EXN)*(1.+(mapl_epsilon)*(QT-QC)-QC)
+wf=water_f(T,ice_ramp)
+
+end subroutine condensation_edmf
+
+
+subroutine condensation_edmfA(THV,QT,P,THL,QL,QI,ice_ramp)
+!
+! zero or one condensation for edmf: calculates QL,QI from THV and QT
+!
+
+use GEOS_UtilsMod, only : GEOS_Qsat
+
+real,intent(in) :: THV,QT,P
+real,intent(in) :: ice_ramp
+real,intent(out):: THL,QL,QI
+
+
+integer :: niter,i
+real :: diff,exn,t,qs,qcold,wf,qc
+ 
+! max number of iterations
+niter=50
+! minimum difference
+diff=2.e-5
+
+EXN=(P/mapl_p00)**mapl_kappa
+QC=0. 
+
+T=EXN*THL
+
+do i=1,NITER
+   T=EXN*THV/(1.+mapl_epsilon*(QT-QC)-QC)
+   QS=geos_qsat(T,P,pascals=.true.,ramp=ice_ramp)
+   QCOLD=QC
+   QC=max(0.5*QC+0.5*(QT-QS),0.)
+if (abs(QC-QCOLD)<Diff) exit
+enddo
+
+ THL=(T-get_alhl(T,ice_ramp)/mapl_cp*QC)/EXN
+ wf=water_f(T,ice_ramp)
+ QL=QC*ice_ramp
+ QI=QC*(1.-ice_ramp) 
+
+end subroutine condensation_edmfA
+
+
+function  get_alhl3(T,IM,JM,LM,iceramp)
+
+real,dimension(IM,JM,LM) ::  T,get_alhl3
+real :: iceramp
+integer :: IM,JM,LM
+integer :: I,J,L
+
+do i=1,im
+  do j=1,jm
+    do l=1,lm
+        get_alhl3(i,j,l)=get_alhl(T(i,j,l),iceramp)
+    enddo
+  enddo
+enddo
+
+end function get_alhl3
+
+function get_alhl(T,iceramp)
+   real :: T,get_alhl,iceramp,wf
+    wf=water_f(T,iceramp)
+    get_alhl=wf*mapl_alhl+(1.-wf)*mapl_alhs
+end function get_alhl
+
+
+function water_f(T,iceramp)
+!
+! computes water fraction
+!
+real ::T,iceramp,water_f,Tw
+real :: Tmax,Tmin
+
+  Tmax=0.
+  Tmin=Tmax-abs(iceramp)
+  Tw=T-273.16
+
+! water fraction
+  IF (Tw>Tmax) THEN
+    water_f=1.
+  ELSE IF (Tw<Tmin) THEN
+    water_f=0.
+  ELSE
+    water_f=(Tw-Tmin)/(Tmax-Tmin);
+  END IF
+
+end function water_f
+
+
+subroutine Poisson(istart,iend,jstart,jend,mu,POI,seed)
+
+integer, intent(in) :: istart,iend,jstart,jend 
+real,dimension(istart:iend,jstart:jend),intent(in) :: MU
+integer, dimension(istart:iend,jstart:jend), intent(out) :: POI
+integer :: sed_len
+integer,dimension(2),  intent(in) :: seed
+
+integer :: seed_len
+integer :: i,j,idum,p
+integer,allocatable :: theseed(:)
+
+call random_seed(SIZE=seed_len)
+allocate(theseed(seed_len))
+
+theseed(1:2)=seed
+! Gfortran uses longer seeds, so fill the rest with zero
+if (seed_len > 2) theseed(3:) = seed(2)
+ 
+ 
+call random_seed(put=theseed)
+
+
+do i=istart,iend
+ do j=jstart,jend
+    poi(i,j)=poidev(mu(i,j),idum)
+enddo
+ enddo
+
+end subroutine Poisson
+
+
+
+      FUNCTION poidev(xm,idum)
+      INTEGER idum
+      REAL poidev,xm,PI
+      PARAMETER (PI=3.141592654)
+!CU    USES gammln,ran1
+      REAL alxm,em,g,oldm,sq,t,y
+      SAVE alxm,g,oldm,sq
+      DATA oldm /-1./
+      if (xm.lt.12.)then
+        if (xm.ne.oldm) then
+          oldm=xm
+          g=exp(-xm)
+        endif
+        em=-1
+        t=1.
+2       em=em+1.
+        t=t*ran1(idum)
+        if (t.gt.g) goto 2
+      else
+        if (xm.ne.oldm) then
+          oldm=xm
+          sq=sqrt(2.*xm)
+          alxm=log(xm)
+          g=xm*alxm-gammln(xm+1.)
+        endif
+1       y=tan(PI*ran1(idum))
+        em=sq*y+xm
+        if (em.lt.0.) goto 1
+        em=int(em)
+        t=0.9*(1.+y**2)*exp(em*alxm-gammln(em+1.)-g)
+        if (ran1(idum).gt.t) goto 1
+      endif
+      poidev=em
+      return
+      END FUNCTION poidev
+
+      FUNCTION gammln(xx)
+      REAL gammln,xx
+      INTEGER j
+      DOUBLE PRECISION ser,stp,tmp,x,y,cof(6)
+      SAVE cof,stp
+      DATA cof,stp/76.18009172947146d0,-86.50532032941677d0, &
+     24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2, &
+     -.5395239384953d-5,2.5066282746310005d0/
+      x=xx
+      y=x
+      tmp=x+5.5d0
+      tmp=(x+0.5d0)*log(tmp)-tmp
+      ser=1.000000000190015d0
+      do 11 j=1,6
+        y=y+1.d0
+        ser=ser+cof(j)/y
+11    continue
+      gammln=tmp+log(stp*ser/x)
+      return
+      END FUNCTION gammln
+
+      FUNCTION ran1(idum)
+      real ran1
+      integer idum
+
+      call random_number(ran1)
+      END FUNCTION ran1
+
 
 end module GEOS_TurbulenceGridCompMod
 
