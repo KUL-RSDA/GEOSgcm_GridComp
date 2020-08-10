@@ -398,6 +398,12 @@ contains
          KH_dev           , &
          ISOTROPY_dev     , &
          mf_frc_dev       , &
+         au_dev           , &
+         hle_dev          , &
+         qte_dev          , &
+         hl2u_dev         , &
+         qt2u_dev         , &
+         hlqtu_dev        , &    
          wqt_dev          , &
          whl_dev          , &
          qt2_dev          , &
@@ -456,9 +462,9 @@ contains
          QDDF3_dev        , &
          CNV_FRACTION_dev , &
          TROPP_dev        , &
-         A_cloud          , &
-         B_cloud          , &
-         qsat             , &
+         A_mynn           , &
+         B_mynn           , &
+         qsat_mynn        , &
          RHX_dev          , &
          REV_LS_dev       , &
          REV_AN_dev       , &
@@ -520,6 +526,12 @@ contains
       real, intent(in   ), dimension(IRUN,0:LM) :: KH_dev      ! KH
       real, intent(in   ), dimension(IRUN,  LM) :: ISOTROPY_dev! ISOTROPY
       real, intent(in   ), dimension(IRUN,  LM) :: mf_frc_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: au_dev   !
+      real, intent(in   ), dimension(IRUN,  LM) :: hle_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: qte_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: hl2u_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: qt2u_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: hlqtu_dev !
       real, intent(in   ), dimension(IRUN,  LM) :: wqt_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: whl_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: qt2_dev  !
@@ -651,9 +663,9 @@ contains
       real, intent(inout), dimension(IRUN,  LM) :: SKEW_QT_dev
       real, intent(in   ), dimension(IRUN,  LM) :: NACTL_dev  ! NACTL
       real, intent(in   ), dimension(IRUN,  LM) :: NACTI_dev  ! NACTI
-      real, intent(  out), dimension(IRUN,  LM) :: A_cloud
-      real, intent(  out), dimension(IRUN,  LM) :: B_cloud
-      real, intent(  out), dimension(IRUN,  LM) :: qsat
+      real, intent(  out), dimension(IRUN,  LM) :: A_mynn
+      real, intent(  out), dimension(IRUN,  LM) :: B_mynn
+      real, intent(  out), dimension(IRUN,  LM) :: qsat_mynn
 
 !!$      real, intent(  out), dimension(IRUN,  LM) :: LIQANMOVE_dev  ! LIQANMOVE
 !!$      real, intent(  out), dimension(IRUN,  LM) :: ICEANMOVE_dev  ! ICEANMOVE
@@ -725,9 +737,9 @@ contains
 
       real :: LSPDFLIQNEW, LSPDFICENEW, LSPDFFRACNEW
 
-      real, dimension(LM) :: thl_sec, qw_sec, qwthl_sec, wqw_sec, wthl_sec, &
+      real, dimension(LM) :: hl_sec, qt_sec, hlqt_sec, wqt_sec, whl_sec, &
                              hl, total_water, w3var, w2var, &
-                             thlsec, qwsec, qwthlsec, wqwsec, wthlsec
+                             hlsec, qtsec, hlqtsec, wqtsec, whlsec
       real :: wrk1, wrk2, wrk3, sm
 
 ! These are in constant memory in CUDA and are set in the GridComp
@@ -1095,6 +1107,12 @@ contains
                   ANVFRC_dev(I,K), &
                   NACTL_dev(I,K),  &
                   NACTI_dev(I,K),  &
+                  au_dev(I,K),     &
+                  hle_dev(I,K),    &
+                  qte_dev(I,K),    &
+                  hl2u_dev(I,K),   &
+                  qt2u_dev(I,K),   &
+                  hlqtu_dev(I,K),  &
                   whl_dev(I,K),        &
                   wqt_dev(I,K),        &
                   hl2_dev(I,K),        &
@@ -1121,9 +1139,9 @@ contains
                   wql_dev(I,K),        &
                   SKEW_QT_dev(I,K),    &
                   CNV_FRACTION_dev(I), SNOMAS_dev(I), FRLANDICE_dev(I), FRLAND_dev(I), &
-                  A_cloud(I,K),        &
-                  B_cloud(I,K),        &
-                  qsat(I,K))
+                  A_mynn(I,K),        &
+                  B_mynn(I,K),        &
+                  qsat_mynn(I,K))
  
             else
             call hystpdf(          &
@@ -2081,11 +2099,17 @@ contains
          AF          , &
          NL          , &
          NI          , &
-         WSL2        , &
-         WQW2        , &
-         SL2         , &
-         QW2         , &
-         QWSL2       , & 
+         AU          , &
+         HLE         , &
+         QTE         , &
+         HL2U        , &
+         QT2U        , &
+         HLQTU       , &
+         WHL         , &
+         WQT         , &
+         HL2         , &
+         QT2         , &
+         HLQT        , & 
          W3          , &
          W2          , &
          MFQT3       , &
@@ -2094,38 +2118,39 @@ contains
          PDF_SIGW,   &
          PDF_W1,     &
          PDF_W2,     &
-         PDF_SIGSL1, &
-         PDF_SIGSL2, &
-         PDF_SL1,    &
-         PDF_SL2,    &
+         PDF_SIGHL1, &
+         PDF_SIGHL2, &
+         PDF_HL1,    &
+         PDF_HL2,    &
          PDF_SIGQT1, &
          PDF_SIGQT2, &
          PDF_QT1,    &
          PDF_QT2,    &
-         PDF_RQTSL,  &
+         PDF_RHLQT,  &
          WTHV2,      &
          WQL,        &
          SKEW_QT,    &
          CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND, &
-         A_cloud,    &
-         B_cloud,    &
-         qsat)
+         A_mynn,    &
+         B_mynn,    &
+         qsat_mynn)
 
       real, intent(in)    :: DT,ALPHA,PL,ZL
       integer, intent(in) :: pdfshape
       real, intent(inout) :: TE,QV,QCl,QCi,CF,QAl,QAi,AF,SKEW_QT,PDF_A
       real, intent(in)    :: NL,NI,CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND
-!      real, intent(in)    :: SL,WSL2,WQW2,SL2,QW2,QWSL2,W3,W2,MF_FRC,MFQT3
-      real, intent(in)    :: WSL2,WQW2,SL2,QW2,QWSL2,W3,W2,MF_FRC,MFQT3
+!      real, intent(in)    :: HL,WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
+      real, intent(in)    :: WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
+      real, intent(in)    :: AU, HLE, QTE, HL2U, QT2U, HLQTU
       real, intent(out)   :: PDF_SIGW, PDF_W1, PDF_W2, &
-                             PDF_SIGSL1, PDF_SIGSL2, PDF_SL1, PDF_SL2, &
+                             PDF_SIGHL1, PDF_SIGHL2, PDF_HL1, PDF_HL2, &
                              PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
-                             PDF_RQTSL
+                             PDF_RHLQT
       real, intent(out)   :: WTHV2, WQL
-      real, intent(out)   :: A_cloud, B_cloud, qsat
+      real, intent(out)   :: A_mynn, B_mynn, qsat_mynn
 
       ! internal arrays
-      real :: QCO, QVO, CFO, QAO, TAU,SL
+      real :: QCO, QVO, CFO, QAO, TAU,HL
       real :: QT, QMX, QMN, DQ, sigmaqt1, sigmaqt2
 
       real :: TEO,QSx,DQsx,QS,DQs
@@ -2135,6 +2160,8 @@ contains
 
       real :: QCx, QVx, CFx, QAx, QC, QA, fQi
       real :: dQAi, dQAl, dQCi, dQCl, Nfac, NLv, NIv 
+
+      real :: Tce, qle, ace, Tcu, qlu, acu, HLU, QTU
 
 !      real :: fQip
 
@@ -2209,14 +2236,14 @@ contains
          elseif (pdfflag.eq.5) then
 !           if (ZL<400.) then
 !             print *,'n=',n,'  ZL=',ZL,'  TEn=',TEn
-!             print *,'SL=',SL,'  QT=',QT,'  QV=',QVn 
-!             print *,'WSL2=',WSL2,'  WQW2=',WQW2,'  SL2=',SL2
-!             print *,'QW2=',QW2,'  QWSL2=',QWSL2,'  W3=',W3
+!             print *,'HL=',HL,'  QT=',QT,'  QV=',QVn 
+!             print *,'WHL=',WHL,'  WQT=',WQT,'  HL2=',HL2
+!             print *,'QT2=',QT2,'  HLQT=',HLQT,'  W3=',W3
 !           end if
 
            ! Update the liquid water static energy
            ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
-           SL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
+           HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
 !                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:) 
            QT = QVn+QCn
 
@@ -2230,12 +2257,12 @@ contains
 !                                 qpl,         &
 !                                 qpi,         &
                                  QT,           &
-                                 SL,          &
-                                 WSL2,        &
-                                 WQW2,         &
-                                 SL2,         &
-                                 QW2,          &
-                                 QWSL2,       & 
+                                 HL,          &
+                                 WHL,         &
+                                 WQT,         &
+                                 HL2,         &
+                                 QT2,         &
+                                 HLQT,        & 
                                  W3,           &
                                  W2,           &
                                  MFQT3,        &
@@ -2245,15 +2272,15 @@ contains
                                  PDF_SIGW,     &
                                  PDF_W1,       &
                                  PDF_W2,       &
-                                 PDF_SIGSL1,   &
-                                 PDF_SIGSL2,   &
-                                 PDF_SL1,      &
-                                 PDF_SL2,      &
+                                 PDF_SIGHL1,   &
+                                 PDF_SIGHL2,   &
+                                 PDF_HL1,      &
+                                 PDF_HL2,      &
                                  PDF_SIGQT1,   &
                                  PDF_SIGQT2,   &
                                  PDF_QT1,      &
                                  PDF_QT2,      &
-                                 PDF_RQTSL,    &
+                                 PDF_RHLQT,    &
                                  WTHV2,        &
                                  WQL,          &
                                  CFn)
@@ -2271,14 +2298,57 @@ contains
          elseif (pdfflag == 6) then ! Single gaussian
             ! Update the liquid water static energy
             ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
-            SL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
+            HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
 !                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:)
             QT = QVn + QCn
-            
-            call gaussian(ZL, 100.*PL, SL, QT, SL2, QW2, QWSL2, &
+
+            call gaussian(ZL, 100.*PL, HL, QT, HL2, QT2, HLQT, &
                           TEn, QCn, CFn, &
-                          A_cloud, B_cloud, qsat)
+                          A_mynn, B_mynn, qsat_mynn)
             
+            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
+         elseif (pdfflag == 7) then ! Double Gaussian with consistent partitioning
+            ! Update the liquid water static energy
+            ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
+
+            HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
+            QT = QVn + QCn
+
+            !
+            ! Updraft ensemble
+            !
+            if ( au > 0. ) then
+               HLU = ( HL - ( 1. - au )*HLE )/au
+               QTU = ( QT - ( 1. - au )*QTE )/au
+
+               call gaussian(ZL, 100.*PL, HLU, QTU, HL2U, QT2U, HLQTU, &
+                             Tcu, qlu, acu, &
+                             A_mynn, B_mynn, qsat_mynn)
+
+            end if
+
+            !
+            ! Environment
+            !
+            
+            call gaussian(ZL, 100.*PL, HLE, QTE, HL2, QT2, HLQT, &
+                          Tce, qle, ace, &
+                          A_mynn, B_mynn, qsat_mynn)
+
+            !
+            ! Combine upddraft and environment
+            !
+
+            if ( au > 0. ) then
+               TEn = au*Tcu + ( 1. - au )*Tce
+               QCn = au*qlu + ( 1. - au )*qle
+               CFn = au*acu + ( 1. - au )*ace
+            else
+               TEn = Tce
+               QCn = qle
+               CFn = ace
+            end if
+
             fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
          endif
 
@@ -2441,16 +2511,16 @@ contains
    end subroutine hystpdf_new
 
    ! Single-gaussian cloud pdf
-   subroutine gaussian(z, p, hl, qt, hl2, qt2, qthl, &
+   subroutine gaussian(z, p, hl, qt, hl2, qt2, hlqt, &
                        T, ql, ac, &
                        A, B, qs)
 
      use MAPL_SatVaporMod,  only: MAPL_EQsat
      use MAPL_ConstantsMod, only: MAPL_CP, MAPL_ALHL, MAPL_GRAV, MAPL_RDRY, MAPL_RVAP, MAPL_PI
 
-     real, intent(in)    :: z, p, hl, qt, hl2, qt2, qthl
-     real, intent(inout) :: T, ql, ac
-     real, intent(out)   :: A, B, qs                                                                                                            
+     real, intent(in)            :: z, p, hl, qt, hl2, qt2, hlqt
+     real, intent(inout)         :: T, ql, ac
+     real, intent(out), optional :: A, B, qs                                                                                                            
      real :: dqs, fac_cond, Tl, s, sigma_s, exner, Q
 
      exner    = (p*1.E-5)**(MAPL_RDRY/MAPL_CP) ! Exner function
@@ -2464,7 +2534,7 @@ contains
      A = 1./( 1. + fac_cond*dqs )
      B = a*exner*dqs
 
-     sigma_s = sqrt( A**2.*qt2 - 2*A*B*(qthl/exner) + B**2.*(hl2/exner**2.) )
+     sigma_s = sqrt( A**2.*qt2 - 2*A*B*(hlqt/exner) + B**2.*(hl2/exner**2.) )
 
      ! Diagnose cloud properties 
      if (sigma_s > 0.) then
