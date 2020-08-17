@@ -45,7 +45,7 @@ module shoc
                  brunt_inv,shear_inv,                            &  ! out
                  LAM, TSCL, VON, CKVAL, CEFAC, CESFAC,           &  ! tuning param in
                  THLTUN, QWTUN, QWTHLTUN, DO_TRANS, DO_CLDLEN,   &
-                 USE_MF_PDF, USE_MF_BUOY, BUOY_OPTION )                 
+                 USE_MF_PDF, USE_MF_BUOY, USE_SUS12LEN, BUOY_OPTION )                 
 
 
   real, parameter :: lsub = lcond+lfus,         &
@@ -77,6 +77,7 @@ module shoc
   integer, intent(in) :: DO_CLDLEN    ! TKE transport term on/off
   integer, intent(in) :: USE_MF_PDF   ! Use mass flux contrib to PDF
   integer, intent(in) :: USE_MF_BUOY  ! Explicitly add mass flux contribution to buoyancy
+  integer, intent(in) :: USE_SUS12LEN ! Use Suselj et al 2012 length scale
   integer, intent(in) :: BUOY_OPTION  ! choose source of TKE buoyancy term
                                       ! 0=local stability
                                       ! 1=single-gaussian PDF,
@@ -938,6 +939,19 @@ contains
 
            endif
            
+           if (USE_SUS12LEN) then
+             wrk2 = 1./(400.*tkes)
+             wrk3 = brunt2(i,j,k)/(0.7*tkes)
+             wrk1 = 1./(wrk2+wrk3)
+             smixt(i,j,k) = wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.))
+           end if
+
+!           if (zl(i,j,k)<1500.) then
+!              smixt(i,j,k) = 1500.
+!           else
+!              smixt(i,j,k) = 100.
+!           end if
+
 !         end if  ! not k=1
 
          smixt_outcld(i,j,k) = smixt(i,j,k)
