@@ -976,6 +976,16 @@ contains
 !======== Buoyancy flux from local stability ======!
 if (BUOY_OPTION==0) then
    wthv_sec = -1.0*(thv/ggr)*brunt*tkh
+!!! Han and Bretherton 2019
+!   a1 = ggr/(thv*MAPL_CP)
+!   delt = 0.608
+!   beta = 0.5 
+!   bhs = a1*beta
+!   bhu = a1
+!   bqs = a1*lcond*(beta-epsv)
+!   bqu = delt*ggr
+!   dsdz = (hl - hl)*adzi
+!   wthv_sec =(thv/ggr)*( (cld_sgs*bhs+(1.-cld_sgs)*bhu)*dsdz+(cld_sgs*bqs+(1.-cld_sgs)*bqu)*dqtdz )
 endif
 !==================================================!
     

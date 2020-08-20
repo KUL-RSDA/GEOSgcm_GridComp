@@ -7737,7 +7737,7 @@ end if
  !
  ! surface conditions
  !      
-   wstar=max(wstarmin,(mapl_grav/300.*wthv*pblh)**(1./3.))
+   wstar=max(wstarmin,(mapl_grav/300.*wthv*pblh)**(1./3.))  ! convective velocity scale
    qstar=wqt/wstar
    thstar=wthv/wstar
 
@@ -7767,9 +7767,7 @@ end if
         UPV(kts-1,I)=V(kts)
        
         UPQT(kts-1,I)=QT(kts)+0.32*UPW(kts-1,I)*sigmaQT/sigmaW
-        UPTHV(kts-1,I)=THV(kts)+0.58*UPW(kts-1,I)*sigmaTH/sigmaW
-        
-
+        UPTHV(kts-1,I)=THV(kts)+0.58*UPW(kts-1,I)*sigmaTH/sigmaW        
 
        ENDDO
          
