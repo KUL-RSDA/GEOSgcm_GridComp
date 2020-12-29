@@ -2302,8 +2302,8 @@ contains
 !                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:)
             QT = QVn + QCn
 
-            call gaussian(ZL, 100.*PL, HL, QT, HL2, QT2, HLQT, &
-                          TEn, QCn, CFn, &
+            call gaussian(ZL, 100.*PL, HL, QT, HL2, QT2, HLQT, WQT, WHL, &
+                          TEn, QCn, CFn, wthv2, &
                           A_mynn, B_mynn, qsat_mynn)
             
             fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
@@ -2321,8 +2321,8 @@ contains
                HLU = ( HL - ( 1. - au )*HLE )/au
                QTU = ( QT - ( 1. - au )*QTE )/au
 
-               call gaussian(ZL, 100.*PL, HLU, QTU, HL2U, QT2U, HLQTU, &
-                             Tcu, qlu, acu, &
+               call gaussian(ZL, 100.*PL, HLU, QTU, HL2U, QT2U, HLQTU, WQT, WHL, &
+                             Tcu, qlu, acu, wthv2, &
                              A_mynn, B_mynn, qsat_mynn)
 
             end if
@@ -2331,8 +2331,8 @@ contains
             ! Environment
             !
             
-            call gaussian(ZL, 100.*PL, HLE, QTE, HL2, QT2, HLQT, &
-                          Tce, qle, ace, &
+            call gaussian(ZL, 100.*PL, HLE, QTE, HL2, QT2, HLQT, WQT, WHL, &
+                          Tce, qle, ace, wthv2, &
                           A_mynn, B_mynn, qsat_mynn)
 
             !
@@ -2511,17 +2511,17 @@ contains
    end subroutine hystpdf_new
 
    ! Single-gaussian cloud pdf
-   subroutine gaussian(z, p, hl, qt, hl2, qt2, hlqt, &
-                       T, ql, ac, &
+   subroutine gaussian(z, p, hl, qt, hl2, qt2, hlqt, wqt, whl, &
+                       T, ql, ac, wthv, &
                        A, B, qs)
 
      use MAPL_SatVaporMod,  only: MAPL_EQsat
      use MAPL_ConstantsMod, only: MAPL_CP, MAPL_ALHL, MAPL_GRAV, MAPL_RDRY, MAPL_RVAP, MAPL_PI
 
-     real, intent(in)            :: z, p, hl, qt, hl2, qt2, hlqt
-     real, intent(inout)         :: T, ql, ac
+     real, intent(in)            :: z, p, hl, qt, hl2, qt2, hlqt, wqt, whl
+     real, intent(inout)         :: T, ql, ac, wthv
      real, intent(out), optional :: A, B, qs                                                                                                            
-     real :: dqs, fac_cond, Tl, s, sigma_s, exner, Q
+     real :: dqs, fac_cond, Tl, s, sigma_s, exner, Q, alpha, beta
 
      exner    = (p*1.E-5)**(MAPL_RDRY/MAPL_CP) ! Exner function
      fac_cond = MAPL_ALHL/MAPL_CP              ! lv/cp 
@@ -2548,6 +2548,10 @@ contains
      end if
 
      T = hl + (MAPL_ALHL/MAPL_CP)*ql - (MAPL_GRAV/MAPL_CP)*z ! Update temperature 
+
+     alpha = 0.61*(Tl/exner) 
+     beta  = (1./exner)*(MAPL_ALHL/MAPL_CP) - 1.61*(Tl/exner)
+     wthv  = (whl/exner)*(1.+0.61*qt-beta*B*ac) + wqt*(alpha+beta*A*ac)
 
    end subroutine gaussian
 

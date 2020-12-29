@@ -220,11 +220,11 @@ w_first = - rog * omega * thv / pval
             end if
           else                                 ! if no active updraft
             if (aterm/=0.5) then               ! but there is residual skewness
-              aterm = aterm*max(1.-DT/1200.,0.0)
-              skew_qw = skew_qw*max(1.-DT/1200.,0.0)
+              aterm = aterm*max(1.-DT/1800.,0.0)
+              skew_qw = skew_qw*max(1.-DT/1800.,0.0)
             else
 !              aterm = aterm*max(1.-DT/1200.,0.0)
-              skew_qw = skew_qw*max(1.-DT/1200.,0.0)
+              skew_qw = skew_qw*max(1.-DT/1800.,0.0)
 !              skew_qw = skew_facw*Skew_w
             end if
           end if

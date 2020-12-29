@@ -526,6 +526,16 @@ contains
          RC=STATUS  )  
     VERIFY_(STATUS)                         
       
+    call MAPL_AddInternalSpec(GC,                                  &
+         SHORT_NAME ='QT2MEM',                                     &
+          LONG_NAME = 'total_water_variance_memory',               &
+         UNITS      ='kg2 kg-2',                                   &       
+         DIMS      = MAPL_DimsHorzVert,                            &
+         VLOCATION = MAPL_VLocationCenter,                         &
+         DEFAULT= 0.0,                                             &
+         FRIENDLYTO = 'TURBULENCE',                                &
+         RC=STATUS  )  
+         VERIFY_(STATUS)                         
     
   if (DOSHLW /= 0) then
           
@@ -5747,7 +5757,7 @@ contains
       real, pointer, dimension(:,:)   :: TROPP
       real, pointer, dimension(:,:,:) :: DQDT, UI, VI, WI, TI, KH, TKE, TKESHOC
       real, pointer, dimension(:,:,:) :: ISOTROPY,w3_canuto,edmf_wqt,edmf_whl,edmf_qt2,edmf_hl2,edmf_hlqt,edmf_w2,edmf_w3,edmf_qt3,edmf_dry_a,edmf_moist_a
-      real, pointer, dimension(:,:,:) :: HL2, QT2, HLQT
+      real, pointer, dimension(:,:,:) :: HL2, QT2, HLQT, QT2MEM
       real, pointer, dimension(    :) :: PREF
       real, pointer, dimension(:,:,:) :: Q, QRAIN, QSNOW, QGRAUPEL, QLLS, QLCN, CLLS, CLCN, BYNCY, QILS, QICN, QCTOT,QITOT,QLTOT
       real, pointer, dimension(:,:,:) :: QPTOTLS, QRTOT, QSTOT,  CFLIQ, CFICE !DONIF
@@ -6479,9 +6489,9 @@ contains
 
 
       real, dimension(IM,JM,LM) :: hl,total_water,w3var,w2var,hlsec,qtsec,hlqtsec,wqtsec,whlsec,wqlsec
-      real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,hlqt_sec, au_full
+      real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,hlqt_sec, au_full,qtgrad
       real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
-      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac
+      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale
 
       real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU, CMNI
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
@@ -6792,6 +6802,7 @@ contains
       call MAPL_GetPointer(INTERNAL, NRAIN,    'NRAIN'    , RC=STATUS); VERIFY_(STATUS)  
       call MAPL_GetPointer(INTERNAL, NSNOW,    'NSNOW'    , RC=STATUS); VERIFY_(STATUS)      
       call MAPL_GetPointer(INTERNAL, NGRAUPEL, 'NGRAUPEL'    , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(INTERNAL, QT2MEM,   'QT2MEM'  , RC=STATUS); VERIFY_(STATUS)
 
       if (DOSHLW /= 0) then
        call MAPL_GetPointer(INTERNAL, CUSH,  'CUSH'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
@@ -8127,6 +8138,7 @@ contains
         VERIFY_(STATUS)
       endif
 
+      call MAPL_GetResource( STATE, QT2SCALE, 'QT2SCALE:',    DEFAULT= 500.0, RC=STATUS )
       call MAPL_GetResource( STATE, QT2TUNE,   'QT2TUNE:',    DEFAULT= 1.0, RC=STATUS )
       call MAPL_GetResource( STATE, HL2TUNE,   'HL2TUNE:',    DEFAULT= 1.0, RC=STATUS )
       call MAPL_GetResource( STATE, HLQT2TUNE, 'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
@@ -9404,6 +9416,9 @@ contains
 
        total_water = max(0.0, Q1 + QLLS + QILS )
 
+       qtgrad = 0.
+       qt2_sec = 0.
+
        ! define resolved gradients on edges 
        do k=1,LM-1
           if (DO_MYNN == 0) then
@@ -9424,7 +9439,9 @@ contains
              hl2_sec(:,:,k) = hl2tune * sm * wrk1 * wrk1
 
              ! Second moment of total water mixing ratio.  Eq 3 in BK13 
-             qt2_sec(:,:,k) = qt2tune * sm * wrk2 * wrk2 
+!             qt2_sec(:,:,k) = qt2tune * sm * wrk2 * wrk2 
+             qtgrad(:,:,k) = (total_water(:,:,k) - total_water(:,:,k+1))/ (ZLO(:,:,k)-ZLO(:,:,k+1))
+             qt2_sec(:,:,k) = 2.*KH(:,:,k)*qtgrad(:,:,k)**2
 
              ! Covariance of total water mixing ratio and liquid/ice water static
              ! energy.  Eq 5 in BK13
@@ -9445,6 +9462,8 @@ contains
        hl2_sec(:,:,LM)  = hl2_sec(:,:,LM-1) 
        qt2_sec(:,:,LM)  = qt2_sec(:,:,LM-1) 
        hlqt_sec(:,:,LM) = hlqt_sec(:,:,LM-1)
+       qtgrad(:,:,LM) = qtgrad(:,:,LM-1)
+       qtgrad(:,:,0) = qtgrad(:,:,1)
 
        ! average edge-values onto centers, add MF contribution 
        w3var = 0.
@@ -9453,6 +9472,13 @@ contains
        hlqtsec = 0.   
        wqtsec = 0.  
        whlsec = 0.  
+!       print *,'qt2mem=',QT2MEM
+!       print *,'qtgrad=',qtgrad
+!       print *,'qt2_sec=',qt2_sec
+!       print *,'edmf_wqt=',edmf_wqt
+!       print *,'edmf_frc=',edmf_frc
+!       print *,'edmf_qt3=',edmf_qt3
+
        do k=1,LM 
           kd = k-1 
           ku = k 
@@ -9466,8 +9492,26 @@ contains
                             + edmf_w2(:,:,k) 
              hlsec(:,:,k) = max( 0., ( 1.0 - edmf_frc(:,:,k) )*0.5*( hl2_sec(:,:,kd) + hl2_sec(:,:,ku) )&
                                       + edmf_hl2(:,:,k) )
-             qtsec(:,:,k) = max( 0., ( 1.0 - edmf_frc(:,:,k) )*0.5*( qt2_sec(:,:,kd) + qt2_sec(:,:,ku) )&
-                                     + edmf_qt2(:,:,k) )
+
+! Blend diagnostic qt2 across timesteps
+!             qtsec(:,:,k) = QT2MEM(:,:,k)*exp(-DT/1800.) + (1.-exp(-DT/1800.))* &
+!                max( 0., ( 1.0 - edmf_frc(:,:,k) )*0.5*( qt2_sec(:,:,kd) + qt2_sec(:,:,ku) ) + edmf_qt2(:,:,k) )
+!             QT2MEM(:,:,k) = qtsec(:,:,k)
+
+!             qtsec(:,:,k) = QT2MEM(:,:,k) + edmf_qt2(:,:,k) - (QT2MEM(:,:,k)-0.5*( qt2_sec(:,:,kd) + qt2_sec(:,:,ku) ))*DT/1800.
+!             QT2MEM(:,:,k) = qtsec(:,:,k)
+
+             ! increment prognostic qt2 with diffusive gradient prod (qt2_sec) and MF prod
+!             qtsec(:,:,k) = (QT2MEM(:,:,k) + 2.*DT_MOIST*edmf_wqt(:,:,k) ) !/ (1. + DT/qt2tscale)
+!             QT2MEM(:,:,k) = (QT2MEM(:,:,k) + 2.*DT_MOIST*edmf_wqt(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku)) ) / (1. + DT/qt2tscale)
+!             qt2tscale = (500.*0.4*ZLO(:,:,k)/(0.4*ZLO(:,:,k)+500.)) / sqrt(tkeshoc(:,:,k))
+
+!             qtsec(:,:,k) = (QT2MEM(:,:,k) + DT_MOIST*0.5*(qt2_sec(:,:,kd)+qt2_sec(:,:,ku))-2.*DT_MOIST*edmf_wqt(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku))) / (1. + DT_MOIST/qt2tscale)
+             qtsec(:,:,k) = (QT2MEM(:,:,k) + DT_MOIST*0.5*(qt2_sec(:,:,kd)+qt2_sec(:,:,ku))-2.*DT_MOIST*edmf_wqt(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku))) / (1. + DT_MOIST*sqrt(tkeshoc(:,:,k))/(2.*qt2scale*0.4*min(ZLO(:,:,k),1500.)/(0.4*min(ZLO(:,:,k),1500.)+qt2scale)))
+
+             QT2MEM(:,:,k) = qtsec(:,:,k)  ! qt2 on full levels
+!             print *,'k=',k,', qtsec=',qtsec(:,:,k),' qtgrad=',qtgrad(:,:,kd),' qt2_sec=',qt2_sec(:,:,kd)
+
              hlqtsec(:,:,k) = ( 1.0 - edmf_frc(:,:,k) )*0.5*( hlqt_sec(:,:,kd) + hlqt_sec(:,:,ku) )&
                                + edmf_hlqt(:,:,k) 
              wqtsec(:,:,k) = ( 1.0 - edmf_frc(:,:,k) )*0.5*( wqt_sec(:,:,kd) + wqt_sec(:,:,ku) )&
@@ -9494,10 +9538,10 @@ contains
              end if
           end if
 
-          ! Restrict QT variance, 5-20% of qstar.
-          qtsec(:,:,k) = min(qtsec(:,:,k),(0.2*QSS(:,:,k))**2)
-!          qtsec(k) = max(min(qtsec(:,:,k),(0.2*QSS(:,:,k))**2),(0.05*QSS(:,:,k))**2)
-          hlsec(:,:,k) = min(hlsec(:,:,k),4.0) 
+          ! Restrict QT variance, 2-20% of qstar.
+!          qtsec(:,:,k) = min(qtsec(:,:,k),(0.2*QSS(:,:,k))**2)
+          qtsec(:,:,k) = max(min(qtsec(:,:,k),(0.25*QSS(:,:,k))**2),(0.01*QSS(:,:,k))**2)
+          hlsec(:,:,k) = min(hlsec(:,:,k),2.0) 
 
           ! Ensure realizibility 
           hlqtsec(:,:,k) = sign( min( abs(hlqtsec(:,:,k)), sqrt(hlsec(:,:,k)*qtsec(:,:,k)) ), hlqtsec(:,:,k) )
@@ -9514,7 +9558,7 @@ contains
        if (associated(WQT))      WQT      = wqtsec
        if (associated(WHL))      WHL      = whlsec
 
-
+!       print *,'qtsec=',qtsec
 
 !==============================================================!
 

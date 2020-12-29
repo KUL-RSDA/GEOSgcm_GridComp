@@ -640,7 +640,7 @@ contains
 
           tke(i,j,k) = min(max(min_tke, wtke), max_tke)
 
-          tscale1    = (dtn+dtn) / a_diss        ! See Eq 8 in BK13
+          tscale1    = (dtn+dtn) / a_diss        ! See Eq 8 in BK13 (note typo, flipped num/denom)
 
           a_diss     = (a_diss/dtn)*tke(i,j,k)    ! TKE dissipation term, epsilon
 
@@ -849,7 +849,7 @@ contains
 ! Compute local Brunt-Vaisalla frequency
              
           wrk = qcl(i,j,k) + qci(i,j,k)
-          if (wrk > 0.0) then            ! If in the cloud
+ !         if (wrk > 0.0) then            ! If in the cloud
             
 ! Find the in-cloud Brunt-Vaisalla frequency
                 
@@ -879,25 +879,25 @@ contains
 
 ! Calculate Brunt-Vaisalla frequency using centered differences in the vertical
 
-             brunt(i,j,k) = betdz*(bbb*(hl(i,j,kc)-hl(i,j,kb))               &
+             brunt(i,j,k) = cld_sgs(i,j,k)*betdz*(bbb*(hl(i,j,kc)-hl(i,j,kb))               &
                           + (bbb*lstarn - (1.+lstarn*dqsat)*tabs(i,j,k))     &
                           * (total_water(i,j,kc)-total_water(i,j,kb))        & 
                           + (bbb*fac_cond - (1.+fac_cond*dqsat)*tabs(i,j,k))*(qpl(i,j,kc)-qpl(i,j,kb))  &
                           + (bbb*fac_sub  - (1.+fac_sub*dqsat)*tabs(i,j,k))*(qpi(i,j,kc)-qpi(i,j,kb)) )
                 
-          else                       ! outside of cloud
+!          else                       ! outside of cloud
                 
 ! Find outside-of-cloud Brunt-Vaisalla frequency
 ! Only unsaturated air, rain and snow contribute to virt. pot. temp. 
 ! liquid/ice moist static energy divided by cp?
 
              bbb = 1. + epsv*qv(i,j,k) - qpl(i,j,k) - qpi(i,j,k)
-             brunt(i,j,k) = betdz*( bbb*(hl(i,j,kc)-hl(i,j,kb))                        &
+             brunt(i,j,k) = brunt(i,j,k) + (1.-cld_sgs(i,j,k))*betdz*( bbb*(hl(i,j,kc)-hl(i,j,kb))                        &
                           + epsv*tabs(i,j,k)*(total_water(i,j,kc)-total_water(i,j,kb)) &
                           + (bbb*fac_cond-tabs(i,j,k))*(qpl(i,j,kc)-qpl(i,j,kb))       &
                           + (bbb*fac_sub -tabs(i,j,k))*(qpi(i,j,kc)-qpi(i,j,kb)) )
 
-          end if
+!          end if
 
              
 ! Reduction of mixing length in the stable regions (where B.-V. freq. > 0) is required.

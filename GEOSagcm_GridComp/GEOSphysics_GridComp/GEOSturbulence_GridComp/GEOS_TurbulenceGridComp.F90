@@ -2025,6 +2025,24 @@ contains
        VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
     VERIFY_(STATUS)
 
+    call MAPL_AddExportSpec(GC,                                            &
+       LONG_NAME  = 'edge_height_above_surface',                     &
+       SHORT_NAME = 'ZLES',                                                   &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                            &
+       LONG_NAME  = 'center_height_above_surface',                     &
+       SHORT_NAME = 'ZLS',                                                   &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
 ! !INTERNAL STATE:
 
 !
@@ -2842,6 +2860,7 @@ contains
     real, dimension(:,:,:), pointer     :: AKQ, BKQ, CKQ, DKQ
     real, dimension(:,:,:), pointer     :: AKV, BKV, CKV, DKV, EKV, FKV
     real, dimension(:,:,:), pointer     :: PLE, ZLE, SINC
+    real, dimension(:,:,:), pointer     :: ZLS, ZLES
     real, dimension(:,:  ), pointer     :: CU, CT, CQ, ZPBL
     integer                             :: IM, JM, LM
     real                                :: DT
@@ -3608,6 +3627,10 @@ contains
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  CKVODT,  'CKVODT',               RC=STATUS)
      VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,     ZLS,     'ZLS',               RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    ZLES,    'ZLES',               RC=STATUS)
+     VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_buoyf,  'edmf_buoyf',   RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_hl2,  'edmf_hl2', ALLOC=.TRUE.,  RC=STATUS)
@@ -3835,6 +3858,9 @@ contains
       QA  = CLCN + CLLS ! Currently not used in REFRESHKS
       Z   = 0.5*(ZLE(:,:,0:LM-1)+ZLE(:,:,1:LM))
       PLO = 0.5*(PLE(:,:,0:LM-1)+PLE(:,:,1:LM))
+
+      if (associated(ZLS))  ZLS = Z
+      if (associated(ZLES)) ZLES = ZLE
 
       TV  = T *( 1.0 + MAPL_VIREPS * Q - QL - QI ) 
       THV = TV*(TH/T)
@@ -4473,6 +4499,7 @@ ENDIF
                        SHC_BUOY_OPTION  )
 
         TKH = max(0.,TKH)
+        if (any(isnan(TKH))) print *,'TKH NaN after SHOC'
 
         KH(:,:,1:LM) = TKH(:,:,1:LM)
         KM(:,:,1:LM) = TKH(:,:,1:LM)*PRANDTLSHOC(:,:,1:LM)
@@ -5946,6 +5973,8 @@ if ((trim(name) /= 'S') .and. (trim(name) /= 'Q') .and. (trim(name) /= 'QLLS') &
        SX_HALF(:,:,1:LM-1) = S(:,:,1:LM-1) + YHLQT(:,:,1:LM-1)
        SX_HALF(:,:,LM)     = YHLQT(:,:,LM)
  end if
+
+if (any(isnan(SX))) print *,'SX has NaN in DIFFUSE'
 
 
 ! Solve for semi-implicit changes. This modifies SX
@@ -7760,7 +7789,6 @@ end if
        
         UPW(kts-1,I)=min(0.5*(wlv+wtv), 5.)  ! npa
 
-        UPW(kts-1,I)=0.5*(wlv+wtv) 
         UPA(kts-1,I)=0.5*ERF(wtv/(sqrt(2.)*sigmaW))-0.5*ERF(wlv/(sqrt(2.)*sigmaW))
        
         UPU(kts-1,I)=U(kts)
