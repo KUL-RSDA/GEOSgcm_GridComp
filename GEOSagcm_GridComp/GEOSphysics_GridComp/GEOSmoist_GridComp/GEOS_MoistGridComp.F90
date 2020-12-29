@@ -846,6 +846,39 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddImportSpec(GC,                             &
+         SHORT_NAME = 'TQSRF',                                     &
+         LONG_NAME  = 'surface_temperature_humidity_covariance',   &
+         UNITS      = 'K kg kg-1',                                 &
+         DIMS       = MAPL_DimsHorzOnly,                           &
+         VLOCATION  = MAPL_VLocationNone,                          &
+         AVERAGING_INTERVAL = AVRGNINT,                            &
+         REFRESH_INTERVAL   = RFRSHINT,                            &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                             &
+         SHORT_NAME = 'Q2SRF',                                     &
+         LONG_NAME  = 'surface_humidity_variance',                 &
+         UNITS      = 'kg2 kg-2',                                  &
+         DIMS       = MAPL_DimsHorzOnly,                           &
+         VLOCATION  = MAPL_VLocationNone,                          &
+         AVERAGING_INTERVAL = AVRGNINT,                            &
+         REFRESH_INTERVAL   = RFRSHINT,                            &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                             &
+         SHORT_NAME = 'T2SRF',                                     &
+         LONG_NAME  = 'surface_temperature_variance',              &
+         UNITS      = 'K2',                                        &
+         DIMS       = MAPL_DimsHorzOnly,                           &
+         VLOCATION  = MAPL_VLocationNone,                          &
+         AVERAGING_INTERVAL = AVRGNINT,                            &
+         REFRESH_INTERVAL   = RFRSHINT,                            &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddImportSpec(GC,                             &
          SHORT_NAME = 'TS',                                        &
          LONG_NAME  = 'surface temperature',                       &
          UNITS      = 'K',                                         &
@@ -5774,6 +5807,7 @@ contains
       integer                         :: YEAR, MONTH, DAY, HR, SE, MN
       type (ESMF_Time)                :: CurrentTime
       real, pointer, dimension(:,:  ) :: LS_ARF, CN_ARF, AN_ARF, SC_ARF
+      real, pointer, dimension(:,:  ) :: T2SRF, Q2SRF, TQSRF
       real, pointer, dimension(:,:  ) :: PTYPE,FRZR,ICE,SNR,PRECU,PRELS,TS,SNOMAS,FRLANDICE,FRLAND,FROCEAN
       real, pointer, dimension(:,:  ) :: IWP,LWP,CWP,TPW,CAPE,ZPBLCN,INHB,ZLCL,ZLFC,ZCBL,CCWP , KPBLIN, KPBLSC
       real, pointer, dimension(:,:  ) :: TVQ0,TVQ1,TVE0,TVE1,TVEX,DCPTE, TVQX2, TVQX1, CCNCOLUMN, NDCOLUMN, NCCOLUMN  !DONIF
@@ -6491,7 +6525,7 @@ contains
       real, dimension(IM,JM,LM) :: hl,total_water,w3var,w2var,hlsec,qtsec,hlqtsec,wqtsec,whlsec,wqlsec
       real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,hlqt_sec, au_full,qtgrad
       real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
-      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale
+      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale,tmp1
 
       real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU, CMNI
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
@@ -6580,6 +6614,7 @@ contains
 #endif
 
       integer :: DO_MYNN, EDMF_CONSISTENT_TYPE
+      integer :: DOCLASP
 
       !  Begin...
       !----------
@@ -6854,6 +6889,10 @@ contains
       call MAPL_GetPointer(IMPORT, TROPP,   'TROPP'   , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, KPBLIN,  'KPBL'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, KPBLSC,  'KPBL_SC' , RC=STATUS); VERIFY_(STATUS)
+
+      call MAPL_GetPointer(IMPORT, T2SRF,   'T2SRF'   , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, Q2SRF,   'Q2SRF'   , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, TQSRF,   'TQSRF'   , RC=STATUS); VERIFY_(STATUS)
 
       call ESMF_StateGet (IMPORT, 'MTR' ,   TR,        RC=STATUS); VERIFY_(STATUS)
 
@@ -9410,6 +9449,8 @@ contains
        VERIFY_(STATUS)      
        call MAPL_GetResource(STATE, EDMF_CONSISTENT_TYPE, 'EDMF_CONSISTENT_TYPE:', DEFAULT=0)
        VERIFY_(STATUS)
+       call MAPL_GetResource(STATE, DOCLASP, 'DOCLASP:', default=0, RC=STATUS)
+       VERIFY_(STATUS)      
 
        ! Liquid water static energy (over cp)
        hl = TEMP + (mapl_grav*ZLO - mapl_alhl*QLLS - mapl_alhf*QILS)/mapl_cp
@@ -9459,11 +9500,36 @@ contains
        ! set values at bottom edge
        whl_sec(:,:,LM)  = SH(:,:)/mapl_cp    ! set to surface fluxes
        wqt_sec(:,:,LM)  = EVAP(:,:)          !
-       hl2_sec(:,:,LM)  = hl2_sec(:,:,LM-1) 
-       qt2_sec(:,:,LM)  = qt2_sec(:,:,LM-1) 
-       hlqt_sec(:,:,LM) = hlqt_sec(:,:,LM-1)
-       qtgrad(:,:,LM) = qtgrad(:,:,LM-1)
-       qtgrad(:,:,0) = qtgrad(:,:,1)
+!       if (DOCLASP /= 0) then
+!         hl2_sec(:,:,LM)  = max(0.,-(SH(:,:)/(PKE(:,:,LM)*mapl_cp))*(TH1(:,:,LM)-T2M/PKE(:,:,LM))/(ZLO(:,:,LM)-2.0)) * isotropy(:,:,LM)
+!         qt2_sec(:,:,LM)  = max(0.,-EVAP(:,:)*(Q1(:,:,LM)-Q2M)/(ZLO(:,:,LM)-2.0)) * isotropy(:,:,LM)
+!         hlqt_sec(:,:,LM) = ( -(SH(:,:)/(PKE(:,:,LM)*mapl_cp))*(Q1(:,:,LM)-Q2M)/(ZLO(:,:,LM)-2.0) -EVAP(:,:)*(TH1(:,:,LM)-T2M/PKE(:,:,LM))/(ZLO(:,:,LM)-2.0) ) * isotropy(:,:,LM)
+!       else
+         hl2_sec(:,:,LM)  = hl2_sec(:,:,LM-1) 
+         qt2_sec(:,:,LM)  = qt2_sec(:,:,LM-1) 
+         hlqt_sec(:,:,LM) = hlqt_sec(:,:,LM-1)
+!       end if
+
+!       if (DOCLASP /= 0) then
+!       do i = 1,IM
+!         do j = 1,JM
+!           k = LM-1
+!           do while (kh(i,j,k).gt.2. .and. k.gt.0) 
+!              k = k-1
+!           end do
+           
+!           ! 0.25 temporary, should be ratio of transport timescale to dissipation timescale
+!           tmp1 = sum(hl2_sec(i,j,k:LM)*MASS(i,j,k:LM))/sum(MASS(i,j,k:LM))
+!           hl2_sec(i,j,k:LM) = hl2_sec(i,j,k:LM) + (tmp1-hl2_sec(i,j,k:LM))*min(1.,0.25)
+
+!           tmp1 = sum(qt2_sec(i,j,k:LM)*MASS(i,j,k:LM))/sum(MASS(i,j,k:LM))
+!           qt2_sec(i,j,k:LM) = qt2_sec(i,j,k:LM) + (tmp1-qt2_sec(i,j,k:LM))*min(1.,0.25)
+
+!           tmp1 = sum(hlqt_sec(i,j,k:LM)*MASS(i,j,k:LM))/sum(MASS(i,j,k:LM))
+!           hlqt_sec(i,j,k:LM) = hlqt_sec(i,j,k:LM) + (tmp1-hlqt_sec(i,j,k:LM))*min(1.,0.25)
+!         end do
+!       end do 
+!       end if
 
        ! average edge-values onto centers, add MF contribution 
        w3var = 0.

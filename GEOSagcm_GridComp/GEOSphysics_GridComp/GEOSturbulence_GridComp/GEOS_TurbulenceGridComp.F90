@@ -436,6 +436,46 @@ contains
      VERIFY_(STATUS)
 
      call MAPL_AddImportSpec(GC,                                  &
+        SHORT_NAME = 'MFTHSRC',                                   &
+        LONG_NAME  = 'mass_flux_source_temperature_perturbation', &
+        UNITS      = 'K',                                         &
+        DIMS       = MAPL_DimsHorzVert,                           &
+        VLOCATION  = MAPL_VLocationCenter,                        &
+        RESTART    = MAPL_RestartSkip,                            &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+     call MAPL_AddImportSpec(GC,                                  &
+        SHORT_NAME = 'MFQTSRC',                                   &
+        LONG_NAME  = 'mass_flux_source_humidity_perturbation',    &
+        UNITS      = 'kg kg-1',                                   &
+        DIMS       = MAPL_DimsHorzVert,                           &
+        VLOCATION  = MAPL_VLocationCenter,                        &
+        RESTART    = MAPL_RestartSkip,                            &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+     call MAPL_AddImportSpec(GC,                                  &
+        SHORT_NAME = 'MFW',                                   &
+        LONG_NAME  = 'mass_flux_initial_vertical_velocity',       &
+        UNITS      = 'm s-1',                                     &
+        DIMS       = MAPL_DimsHorzVert,                           &
+        VLOCATION  = MAPL_VLocationCenter,                        &
+        RESTART    = MAPL_RestartSkip,                            &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+     call MAPL_AddImportSpec(GC,                                  &
+        SHORT_NAME = 'MFAREA',                                    &
+        LONG_NAME  = 'mass_flux_area_fraction',                   &
+        UNITS      = '1',                                         &
+        DIMS       = MAPL_DimsHorzVert,                           &
+        VLOCATION  = MAPL_VLocationCenter,                        &
+        RESTART    = MAPL_RestartSkip,                            &
+                                                       RC=STATUS  )
+     VERIFY_(STATUS)
+
+     call MAPL_AddImportSpec(GC,                                  &
         SHORT_NAME         = 'FRLAND',                            &
         LONG_NAME          = 'land_fraction',                     &
         UNITS              = '1',                                 &
@@ -3243,6 +3283,7 @@ contains
      real, dimension(IM,JM,LM)           :: RDZ_HALF
      real, dimension(IM,JM,0:LM)         :: DMI_HALF
 
+     real, dimension(:,:,:), pointer     :: MFQTSRC, MFTHSRC, MFW, MFAREA
      real, dimension(:,:,:), pointer     :: EKH, EKM, KHLS, KMLS, KHRAD, KHSFC
      real, dimension(:,:  ), pointer     :: BSTAR, USTAR, PPBL, WERAD, WESFC,VSCRAD,KERAD,DBUOY,ZSML,ZCLD,ZRADML,FRLAND
      real, dimension(:,:  ), pointer     :: TCZPBL => null()
@@ -3273,7 +3314,7 @@ contains
                                             edmf_whl, edmf_qt3, w3_canuto, &
                                             hle, qte, &
                                             A_mynn, B_mynn, qsat_mynn
-   real, dimension(IM,JM,0:LM)          ::  ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
+   real, dimension(IM,JM,0:LM)          ::  ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3,awtke3
 !   real, dimension(IM,JM,0:LM)          ::  awhl3, awqt3, awthv3 ! for EDMF contribution to MYNN
    real, dimension(IM,JM,0:LM)          ::  ae3_test, aw3_test, aws3_test, awqv3_test, awql3_test, awqi3_test, awu3_test, awv3_test
 
@@ -3333,7 +3374,7 @@ contains
 
      ! mass-flux constants/parameters
      real :: NumUpR,ETr
-     integer :: NumUp,ET
+     integer :: NumUp,ET,DOCLASP
      real :: pwmin,pwmax,AlphaW,AlphaQT,AlphaTH,L0,L0fac,ENT0,EDfac
      real                            :: DOMF,DOMFCOND 
 
@@ -3456,6 +3497,13 @@ contains
      call MAPL_GetPointer(IMPORT,    A_mynn,    'A_mynn', RC=STATUS); VERIFY_(STATUS)
      call MAPL_GetPointer(IMPORT,    B_mynn,    'B_mynn', RC=STATUS); VERIFY_(STATUS)
      call MAPL_GetPointer(IMPORT, qsat_mynn, 'qsat_mynn', RC=STATUS); VERIFY_(STATUS)
+     call MAPL_GetPointer(IMPORT,MFTHSRC, 'MFTHSRC',RC=STATUS); VERIFY_(STATUS)
+     call MAPL_GetPointer(IMPORT,MFQTSRC, 'MFQTSRC',RC=STATUS); VERIFY_(STATUS)
+     call MAPL_GetPointer(IMPORT,MFW, 'MFW',RC=STATUS); VERIFY_(STATUS)
+     call MAPL_GetPointer(IMPORT,MFAREA, 'MFAREA',RC=STATUS); VERIFY_(STATUS)
+
+!     print *,'TurbGC: MFTHSRC(:,:,1:10)=',MFTHSRC(:,:,1:10)
+!     print *,'TurbGC: MFQTSRC(:,:,1:10)=',MFQTSRC(:,:,1:10)
 
 ! Get turbulence parameters from configuration
 !---------------------------------------------
@@ -3923,6 +3971,7 @@ contains
     call MAPL_GetResource (MAPL, EDfac, "EDMF_EDfac:", default=1.,     RC=STATUS)
   ! if true then 
     call MAPL_GetResource (MAPL, DOMF, "EDMF_DOMF:", default=0.,  RC=STATUS)
+    call MAPL_GetResource (MAPL, DOCLASP, "DOCLASP:", default=0,  RC=STATUS)
     call MAPL_GetResource (MAPL, DOMFCOND, "EDMF_COND:", default=0.,  RC=STATUS)
     call MAPL_GetResource (MAPL,EntWFac,"EDMF_ENTWFAC:",default=0.3333, RC=STATUS)  
     call MAPL_GetResource (MAPL, EDMF_DISCRETE_TYPE, "EDMF_DISCRETE_TYPE:", default=0,  RC=STATUS)
@@ -3990,7 +4039,8 @@ if (ETr .eq. 1.) then
 !    zpbl_test = zpbl
     call EDMF(1,IM*JM,1,LM,DT,Z,ZLE,PLE,RHOE,NumUp,&
 !             U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,zpbl_test,ice_ramp, &
-             U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,zpbl,ice_ramp, &
+             U,V,THL,THV,QT,Q,QL,QI,TKESHOC,USTAR,SH,EVAP,zpbl,ice_ramp, &
+             MFTHSRC, MFQTSRC, MFW, MFAREA, &
              edmfdrya,edmfmoista, &
              edmfdryw,edmfmoistw, &
              edmfdryqt,edmfmoistqt, &
@@ -3998,7 +4048,7 @@ if (ETr .eq. 1.) then
              edmfdryu,edmfmoistu,  &
              edmfdryv,edmfmoistv,  &
              edmfmoistqc,             &
-             ae3, aw3, aws3, awqv3, awql3, awqi3, awu3, awv3, &
+             ae3, aw3, aws3, awqv3, awql3, awqi3, awu3, awv3, awtke3, &
 !             WHL_MF,WQT_MF,WTHV_MF, & ! for MYNN  
              WHL_tmp,WQT_tmp,WTHV_tmp, & ! for MYNN  
              pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
@@ -4011,7 +4061,7 @@ if (ETr .eq. 1.) then
              thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
              thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
 #endif
-             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
+             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT, DOCLASP)
 
 !!$    call run_edmf(IM, JM, LM, numup, iras, jras, &                                ! in
 !!$                  edmf_discrete_type, edmf_implicit, edmf_thermal_plume, &        ! in
@@ -4101,7 +4151,8 @@ if (ETr .eq. 1.) then
 !    zpbl_test = zpbl
     call EDMF(1,IM*JM,1,LM,DT,Z,ZLE,PLE,RHOE,1,&
 !             U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,zpbl_test,ice_ramp, &
-             U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,zpbl,ice_ramp, &
+             U,V,THL,THV,QT,Q,QL,QI,TKESHOC,USTAR,SH,EVAP,zpbl,ice_ramp, & 
+             MFTHSRC, MFQTSRC, MFW, MFAREA, &
              edmfdrya,edmfmoista, &
              edmfdryw,edmfmoistw, &
              edmfdryqt,edmfmoistqt, &
@@ -4109,7 +4160,7 @@ if (ETr .eq. 1.) then
              edmfdryu,edmfmoistu,  &
              edmfdryv,edmfmoistv,  &
              edmfmoistqc,             &
-             ae3, aw3, aws3, awqv3, awql3, awqi3, awu3, awv3, &
+             ae3, aw3, aws3, awqv3, awql3, awqi3, awu3, awv3, awtke3, &
 !             WHL_MF,WQT_MF,WTHV_MF, & ! for MYNN  
              WHL_tmp,WQT_tmp,WTHV_tmp, & ! for MYNN  
              pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
@@ -4122,7 +4173,7 @@ if (ETr .eq. 1.) then
              thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
              thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
 #endif
-             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
+             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT, DOCLASP)
 
 !!$    call run_edmf(IM, JM, LM, 1, iras, jras, &                                    ! in
 !!$                  edmf_discrete_type, edmf_implicit, edmf_thermal_plume, &        ! in
@@ -4178,7 +4229,8 @@ if (ETr .eq. 1.) then
 !    zpbl_test = zpbl
     call EDMF(1,IM*JM,1,LM,DT,Z,ZLE,PLE,RHOE,NumUp,&
 !             U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,zpbl_test,ice_ramp, &
-             U,V,THL,THV,QT,Q,QL,QI,USTAR,SH,EVAP,zpbl,ice_ramp, &
+             U,V,THL,THV,QT,Q,QL,QI,TKESHOC,USTAR,SH,EVAP,zpbl,ice_ramp, &
+             MFTHSRC, MFQTSRC, MFW, MFAREA, &
              edmfdrya,edmfmoista, &
              edmfdryw,edmfmoistw, &
              edmfdryqt,edmfmoistqt, &
@@ -4186,7 +4238,7 @@ if (ETr .eq. 1.) then
              edmfdryu,edmfmoistu,  &
              edmfdryv,edmfmoistv,  &
              edmfmoistqc,             &
-             ae3, aw3, aws3, awqv3, awql3, awqi3, awu3, awv3, &
+             ae3, aw3, aws3, awqv3, awql3, awqi3, awu3, awv3, awtke3, &
 !             WHL_MF,WQT_MF,WTHV_MF, & ! for MYNN  
              WHL_tmp,WQT_tmp,WTHV_tmp, & ! for MYNN  
              pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
@@ -4199,7 +4251,7 @@ if (ETr .eq. 1.) then
              thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
              thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
 #endif
-             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT)
+             EDMF_DISCRETE_TYPE, EDMF_IMPLICIT, DOCLASP)
  
 !!$    call run_edmf(IM, JM, LM, numup, iras, jras, &                                ! in
 !!$                  edmf_discrete_type, edmf_implicit, edmf_thermal_plume, &        ! in
@@ -4346,6 +4398,7 @@ ELSE
     awqi3 = 0.0
     awu3  = 0.0
     awv3  = 0.0
+    awtke3= 0.0
     buoyf = 0.0
 
 !    if ( DO_MYNN /= 0 ) then
@@ -7390,8 +7443,9 @@ enddo
 end subroutine ComputeZPBL
 
 SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
-              u3,v3,thl3,thv3,qt3,qv3,ql3,qi3,&
+              u3,v3,thl3,thv3,qt3,qv3,ql3,qi3,tke3,&
               ust2,wthl2,wqt2,pblh2,ice_ramp, &
+              mfsrcthl, mfsrcqt, mfw, mfarea, &
             ! outputs - tendencies
            !  &dth,dqv,dqc,du,dv,&
              ! outputs - updraft properties   
@@ -7403,7 +7457,7 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
              dry_v3,moist_v3, &
              moist_qc3, &
             ! outputs - variables needed for solver 
-             ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3, &
+             ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3,awtke3, &
              awhl3,awqt3,awthv3, & ! for MYNN
              pwmin,pwmax,AlphaW,AlphaQT,AlphaTH, &
              ET,L0,ENT0,EDfac,EntWFac,buoyf,&
@@ -7415,7 +7469,7 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
              thl_plume1,thl_plume2,thl_plume3,thl_plume4,thl_plume5, &
              thl_plume6,thl_plume7,thl_plume8,thl_plume9,thl_plume10, &
 #endif
-             edmf_discrete_type, edmf_implicit)
+             edmf_discrete_type, edmf_implicit, doclasp)
 
 
 
@@ -7450,15 +7504,17 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
 ! s_aw3,s_awthl3 ... (ITS:ITE,KTS-1:KTE)
 
 
-       INTEGER, INTENT(IN) :: ITS,ITE,KTS,KTE,NUP
-       REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(IN) :: U3,V3,THL3,QT3,THV3,QV3,QL3,QI3,ZLO3
+       INTEGER, INTENT(IN) :: ITS,ITE,KTS,KTE,NUP,DOCLASP
+       REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(IN) :: U3,V3,THL3,QT3,THV3,QV3,QL3,QI3,TKE3,ZLO3
        ! zw .. heights of the updraft levels (edges of boxes)
       ! REAL,DIMENSION(ITS:ITE,KTS:KTE+1), INTENT(IN) :: ZW
        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(IN) :: ZW3,PW3, rhoe3
+       REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(IN) :: mfsrcqt,mfsrcthl,mfw,mfarea
        REAL,DIMENSION(ITS:ITE), INTENT(IN) :: UST2,WTHL2,WQT2,PBLH2
        INTEGER, INTENT(IN) :: edmf_discrete_type, edmf_implicit
        REAL, INTENT(IN)                     :: ICE_RAMP  
        REAL :: DT,EntWFac
+       INTEGER :: NUP2
        INTEGER,DIMENSION(ITS:ITE) :: iras,jras
 
 ! outputs
@@ -7476,7 +7532,7 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
 #endif
 
   ! outputs - variables needed for solver (s_aw - sum ai*wi, s_awphi - sum ai*wi*phii)
-        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
+        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3,awtke3
         REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: awhl3, awqt3, awthv3
         REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(OUT) :: au, Mu
    ! output - buoyancy flux: sum_i a_i*w_i*(thv_i-<thv>) ... for TKE equation
@@ -7521,7 +7577,7 @@ SUBROUTINE EDMF(its,ite,kts,kte,dt,zlo3,zw3,pw3,rhoe3,nup,&
 
 
 ! constants get from resources
- real :: ENT0,pwmin,pwmax,AlphaW,AlphaQT,AlphaTH,EDfac
+ real :: ENT0,pwmin,pwmax,AlphaW,AlphaQT,AlphaTH,EDfac,mftot
  integer,intent(IN) :: ET
 
 real, dimension(its:ite) :: L0
@@ -7560,6 +7616,7 @@ real, dimension(its:ite) :: L0
       awqi3 =0.
       awu3  =0.
       awv3  =0.
+      awtke3=0.
       awhl3 =0. !
       awqt3 =0. !
       awthv3=0. !
@@ -7612,8 +7669,13 @@ pblh=max(pblh,pblhmin)
 wthv=wthl+mapl_epsilon*thv3(IH,kte)*wqt
 
 ! if surface buoyancy is positive then mass-flux, otherwise not
-  IF ( wthv > 0.0 ) then
+  IF ( (wthv > 0.0 .and. doclasp==0) .or. (any(mfsrcthl(IH,1:nup) > 0.0) .and. doclasp/=0)) then
 
+     if (doclasp/=0) then
+       nup2 = count(mfsrcthl(IH,1:nup)>0.0)
+     else
+       nup2 = nup
+     end if
 
  UPW=0.
  UPTHL=0.
@@ -7703,7 +7765,7 @@ D_flip  = 0.
   !   2 ... probability of entrainment is a function of dTHVdz
  
   ! get dz/L0  
-    do i=1,Nup
+    do i=1,Nup2
       do k=kts,kte
          ENTf(k,i)=(ZW(k)-ZW(k-1))/L0(IH)
       enddo
@@ -7727,15 +7789,15 @@ if(THE_SEED(2) == 0) THE_SEED(2) = -5
 
 
 
-call Poisson(1,Nup,kts,kte,ENTf,ENTi,the_seed)    
+call Poisson(1,Nup2,kts,kte,ENTf,ENTi,the_seed)    
  
 if (L0(IH) .gt. 0. ) then
 
    ! entrainent: Ent=Ent0/dz*P(dz/L0)             
-   do i=1,Nup   
+   do i=1,Nup2   
     do k=kts,kte
-!     ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1))
-     ENT(k,i)=ENTf(k,i)*Ent0/(ZW(k)-ZW(k-1)) ! test
+!     ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1)) ! stochastic
+     ENT(k,i)=ENTf(k,i)*Ent0/(ZW(k)-ZW(k-1))        ! fixed
    enddo
    enddo
 
@@ -7778,24 +7840,54 @@ end if
    sigmaQT=AlphaQT*max(qstar,0.)
    sigmaTH=AlphaTH*max(thstar,0.)
 
-   wmin=sigmaW*pwmin
-   wmax=sigmaW*pwmax
-      
-       ! define surface conditions   
-       DO I=1,NUP
-       
-        wlv=wmin+(wmax-wmin)/(real(NUP))*(real(i)-1.)
-        wtv=wmin+(wmax-wmin)/(real(NUP))*real(i)
-       
-        UPW(kts-1,I)=min(0.5*(wlv+wtv), 5.)  ! npa
+   if (doclasp/= 0) then
+     wmin=2.*sigmaW
+     wmax=2.*sigmaW
 
-        UPA(kts-1,I)=0.5*ERF(wtv/(sqrt(2.)*sigmaW))-0.5*ERF(wlv/(sqrt(2.)*sigmaW))
+     mftot = 0.  ! estimate total initial mass flux for non-CLASP approach
+     DO I=1,NUP
+        wlv=wmin+(wmax-wmin)/(real(NUP2))*(real(i)-1.)
+        wtv=wmin+(wmax-wmin)/(real(NUP2))*real(i)
+        mftot=0.5*(wlv+wtv)*(0.5*ERF(wtv/(sqrt(2.)*sigmaW))-0.5*ERF(wlv/(sqrt(2.)*sigmaW)))
+     END DO
+   else
+     wmin=sigmaW*pwmin
+     wmax=sigmaW*pwmax
+   end if    
+
+  if (any(MFW(IH,1:NUP2).lt.0.)) print *,'MFW < 0 !!!'
+  if (any(MFSRCQT(IH,1:NUP2).lt.0.)) print *,'MFSRCQT < 0 !!!'
+  if (any(MFSRCTHL(IH,1:NUP2).lt.0.)) print *,'MFSRCTHL < 0 !!!'
+  if (any(isnan(MFW(IH,1:NUP2)))) print *,'MFWSTAR UNDEF !!!'
+  if (any(isnan(MFSRCQT(IH,1:NUP2)))) print *,'MFSRCQT UNDEF !!!'
+  if (any(isnan(MFSRCTHL(IH,1:NUP2)))) print *,'MFSRCTHL UNDEF !!!'
+
+       ! define surface conditions   
+       DO I=1,NUP2
        
+        wlv=wmin+(wmax-wmin)/(real(NUP2))*(real(i)-1.)
+        wtv=wmin+(wmax-wmin)/(real(NUP2))*real(i)
+       
+
+!        UPW(kts-1,I)=0.5*(wlv+wtv) 
+        if (doclasp/=0) then
+          UPW(kts-1,I) = MFW(IH,I)  
+          UPA(kts-1,I)=MFAREA(IH,I) !0.5*(ERF(3.0/sqrt(2.))-ERF(1.0/sqrt(2.)))/real(NUP)  ! assume equal size for now       
+        else
+          UPW(kts-1,I)=min(0.5*(wlv+wtv), 5.)  ! npa
+          UPA(kts-1,I)=0.5*ERF(wtv/(sqrt(2.)*sigmaW))-0.5*ERF(wlv/(sqrt(2.)*sigmaW))
+        end if  
+
         UPU(kts-1,I)=U(kts)
         UPV(kts-1,I)=V(kts)
        
-        UPQT(kts-1,I)=QT(kts)+0.32*UPW(kts-1,I)*sigmaQT/sigmaW
-        UPTHV(kts-1,I)=THV(kts)+0.58*UPW(kts-1,I)*sigmaTH/sigmaW        
+        if (doclasp/=0) then   ! if CLASP, use tile-based perturbations
+          UPQT(kts-1,I)=QT(kts)+MFSRCQT(IH,I)
+          UPTHV(kts-1,I)=THV(kts)+MFSRCTHL(IH,I)
+        else
+          UPQT(kts-1,I)=QT(kts)+0.32*UPW(kts-1,I)*sigmaQT/sigmaW
+          UPTHV(kts-1,I)=THV(kts)+0.58*UPW(kts-1,I)*sigmaTH/sigmaW
+        end if
 
        ENDDO
          
@@ -7807,7 +7899,7 @@ end if
    QTsrfF=0.
    THVsrfF=0.
    
-   DO I=1,NUP
+   DO I=1,NUP2
      QTsrfF=QTsrfF+UPW(kts-1,I)*UPA(kts-1,I)*(UPQT(kts-1,I)-QT(kts))
      THVsrfF=THVsrfF+UPW(kts-1,I)*UPA(kts-1,I)*(UPTHV(kts-1,I)-THV(kts))   
    ENDDO
@@ -7829,7 +7921,7 @@ end if
      
       
          
-      DO I=1,NUP
+      DO I=1,NUP2
        ! compute condensation and THL,QL,QI     
         call condensation_edmfA(UPTHV(kts-1,i),UPQT(kts-1,I),P(kts-1), & 
         UPTHL(kts-1,I),UPQL(kts-1,i),UPQI(kts-1,i),ice_ramp)
@@ -7839,7 +7931,7 @@ end if
   ! integrate updrafts 
   !      
         
-         DO I=1,NUP  ! loop over updrafts  
+         DO I=1,NUP2  ! loop over updrafts  
          ! loop over vertical 
          vertint:   DO k=KTS,KTE       
 
@@ -7932,7 +8024,7 @@ end if
         thl_plume9(IH,k) = upthl(kte+kts-k-1,9) 
         thl_plume10(IH,k)= upthl(kte+kts-k-1,10)
 #endif
-         DO I=1,NUP ! first sum over all i-updrafts
+         DO I=1,NUP2 ! first sum over all i-updrafts
             IF ((UPQL(K,I)>0.) .OR. UPQI(K,I)>0.)  THEN
                moist_a(K)=moist_a(K)+UPA(K,I)
                moist_w(K)=moist_w(K)+UPA(K,I)*UPW(K,I)
@@ -8050,7 +8142,7 @@ end if
 
      s_awthv=0.
 
-    DO I=1,NUP
+    DO I=1,NUP2
      
           DO k=KTS-1,KTE
           s_aw(K)=s_aw(K)+UPA(K,I)*UPW(K,I)
@@ -8128,6 +8220,7 @@ end if
       awqi3(IH,K)=s_awqi(KTE+KTS-K-1)
       awu3(IH,K)=s_awu(KTE+KTS-K-1)
       awv3(IH,K)=s_awv(KTE+KTS-K-1)
+!      awtke3(IH,K)=s_awtke(KTE+KTS-K-1)
       ae3(IH,K)=(1.-dry_a(KTE+KTS-K-1)-moist_a(KTE+KTS-K-1))*EDfac
       awhl3(IH,K)=s_awhl(KTE+KTS-K-1)
       awqt3(IH,K)=s_awqt(KTE+KTS-K-1)

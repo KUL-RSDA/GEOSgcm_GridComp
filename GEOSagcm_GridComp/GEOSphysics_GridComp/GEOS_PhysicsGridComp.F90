@@ -1103,8 +1103,9 @@ contains
      VERIFY_(STATUS)
 
      call MAPL_AddConnectivity ( GC,                               &
-         SHORT_NAME  = (/'CT   ','CM   ','CQ   ',                  &
-                         'BSTAR','USTAR'              /),          &
+         SHORT_NAME  = (/'CT     ','CM     ','CQ     ',            &
+                         'BSTAR  ','USTAR  ','MFQTSRC','MFTHSRC',  &
+                         'MFW    ','MFAREA ' /),   &
          DST_ID      = TURBL,                                      &
          SRC_ID      = SURF,                                       &
                                                         RC=STATUS  )
@@ -1318,7 +1319,7 @@ contains
     end if
 
     call MAPL_AddConnectivity ( GC,                                &
-         SHORT_NAME  = (/'TS' /),                                  &
+         SHORT_NAME  = (/'TS   ','T2SRF','Q2SRF','TQSRF' /),                                  &
          DST_ID      = MOIST,                                      &
          SRC_ID      = SURF,                                       &
                                                         RC=STATUS  )
