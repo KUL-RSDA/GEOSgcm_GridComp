@@ -4455,6 +4455,9 @@ module GEOS_SurfaceGridCompMod
          print *,'tqsrf=',TQSRF
          T2SRF(I,J) = SUM( (THTILE-T2SRF(I,J))**2 ) / NT
          Q2SRF(I,J) = SUM( (QHTILE-Q2SRF(I,J))**2 ) / NT
+
+         print *,'TA = ',TA(I,J)
+         print *,'QA = ',QA(I,J)
 !        end do
       end do
     end do
@@ -4494,6 +4497,9 @@ module GEOS_SurfaceGridCompMod
 
          ! Number of tiles with positive bouyancy flux
          NPOSB = COUNT(BUOY_TILE .gt. 0.0)
+         if (NPOSB.ge.5) NPOSB = NPOSB-1 !CEILING(FLOAT(NPOSB)/2.)
+         if (NPOSB.ge.8) NPOSB = NPOSB-1
+
 !         print *,'NumUpI=',NumUpI
 !         print *,'NPOSB=',NPOSB
 
@@ -4517,7 +4523,8 @@ module GEOS_SurfaceGridCompMod
 !               imax = maxloc( BUOY_TILE ) ! tile index with current max buoyancy
 
                ! velocity scale at tile with max buoyancy
-               wstar=max(0.1,((MAPL_GRAV/TA(I,J))*BUOY_TILE(imax)*100.0)**(1./3.))
+!               wstar=max(0.1,((MAPL_GRAV/TA(I,J))*BUOY_TILE(imax)*500.0)**(1./3.))
+               wstar=max(1e-3,((MAPL_GRAV/300.)*BUOY_TILE(imax)*500.0)**(1./3.))
 
                sigmaW = AlphaW*wstar 
                wmin=sigmaW
@@ -4527,6 +4534,7 @@ module GEOS_SurfaceGridCompMod
 
                MFW(I,J,N)=min(0.5*(wlv+wtv), 5.)
                MFAREA(I,J,N)=(0.5*ERF(wtv/(sqrt(2.)*AlphaW*wstar))-0.5*ERF(wlv/(sqrt(2.)*AlphaW*wstar)))/NumUpI
+!               MFAREA(I,J,N) = 0.12/NumUp
 
                ! QT and TH source perturbations for updrafts
                MFQTSRC(I,J,N) = 0.32*(MFW(I,J,N)/sigmaW)*2.89*EVAP_TILE(imax)/wstar &
@@ -4534,6 +4542,9 @@ module GEOS_SurfaceGridCompMod
                MFTHSRC(I,J,N) = 0.58*(MFW(I,J,N)/sigmaW)*2.89*SH_TILE(imax)/wstar &
                                 + hetfac*(THTILE(imax)-THTILEAVG)
 
+               ! Limit magnitude of perturbation
+               MFQTSRC(I,J,N) = min(0.2*QA(I,J),max(-0.2*QA(I,J),MFQTSRC(I,J,N))) 
+               MFTHSRC(I,J,N) = min(2.0,max(-2.0,MFTHSRC(I,J,N))) 
 !               MFQTSRC(I,J,N) = max(0.,EVAP_TILE(imax)) / wstar
 !               MFTHSRC(I,J,N) = min(1.5,max(0.,SH_TILE(imax)) / wstar)
 
@@ -4557,7 +4568,8 @@ module GEOS_SurfaceGridCompMod
 !               imax = maxloc( BUOY_TILE ) ! tile index with current max buoyancy
 
                ! velocity scale at tile with max buoyancy
-               wstar=max(0.1,((MAPL_GRAV/TA(I,J))*BUOY_TILE(imax)*100.0)**(1./3.))
+!               wstar=max(0.1,((MAPL_GRAV/TA(I,J))*BUOY_TILE(imax)*500.0)**(1./3.))
+               wstar=max(1e-3,((MAPL_GRAV/300.)*BUOY_TILE(imax)*500.0)**(1./3.))
 !               print *,'  wstar=',wstar
 
                sigmaW = AlphaW*wstar 
@@ -4571,12 +4583,17 @@ module GEOS_SurfaceGridCompMod
                      wtv=wmin+(wmax-wmin)/(real(f1+1))*real(X)
 
                      MFW(I,J,cnt+X)=min(0.5*(wlv+wtv), 5.)
-                     MFAREA(I,J,cnt+X)=(0.5*ERF(wtv/(sqrt(2.)*AlphaW*wstar))-0.5*ERF(wlv/(sqrt(2.)*AlphaW*wstar))) !/NumUpI
+                     MFAREA(I,J,cnt+X)=(0.5*ERF(wtv/(sqrt(2.)*AlphaW*wstar))-0.5*ERF(wlv/(sqrt(2.)*AlphaW*wstar)))/NPOSB
+!                     MFAREA(I,J,cnt+X) = 0.12/NumUp
 
                      MFQTSRC(I,J,cnt+X) = 0.32*(MFW(I,J,cnt+X)/sigmaW)*2.89*EVAP_TILE(imax)/wstar &
                                    + hetfac*(QHTILE(imax)-QHTILEAVG)
                      MFTHSRC(I,J,cnt+X) = 0.58*(MFW(I,J,cnt+X)/sigmaW)*2.89*SH_TILE(imax)/wstar &
                                    + hetfac*(THTILE(imax)-THTILEAVG)
+
+                     ! Limit magnitude of perturbation
+                     MFQTSRC(I,J,cnt+X) = min(0.2*QA(I,J),max(-0.2*QA(I,J),MFQTSRC(I,J,cnt+X))) 
+                     MFTHSRC(I,J,cnt+X) = min(2.0,max(-2.0,MFTHSRC(I,J,cnt+X))) 
                   end do
 
 !                  MFQTSRC(I,J,cnt:cnt+f1) = max(0.,EVAP_TILE(imax)) / wstar + hetfac*(QHTILE(N)-QHTILEAVG)
@@ -4591,12 +4608,17 @@ module GEOS_SurfaceGridCompMod
                       wtv=wmin+(wmax-wmin)/(real(f1))*real(X)
 
                       MFW(I,J,cnt+X)=min(0.5*(wlv+wtv), 5.)
-                      MFAREA(I,J,cnt+X)=(0.5*ERF(wtv/(sqrt(2.)*AlphaW*wstar))-0.5*ERF(wlv/(sqrt(2.)*AlphaW*wstar))) !/NumUpI
+                      MFAREA(I,J,cnt+X)=(0.5*ERF(wtv/(sqrt(2.)*AlphaW*wstar))-0.5*ERF(wlv/(sqrt(2.)*AlphaW*wstar)))/NPOSB
+!                      MFAREA(I,J,cnt+X) = 0.12/NumUp
 
                       MFQTSRC(I,J,cnt+X) = 0.32*(MFW(I,J,cnt+X)/sigmaW)*2.89*EVAP_TILE(imax)/wstar &
                                     + hetfac*(QHTILE(imax)-QHTILEAVG)
                       MFTHSRC(I,J,cnt+X) = 0.58*(MFW(I,J,cnt+X)/sigmaW)*2.89*SH_TILE(imax)/wstar &
                                     + hetfac*(THTILE(imax)-THTILEAVG)
+
+                      ! Limit magnitude of perturbation
+                      MFQTSRC(I,J,cnt+X) = min(0.2*QA(I,J),max(-0.2*QA(I,J),MFQTSRC(I,J,cnt+X))) 
+                      MFTHSRC(I,J,cnt+X) = min(2.0,max(-2.0,MFTHSRC(I,J,cnt+X))) 
                   end do
 
 !                  MFQTSRC(I,J,cnt:cnt+f1-1) = max(0.,EVAP_TILE(imax)) / wstar + hetfac*(QHTILE(N)-QHTILEAVG)
@@ -4613,9 +4635,10 @@ module GEOS_SurfaceGridCompMod
       end do  ! JM loop
     end do  ! IM loop
 
-    print *,'MFQTSRC=',MFQTSRC
-    print *,'MFTHSRC=',MFTHSRC
-    print *,'MFW=',MFW
+    print *,'MFQTSRC=',MFQTSRC(:,:,1:NUMUPI)
+    print *,'MFTHSRC=',MFTHSRC(:,:,1:NUMUPI)
+    print *,'MFW=',MFW(:,:,1:NUMUPI)
+    print *,'MFAREA=',MFAREA(:,:,1:NUMUPI)
 
     deallocate(BUOY_TILE)
     deallocate(SH_TILE)

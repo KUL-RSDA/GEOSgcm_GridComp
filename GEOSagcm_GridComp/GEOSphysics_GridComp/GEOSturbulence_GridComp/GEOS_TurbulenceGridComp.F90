@@ -7669,10 +7669,10 @@ pblh=max(pblh,pblhmin)
 wthv=wthl+mapl_epsilon*thv3(IH,kte)*wqt
 
 ! if surface buoyancy is positive then mass-flux, otherwise not
-  IF ( (wthv > 0.0 .and. doclasp==0) .or. (any(mfsrcthl(IH,1:nup) > 0.0) .and. doclasp/=0)) then
+  IF ( (wthv > 0.0 .and. doclasp==0) .or. (any(mfsrcthl(IH,1:nup) >= -2.0) .and. doclasp/=0)) then
 
      if (doclasp/=0) then
-       nup2 = count(mfsrcthl(IH,1:nup)>0.0)
+       nup2 = count(mfsrcthl(IH,1:nup)>=-2.0)
      else
        nup2 = nup
      end if
@@ -7828,7 +7828,8 @@ end if
  !
  ! surface conditions
  !      
-   wstar=max(wstarmin,(mapl_grav/300.*wthv*pblh)**(1./3.))  ! convective velocity scale
+!   wstar=max(wstarmin,(mapl_grav/300.*wthv*pblh)**(1./3.))  ! convective velocity scale
+   wstar=max(wstarmin,(mapl_grav/300.*wthv*500.)**(1./3.))  ! convective velocity scale
    qstar=wqt/wstar
    thstar=wthv/wstar
 
@@ -7837,8 +7838,10 @@ end if
 !   sigmaTH=2.89*abs(thstar)
    
    sigmaW=AlphaW*wstar
-   sigmaQT=AlphaQT*max(qstar,0.)
-   sigmaTH=AlphaTH*max(thstar,0.)
+   sigmaQT=AlphaQT*qstar
+   sigmaTH=AlphaTH*thstar
+!   sigmaQT=AlphaQT*max(qstar,0.)
+!   sigmaTH=AlphaTH*max(thstar,0.)
 
    if (doclasp/= 0) then
      wmin=2.*sigmaW
@@ -7891,6 +7894,9 @@ end if
 
        ENDDO
          
+       print *,'MFAREA (turb): ',MFAREA(:,1:NUP2)
+       print *,'UPA sum: ',sum(UPA(kts-1,:))
+       print *,'UPAW sum: ',sum(UPA(kts-1,:)*UPW(kts-1,:))
    
    !
    ! for stability make sure that the surface mass-fluxes are not more than their values computed from the surface scheme
@@ -7905,19 +7911,18 @@ end if
    ENDDO
   
    
-   if (THVsrfF .gt. wthv) then
+   if (THVsrfF .gt. wthv .and. THVsrfF .gt. 0.1) then
    ! change surface THV so that the fluxes from the mass flux equal prescribed values
         UPTHV(kts-1,:)=(UPTHV(kts-1,:)-THV(kts))*wthv/THVsrfF+THV(kts)
- !        print *,'adjusting surface THV for a factor',wthv/THVsrfF
+         print *,'adjusting surface THV perturbation by a factor',wthv/THVsrfF
   endif     
       
    IF ( (QTsrfF .gt. wqt) .and. (wqt .gt. 0.) )  then
    ! change surface QT so that the fluxes from the mass flux equal prescribed values
    ! - we do not need to worry about the negative values as they should not exist -
-        UPQT(kts-1,:)=(UPQT(kts-1,:)-QT(kts))*wthv/QTsrfF+QT(kts)
-  !      print *,'adjusting surface QT for a factor',wthv/QTsrfF
-
-    ENDIF     
+        UPQT(kts-1,:)=(UPQT(kts-1,:)-QT(kts))*wqt/QTsrfF+QT(kts)
+        print *,'adjusting surface QT perturbation by a factor',wqt/QTsrfF
+   ENDIF     
      
       
          
@@ -7959,7 +7964,7 @@ end if
               END IF
 
               IF (Wn2>0.) THEN
-                 UPW(K,I)=sqrt(Wn2)   
+!                 UPW(K,I)=sqrt(Wn2)   
                  UPW(K,I)=min( sqrt(Wn2), 5. ) ! npa
                  UPTHV(K,I)=THVn
                  UPTHL(K,I)=THLn
