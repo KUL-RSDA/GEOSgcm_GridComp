@@ -8062,11 +8062,11 @@ end if
           if (edmf_implicit == 1) then
              stmp = mapl_cp*exfh(k)*UPTHL(K,i) + mapl_grav*zw(k) + mapl_alhl*UPQL(K,i) + UPQI(K,I)*mapl_alhs
           else
-!             stmp = exfh(k)*mapl_cp*UPTHL(K,i) + UPQI(K,I)*mapl_alhs + UPQL(K,i)*mapl_alhl + mapl_grav*zw(k) - exf(k)*mapl_cp*THLI(K) - QII(K)*mapl_alhs - QLI(K)*mapl_alhl - mapl_grav*zlo(K)
+             stmp = exfh(k)*mapl_cp*UPTHL(K,i) + UPQI(K,I)*mapl_alhs + UPQL(K,i)*mapl_alhl + mapl_grav*zw(k) - exf(k)*mapl_cp*THLI(K) - QII(K)*mapl_alhs - QLI(K)*mapl_alhl - mapl_grav*zlo(K)
 !             stmp = exfh(k)*mapl_cp*UPTHL(K,i) + UPQI(K,I)*mapl_alhs + UPQL(K,i)*mapl_alhl - exfh(k)*mapl_cp*THLI(K) - QII(K)*mapl_alhs - QLI(K)*mapl_alhl
-             stmp =   mapl_cp*exfh(k)*( UPTHL(K,i) - THLI(K) ) &
-                    + mapl_alhl*( UPQL(K,i) - QLI(K) ) &
-                    + mapl_alhs*( UPQI(K,I) - QII(K) ) 
+!             stmp =   mapl_cp*exfh(k)*( UPTHL(K,i) - THLI(K) ) &
+!                    + mapl_alhl*( UPQL(K,i) - QLI(K) ) &
+!                    + mapl_alhs*( UPQI(K,I) - QII(K) ) 
           end if
           ltm=exfh(k)*(UPTHL(K,i)-THLI(K)) !+mapl_grav*zw(k)/mapl_cp
           s_aws(k)=s_aws(K)+UPA(K,i)*UPW(K,i)*stmp
@@ -8244,8 +8244,8 @@ enddo
 
  THL=(T-get_alhl(T,ice_ramp)/mapl_cp*QC)/EXN
  wf=water_f(T,ice_ramp)
- QL=QC*ice_ramp
- QI=QC*(1.-ice_ramp) 
+ QL=QC*wf
+ QI=QC*(1.-wf) 
 
 end subroutine condensation_edmfA
 
