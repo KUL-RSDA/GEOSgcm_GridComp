@@ -1062,6 +1062,24 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'aerosol_boundary_layer_height',                         &
+       SHORT_NAME = 'ZPBLAERO',                                              &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'boundary_layer_height_from_refractivity_gradient',      &
+       SHORT_NAME = 'ZPBLRFRCT',                                             &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
        LONG_NAME  = 'turbulent_kinetic_energy',                              &
        SHORT_NAME = 'TKE',                                                   &
        UNITS      = 'm+2 s-2',                                               &
@@ -1832,6 +1850,12 @@ contains
      character(len=ESMF_MAXSTR)          :: IAm='Refresh'
      integer                             :: STATUS
 
+     character(len=ESMF_MAXSTR)          :: TYPE
+     character(len=ESMF_MAXSTR)          :: NAME
+     type (ESMF_Field)                   :: FIELD
+     type (ESMF_Array)                   :: ARRAY
+     type (ESMF_FieldBundle)             :: TR
+
      real, dimension(:,:,:), pointer     :: TH, U, V, OMEGA, Q, T, RI, DU, RADLW, RADLWC, LWCRT
      real, dimension(:,:  ), pointer     :: VARFLT
      real, dimension(:,:,:), pointer     :: KH, KM, QLLS, QILS, CLLS, QLCN, QICN, CLCN
@@ -1850,6 +1874,8 @@ contains
      real, dimension(:,:  ), pointer     :: ZPBLHTKE => null()
      real, dimension(:,:,:), pointer     :: TKE => null()
      real, dimension(:,:  ), pointer     :: ZPBLRI => null()
+     real, dimension(:,:  ), pointer     :: ZPBLAERO => null()
+     real, dimension(:,:  ), pointer     :: ZPBLRFRCT => null()
      real, dimension(:,:  ), pointer     :: ZPBLRI2 => null()
      real, dimension(:,:  ), pointer     :: ZPBLTHV => null()
      real, dimension(:,:  ), pointer     :: KPBL => null()
@@ -1865,6 +1891,8 @@ contains
      logical                             :: ALLOC_TCZPBL, CALC_TCZPBL
      logical                             :: ALLOC_ZPBL2, CALC_ZPBL2
      logical                             :: ALLOC_ZPBL10p, CALC_ZPBL10p
+     logical                             :: ALLOC_ZPBLAERO
+     logical                             :: ALLOC_ZPBLRFRCT
 
      real                                :: LOUIS, ALHFAC, ALMFAC
      real                                :: LAMBDAM, LAMBDAM2
@@ -1880,6 +1908,8 @@ contains
      integer                             :: I,J,L,LOCK_ON
      integer                             :: KPBLMIN,PBLHT_OPTION
 
+     real                                :: a1,a2
+     real,               dimension(IM,JM,LM) :: dum3d,tmp3d,WVP
      real,               dimension(LM+1) :: temparray, htke
      real,               dimension(IM,JM,LM  ) :: tcrib !TransCom bulk Ri
      real,               dimension(LM+1) :: thetav
@@ -1908,10 +1938,24 @@ contains
 
      real(kind=MAPL_R8), dimension(IM,JM,LM) :: AKX, BKX
 
+     real(kind=MAPL_R8), dimension(IM,JM,LM) :: AERTOT
+     real, dimension(:,:,:), pointer     :: S
+     integer :: NTR, K
+     real :: maxaero
+
+
 #ifdef _CUDA
      type(dim3) :: Grid, Block
      integer :: blocksize_x, blocksize_y
 #endif
+
+! Get tracer bundle for aerosol PBL calculation
+!-----------------------------------
+
+    call ESMF_StateGet(IMPORT, 'TR' ,    TR,     RC=STATUS); VERIFY_(STATUS)
+
+    call ESMF_FieldBundleGet(TR, fieldCOUNT=NTR, RC=STATUS)
+    VERIFY_(STATUS)
 
 ! Get Sounding from the import state
 !-----------------------------------
@@ -2040,6 +2084,10 @@ contains
      call MAPL_GetPointer(EXPORT,    ZPBLRI2,  'ZPBLRI2',           RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,    ZPBLTHV,  'ZPBLTHV',           RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    ZPBLAERO, 'ZPBLAERO',          RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    ZPBLRFRCT, 'ZPBLRFRCT',        RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,   LWCRT,   'LWCRT', ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS)
@@ -2922,6 +2970,113 @@ contains
          end do 
       end if ! ZPBLTHV
 
+
+!=========================================================================
+!  ZPBL defined by minimum in vertical gradient of refractivity.
+!  As shown in Ao, et al, 2012: "Planetary boundary layer heights from 
+!  GPS radio occultation refractivity and humidity profiles", Climate and 
+!  Dynamics.  https://doi.org/10.1029/2012JD017598
+!=========================================================================
+    if (associated(ZPBLRFRCT)) then
+
+      a1 = 0.776    ! K/Pa
+      a2 = 3.73e3   ! K2/Pa
+
+      WVP = Q * PLO / (Q*(1.-0.622)+0.622)  ! water vapor partial pressure
+
+      ! Pressure gradient term
+      dum3d(:,:,2:LM-1) = (PLO(:,:,1:LM-2)-PLO(:,:,3:LM)) / (Z(:,:,1:LM-2)-Z(:,:,3:LM))
+      dum3d(:,:,1) = (PLO(:,:,1)-PLO(:,:,2)) / (Z(:,:,1)-Z(:,:,2))
+      dum3d(:,:,LM) = (PLO(:,:,LM-1)-PLO(:,:,LM)) / (Z(:,:,LM-1)-Z(:,:,LM))
+      tmp3d = a1 * dum3d / T
+
+      ! Add Temperature gradient term
+      dum3d(:,:,2:LM-1) = (T(:,:,1:LM-2)-T(:,:,3:LM)) / (Z(:,:,1:LM-2)-Z(:,:,3:LM))
+      dum3d(:,:,1) = (T(:,:,1)-T(:,:,2)) / (Z(:,:,1)-Z(:,:,2))
+      dum3d(:,:,LM) = (T(:,:,LM-1)-T(:,:,LM)) / (Z(:,:,LM-1)-Z(:,:,LM))
+      tmp3d = tmp3d - (a1*plo/T**2 + 2.*a2*WVP/T**3)*dum3d
+
+      ! Add vapor pressure gradient term
+      dum3d(:,:,2:LM-1) = (WVP(:,:,1:LM-2)-WVP(:,:,3:LM)) / (Z(:,:,1:LM-2)-Z(:,:,3:LM))
+      dum3d(:,:,1) = (WVP(:,:,1)-WVP(:,:,2)) / (Z(:,:,1)-Z(:,:,2))
+      dum3d(:,:,LM) = (WVP(:,:,LM-1)-WVP(:,:,LM)) / (Z(:,:,LM-1)-Z(:,:,LM))
+      tmp3d = tmp3d + (a2/T**2)*dum3d
+
+      ! ZPBL is height of minimum in refractivity (tmp3d)
+      do I = 1,IM
+        do J = 1,JM
+          K = MINLOC(tmp3d(I,J,:),DIM=1,BACK=.TRUE.)   ! return last index, if multiple
+          ZPBLRFRCT(I,J) = Z(I,J,K)
+        end do
+      end do
+
+    end if  ! ZPBLRFRCT
+
+
+!=========================================================================
+!  PBL depth based on total aerosol profile
+!=========================================================================
+    if (associated(ZPBLAERO)) then
+
+      ZPBLAERO = MAPL_UNDEF  ! initialize with undef
+
+      ! Loop over tracers to gather aerosol fields
+      aertot = 0.
+      do K=1,NTR
+
+        ! Get the Kth Field and its name from tracer bundle
+         call ESMF_FieldBundleGet(TR, K, FIELD, RC=STATUS)
+         VERIFY_(STATUS)
+
+         call ESMF_FieldGet(FIELD, name=NAME, RC=STATUS)
+         VERIFY_(STATUS)
+
+         call ESMFL_BundleGetPointerToData(TR, NAME, S, RC=STATUS)
+         VERIFY_(STATUS)
+
+        ! Add aerosols to total
+         I= index(NAME, '::')
+         if (I> 0) then
+            NAME = trim(NAME(I+2:))
+         end if
+         if (NAME(1:3)=='du0' .or. NAME(1:3)=='ss0' .or. NAME(1:3)=='BCp' .or. NAME(1:3)=='OCp' .or. &
+             NAME(1:3)=='SO4' .or. NAME(1:3)=='NO3' .or. NAME(1:3)=='NH3' .or. NAME(1:3)=='NH4' ) then
+            aertot = aertot + S
+         end if
+
+       end do ! K tracer loop
+
+       do I = 1,IM
+         do J = 1,JM
+
+           ! Find index for 3km limit
+           L = LM
+           do while (Z(I,J,L).lt.3000.)
+             L = L-1
+           end do
+           maxaero = maxval(aertot(I,J,L:LM))
+           print *,'MAXAERO = ',maxaero
+
+           ! if sufficient aerosol, scan up from maximum and find level with 0.85*max
+           if (maxaero.gt.6e-9) then
+
+             L = L-1+maxloc( aertot(I,J,L:LM), DIM=1 ) ! index of maximum
+             do while (aertot(I,J,L).gt.0.85*maxaero .and. Z(I,J,L).lt.10000.)
+                L = L-1
+             end do
+             ! if level is above 10km, leave undefined. interpolate to height of 0.85*maxaero.
+             if (Z(I,J,L).lt.10000.) then   
+                ZPBLAERO(I,J) = Z(I,J,L) + (0.85*maxaero-aertot(I,J,L))*(aertot(I,J,L)-aertot(I,J,L+1))/(Z(I,J,L)-Z(I,J,L+1)) 
+             end if
+
+           end if ! maxaero threshold
+
+         end do ! JM
+       end do   ! IM
+   
+     end if   ! if assoc(zpblaero)
+
+
       SELECT CASE(PBLHT_OPTION)
 
       CASE( 1 )
@@ -3100,6 +3255,8 @@ contains
       if(ALLOC_TCZPBL) deallocate(TCZPBL)
       if(ALLOC_ZPBL2) deallocate(ZPBL2)
       if(ALLOC_ZPBL10p) deallocate(ZPBL10p)
+!      if(ALLOC_ZPBLAERO) deallocate(ZPBLAERO)
+!      if(ALLOC_ZPBLRFRCT) deallocate(ZPBLRFRCT)
 
       RETURN_(ESMF_SUCCESS)
      end subroutine REFRESH
