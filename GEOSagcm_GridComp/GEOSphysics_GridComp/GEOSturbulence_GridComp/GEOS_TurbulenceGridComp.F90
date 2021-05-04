@@ -3055,7 +3055,6 @@ contains
              L = L-1
            end do
            maxaero = maxval(aertot(I,J,L:LM))
-           print *,'MAXAERO = ',maxaero
 
            ! if sufficient aerosol, scan up from maximum and find level with 0.85*max
            if (maxaero.gt.6e-9) then
