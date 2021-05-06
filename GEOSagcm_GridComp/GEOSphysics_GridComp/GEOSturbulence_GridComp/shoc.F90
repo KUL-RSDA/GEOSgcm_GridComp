@@ -929,14 +929,14 @@ contains
               wrk3 = tke(i,j,k) /(0.01 * brunt2(i,j,k))
 !              wrk1 = 1.0 / (tscale*vonk*zl(i,j,k))
 !              wrk2 = 1.0 / (tscale*l_inf(i,j))
-              smixt1(i,j,k) = wrk1
-              smixt2(i,j,k) = wrk2
-              smixt3(i,j,k) = wrk3
+              smixt1(i,j,k) = sqrt(wrk1)*9.4
+              smixt2(i,j,k) = sqrt(wrk2)*9.4
+              smixt3(i,j,k) = sqrt(wrk3)*9.4
 !              smixt3(i,j,k) = sqrt(brunt2(i,j,k)) / (0.7*tkes)
               wrk1 = 1.0 / (1./wrk1 + 1./wrk2 + 1./wrk3)
-              smixt(i,j,k) = min(max_eddy_length_scale, 2.8284*sqrt(wrk1)/0.3)
-!              smixt(i,j,k) = min(max_eddy_length_scale,        sqrt(wrk1)/0.3)
-
+              smixt(i,j,k) = min(max_eddy_length_scale, 9.4*sqrt(wrk1))
+!              if (zl(i,j,k).gt.2200.) smixt(i,j,k) = 10.
+!              smixt(i,j,k) = min(max_eddy_length_scale,  3.3*sqrt(wrk1))
            endif
            
            if (USE_SUS12LEN) then
@@ -1050,7 +1050,7 @@ endif
 !!! npa                
               if (conv_var > 0) then ! If convective vertical velocity scale > 0
                  
-                depth = min((zl(i,j,ku)-zl(i,j,kl)) + adzi(i,j,kl), 1000.)
+                depth = min((zl(i,j,ku)-zl(i,j,kl)) + adzi(i,j,kl), 400.)
                       
                      
                 do kk=kl,ku
@@ -1060,12 +1060,12 @@ endif
 !                  wrk = wrk * wrk + 0.01*brunt2(i,j,kk)/tke(i,j,kk)
 ! JDC Modify (based on Eq 13 in BK13)
                   wrk = conv_var/(depth*depth*sqrt(tke(i,j,kk)))
-                  smixt_incld(i,j,kk) = 1./wrk
                   wrk = wrk + 0.01*brunt2(i,j,kk)/tke(i,j,kk)
+                  smixt_incld(i,j,kk) = 3.3/sqrt(wrk)
                   
 ! npa modify, weight in-cloud length scale by local cloud fraction
                   if (DO_CLDLEN/=0) then
-                    smixt(i,j,kk) = (1.-cld_sgs(i,j,kk))*smixt(i,j,kk) + cld_sgs(i,j,kk)*3.3*sqrt(1.0/wrk)
+                    smixt(i,j,kk) = (1.-cld_sgs(i,j,kk))*smixt(i,j,kk) + cld_sgs(i,j,kk)*smixt_incld(i,j,kk)
                     smixt(i,j,kk) = min(max_eddy_length_scale, smixt(i,j,kk))
                   end if
 
