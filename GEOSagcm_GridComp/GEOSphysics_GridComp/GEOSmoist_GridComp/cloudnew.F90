@@ -404,6 +404,8 @@ contains
          hl2u_dev         , &
          qt2u_dev         , &
          hlqtu_dev        , &    
+         wqtfac_dev       , &
+         whlfac_dev       , &
          wqt_dev          , &
          whl_dev          , &
          qt2_dev          , &
@@ -412,6 +414,7 @@ contains
          w2_dev           , &
          w3_dev           , &
          qt3_dev          , &
+         hl3_dev          , &
          TKE_dev          , &
          DTS_dev          , &
          RMFDTR_dev       , &
@@ -492,10 +495,10 @@ contains
          VFALLWAT_AN_dev,VFALLWAT_LS_dev,   &
          VFALLSN_AN_dev,VFALLSN_LS_dev,VFALLSN_CN_dev,VFALLSN_SC_dev, &
          VFALLRN_AN_dev,VFALLRN_LS_dev,VFALLRN_CN_dev,VFALLRN_SC_dev,  &
-         PDF_A_dev, PDF_SIGW_dev, PDF_W1_dev, PDF_W2_dev, & 
+         PDF_A_dev, PDF_SIGW1_dev, PDF_SIGW2_dev, PDF_W1_dev, PDF_W2_dev, & 
          PDF_SIGTH1_dev, PDF_SIGTH2_dev, PDF_TH1_dev, PDF_TH2_dev, &
          PDF_SIGQT1_dev, PDF_SIGQT2_dev, PDF_QT1_dev, PDF_QT2_dev, &
-         PDF_RQTTH_dev, WTHV2_dev, wql_dev, SKEW_QT_dev, &
+         PDF_RQTTH_dev, PDF_RWTH_dev, PDF_RWQT_dev, WTHV2_dev, wql_dev, SKEW_QT_dev, &
          TEMPOR_dev, DOSHLW, &
          NACTL_dev,    &
          NACTI_dev,    &
@@ -532,6 +535,8 @@ contains
       real, intent(in   ), dimension(IRUN,  LM) :: hl2u_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: qt2u_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: hlqtu_dev !
+      real, intent(in   ), dimension(IRUN,  LM) :: wqtfac_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: whlfac_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: wqt_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: whl_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: qt2_dev  !
@@ -540,6 +545,7 @@ contains
       real, intent(in   ), dimension(IRUN,  LM) :: w2_dev   !
       real, intent(in   ), dimension(IRUN,  LM) :: w3_dev   !
       real, intent(in   ), dimension(IRUN,  LM) :: qt3_dev  !
+      real, intent(in   ), dimension(IRUN,  LM) :: hl3_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: tke_dev  !
       real, intent(in   ), dimension(IRUN     ) :: DTS_dev     ! DTS
       real, intent(in   ), dimension(IRUN,  LM) :: RMFDTR_dev  ! CNV_MFD
@@ -646,7 +652,8 @@ contains
       real, intent(  out), dimension(IRUN,  LM) :: VFALLRN_CN_dev ! VFALLRN_CN
       real, intent(  out), dimension(IRUN,  LM) :: VFALLRN_SC_dev ! VFALLRN_SC
       real, intent(inout), dimension(IRUN,  LM) :: PDF_A_dev
-      real, intent(  out), dimension(IRUN,  LM) :: PDF_SIGW_dev
+      real, intent(  out), dimension(IRUN,  LM) :: PDF_SIGW1_dev
+      real, intent(  out), dimension(IRUN,  LM) :: PDF_SIGW2_dev
       real, intent(  out), dimension(IRUN,  LM) :: PDF_W1_dev
       real, intent(  out), dimension(IRUN,  LM) :: PDF_W2_dev
       real, intent(  out), dimension(IRUN,  LM) :: PDF_SIGTH1_dev
@@ -658,6 +665,8 @@ contains
       real, intent(  out), dimension(IRUN,  LM) :: PDF_QT1_dev
       real, intent(  out), dimension(IRUN,  LM) :: PDF_QT2_dev
       real, intent(  out), dimension(IRUN,  LM) :: PDF_RQTTH_dev
+      real, intent(  out), dimension(IRUN,  LM) :: PDF_RWTH_dev
+      real, intent(  out), dimension(IRUN,  LM) :: PDF_RWQT_dev
       real, intent(  out), dimension(IRUN,  LM) :: WTHV2_dev
       real, intent(  out), dimension(IRUN,  LM) :: wql_dev
       real, intent(inout), dimension(IRUN,  LM) :: SKEW_QT_dev
@@ -1115,15 +1124,19 @@ contains
                   hlqtu_dev(I,K),  &
                   whl_dev(I,K),        &
                   wqt_dev(I,K),        &
+                  wqtfac_dev(I,K),     &
+                  whlfac_dev(I,K),     &
                   hl2_dev(I,K),        &
                   qt2_dev(I,K),        &
                   hlqt_dev(I,K),       & 
                   w3_dev(I,K),         &
                   w2_dev(I,K),         &
                   qt3_dev(I,K),        &
+                  hl3_dev(I,K),        &
                   mf_frc_dev(I,K),     &
                   PDF_A_dev(I,K),      &  ! can remove these after development
-                  PDF_SIGW_dev(I,K),   &
+                  PDF_SIGW1_dev(I,K),  &
+                  PDF_SIGW2_dev(I,K),  &
                   PDF_W1_dev(I,K),     &
                   PDF_W2_dev(I,K),     &
                   PDF_SIGTH1_dev(I,K), &
@@ -1135,6 +1148,8 @@ contains
                   PDF_QT1_dev(I,K),    &
                   PDF_QT2_dev(I,K),    &
                   PDF_RQTTH_dev(I,K),  &
+                  PDF_RWTH_dev(I,K),   &
+                  PDF_RWQT_dev(I,K),   &
                   WTHV2_dev(I,K),      &
                   wql_dev(I,K),        &
                   SKEW_QT_dev(I,K),    &
@@ -2107,15 +2122,19 @@ contains
          HLQTU       , &
          WHL         , &
          WQT         , &
+         wqtfac      , &
+         whlfac      , &
          HL2         , &
          QT2         , &
          HLQT        , & 
          W3          , &
          W2          , &
          MFQT3       , &
+         MFHL3       , &
          MF_FRC      , &
          PDF_A,      &  ! can remove these after development
-         PDF_SIGW,   &
+         PDF_SIGW1,  &
+         PDF_SIGW2,  &
          PDF_W1,     &
          PDF_W2,     &
          PDF_SIGHL1, &
@@ -2127,6 +2146,8 @@ contains
          PDF_QT1,    &
          PDF_QT2,    &
          PDF_RHLQT,  &
+         PDF_RWHL,   &
+         PDF_RWQT,   &
          WTHV2,      &
          WQL,        &
          SKEW_QT,    &
@@ -2140,12 +2161,12 @@ contains
       real, intent(inout) :: TE,QV,QCl,QCi,CF,QAl,QAi,AF,SKEW_QT,PDF_A
       real, intent(in)    :: NL,NI,CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND
 !      real, intent(in)    :: HL,WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
-      real, intent(in)    :: WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
+      real, intent(in)    :: WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3,MFHL3,wqtfac,whlfac
       real, intent(in)    :: AU, HLE, QTE, HL2U, QT2U, HLQTU
-      real, intent(out)   :: PDF_SIGW, PDF_W1, PDF_W2, &
+      real, intent(out)   :: PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, &
                              PDF_SIGHL1, PDF_SIGHL2, PDF_HL1, PDF_HL2, &
                              PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
-                             PDF_RHLQT
+                             PDF_RHLQT,  PDF_RWHL, PDF_RWQT
       real, intent(out)   :: WTHV2, WQL
       real, intent(out)   :: A_mynn, B_mynn, qsat_mynn
 
@@ -2176,7 +2197,7 @@ contains
       QA = QAl + QAi
       QT  =  QC  + QA + QV  !Total water after microphysics
       tmpARR = 0.0
-      nmax =  20
+      nmax =  10
       QAx = 0.0
 
       if ( AF < 1.0 )  tmpARR = 1./(1.-AF)
@@ -2247,7 +2268,7 @@ contains
 !                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:) 
            QT = QVn+QCn
 
-           call partition_dblgss(DT,           &
+           call partition_dblgss(DT/nmax,           &
                                  TEn,          &
                                  QVn,          &
                                  QCn,          &
@@ -2260,16 +2281,20 @@ contains
                                  HL,          &
                                  WHL,         &
                                  WQT,         &
+                                 wqtfac,      &
+                                 whlfac,      &
                                  HL2,         &
                                  QT2,         &
                                  HLQT,        & 
                                  W3,           &
                                  W2,           &
                                  MFQT3,        &
+                                 MFHL3,        &
                                  MF_FRC,       &
                                  SKEW_QT,      &
                                  PDF_A,        &
-                                 PDF_SIGW,     &
+                                 PDF_SIGW1,    &
+                                 PDF_SIGW2,    &
                                  PDF_W1,       &
                                  PDF_W2,       &
                                  PDF_SIGHL1,   &
@@ -2281,12 +2306,13 @@ contains
                                  PDF_QT1,      &
                                  PDF_QT2,      &
                                  PDF_RHLQT,    &
+                                 PDF_RWHL,     &
+                                 PDF_RWQT,     &
                                  WTHV2,        &
                                  WQL,          &
                                  CFn)
 
            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
-
 
 ! TEMP:  overwrite ADG with uniform PDF
 !           sigmaqt1  = ALPHA*QSn
@@ -2409,7 +2435,7 @@ contains
          TEn = TEp + (1.0-fQi)*(MAPL_ALHL/MAPL_CP)*( (QCn - QCp)*(1.-AF) + (QAo-QAx)*AF ) &
                +      fQi* (MAPL_ALHS/MAPL_CP)*( (QCn - QCp)*(1.-AF) + (QAo-QAx)*AF )
 
-         if (abs(Ten - Tep) .lt. 0.00001) exit 
+!         if (abs(Ten - Tep) .lt. 0.00001) exit 
 !         if (abs(Ten-Tep)>2.0) print *,'Ten-Tep large, Ten=',Ten,'  Tep=',Tep,'  PL=',PL,'  n=',n,'  QCn=',QCn,'  QCp=',QCp,'  AF=',AF
 
          DQS  = DQSAT( TEn, PL, QSAT=QSn )
@@ -2539,7 +2565,6 @@ contains
      ! Diagnose cloud properties 
      if (sigma_s > 0.) then
         Q = A*(qt - qs)/sigma_s
-
         ac = 0.5*(1.0 +erf(Q/sqrt(2.)) )
         ql = sigma_s*( ac*Q + exp(-0.5*Q**2.)/sqrt(2.*MAPL_PI) )
      else
