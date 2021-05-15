@@ -5392,8 +5392,8 @@ ENDIF
       if (associated(TKE)) then         ! Reminder: TKE is on model edges
         if (DO_SHOC /= 0) then          !           TKESHOC is not.
           TKE(:,:,1:LM-1) = 0.5*(TKESHOC(:,:,1:LM-1)+TKESHOC(:,:,2:LM))
-          TKE(:,:,0) = 0.
-          TKE(:,:,LM) = 0.
+          TKE(:,:,0) = 1e-6
+          TKE(:,:,LM) = 1e-6
         else
           TKE = MAPL_UNDEF
           do L = 1,LM-1
@@ -5408,8 +5408,8 @@ ENDIF
           ! based on Eq. 7 from Bogenschutz and Krueger (2013).
           ! This is a placeholder to allow use of the double-gaussian
           ! PDF without SHOC, but should be tested and revised!!!
-          ISOTROPY(:,:,LM) = KH(:,:,LM-1) / (0.1*TKE(:,:,LM-1))
-          ISOTROPY(:,:,1) = KH(:,:,1) / (0.1*TKE(:,:,1))
+          ISOTROPY(:,:,LM) = KH(:,:,LM-1) / max(0.01,0.1*TKE(:,:,LM-1))
+          ISOTROPY(:,:,1) = KH(:,:,1) / max(0.01,0.1*TKE(:,:,1))
           do L = 2,LM-1
             ISOTROPY(:,:,L) = (KH(:,:,L)+KH(:,:,L-1)) / (0.1*(TKE(:,:,L)+TKE(:,:,L-1)))
           end do

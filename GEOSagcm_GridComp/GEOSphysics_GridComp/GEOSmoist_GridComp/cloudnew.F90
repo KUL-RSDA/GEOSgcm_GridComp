@@ -2223,6 +2223,10 @@ contains
       QCn = QCx
       DQS = DQSx
 
+      HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
+!                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:) 
+!           QT = QVn+QCn
+
       do n=1,nmax
 
          QVp = QVn
@@ -2264,9 +2268,6 @@ contains
 
            ! Update the liquid water static energy
            ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
-           HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
-!                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:) 
-           QT = QVn+QCn
 
            call partition_dblgss(DT/nmax,           &
                                  TEn,          &
@@ -2275,8 +2276,6 @@ contains
                                  0.0,          & ! assume OMEGA=0
                                  ZL,           &
                                  PL*100.,      &
-!                                 qpl,         &
-!                                 qpi,         &
                                  QT,           &
                                  HL,          &
                                  WHL,         &
@@ -2311,6 +2310,7 @@ contains
                                  WTHV2,        &
                                  WQL,          &
                                  CFn)
+
 
            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
 

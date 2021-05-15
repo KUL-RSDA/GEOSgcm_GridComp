@@ -927,12 +927,9 @@ contains
               wrk1 = (tscale*tkes*vonk*zl(i,j,k))
               wrk2 = (tscale*tkes*l_inf(i,j))
               wrk3 = tke(i,j,k) /(0.01 * brunt2(i,j,k))
-!              wrk1 = 1.0 / (tscale*vonk*zl(i,j,k))
-!              wrk2 = 1.0 / (tscale*l_inf(i,j))
               smixt1(i,j,k) = sqrt(wrk1)*9.4
               smixt2(i,j,k) = sqrt(wrk2)*9.4
               smixt3(i,j,k) = sqrt(wrk3)*9.4
-!              smixt3(i,j,k) = sqrt(brunt2(i,j,k)) / (0.7*tkes)
               wrk1 = 1.0 / (1./wrk1 + 1./wrk2 + 1./wrk3)
               smixt(i,j,k) = min(max_eddy_length_scale, 9.4*sqrt(wrk1))
 !              if (zl(i,j,k).gt.2200.) smixt(i,j,k) = 10.
