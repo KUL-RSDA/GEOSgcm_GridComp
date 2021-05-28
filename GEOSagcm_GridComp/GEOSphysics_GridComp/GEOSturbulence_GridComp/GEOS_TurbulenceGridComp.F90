@@ -3698,11 +3698,11 @@ contains
        call MAPL_GetResource (MAPL, SHC_THL2TUNE, trim(COMP_NAME)//"_SHC_THL2TUNE:", default=1.,         RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_QW2TUNE,  trim(COMP_NAME)//"_SHC_QW2TUNE:",  default=1.,         RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_QWTHL2TUNE, trim(COMP_NAME)//"_SHC_QWTHL2TUNE:", default=1.,     RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_DO_TRANS, trim(COMP_NAME)//"_SHC_DO_TRANS:", default=1,     RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_DO_CLDLEN, trim(COMP_NAME)//"_SHC_DO_CLDLEN:", default=1,     RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_USE_MF_PDF, trim(COMP_NAME)//"_SHC_USE_MF_PDF:", default=1,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_DO_TRANS, trim(COMP_NAME)//"_SHC_DO_TRANS:", default=0,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_DO_CLDLEN, trim(COMP_NAME)//"_SHC_DO_CLDLEN:", default=0,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_USE_MF_PDF, trim(COMP_NAME)//"_SHC_USE_MF_PDF:", default=0,     RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_USE_MF_BUOY, trim(COMP_NAME)//"_SHC_USE_MF_BUOY:", default=0,     RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_USE_SUS12LEN, trim(COMP_NAME)//"_SHC_USE_SUS12LEN:", default=0,     RC=STATUS)
+       call MAPL_GetResource (MAPL, SHC_USE_SUS12LEN, trim(COMP_NAME)//"_SHC_USE_SUS12LEN:", default=1,     RC=STATUS)
 !       call MAPL_GetResource (MAPL, PDFSHAPE,  'PDFSHAPE:',   DEFAULT=     1.0    )
 !       if (PDFSHAPE/=5) then
 !         call MAPL_GetResource (MAPL, SHC_BUOY_OPTION, trim(COMP_NAME)//"_SHC_BUOY_OPTION:", default=0,     RC=STATUS)
@@ -4127,7 +4127,7 @@ contains
        call MAPL_GetResource (MAPL, ETr, "EDMF_ET:", default=1.,     RC=STATUS)
        ET=nint(ETr)
  ! constant entrainment rate   
-      call MAPL_GetResource (MAPL, ENT0, "EDMF_ENT0:", default=0.3,     RC=STATUS)
+      call MAPL_GetResource (MAPL, ENT0, "EDMF_ENT0:", default=0.35,     RC=STATUS)
       ! L0 if ET==1
       call MAPL_GetResource (MAPL, L0, "EDMF_L0:", default=100.,     RC=STATUS)
       ! L0fac if ET==2
@@ -8260,8 +8260,8 @@ end do
          factor = 1.0
          DO k=KTS,KTE
             mf = SUM(RHOE(K)*UPA(K,:)*UPW(K,:))
-            if (mf .gt. 2.*dp(K)/(MAPL_GRAV*dt)) then
-               factor = min(factor,2.*dp(K)/(mf*MAPL_GRAV*dt) )
+            if (mf .gt. dp(K)/(MAPL_GRAV*dt)) then
+               factor = min(factor,dp(K)/(mf*MAPL_GRAV*dt) )
             end if
          ENDDO
          UPA = factor*UPA   
@@ -8594,7 +8594,8 @@ enddo
 T=EXN*THL+get_alhl(T,ice_ramp)/mapl_cp*QC
 QS=geos_qsat(T,P,pascals=.true.,ramp=ice_ramp)
 QC=max(QT-QS,0.)
-THV=(THL+get_alhl(T,ice_ramp)/mapl_cp*QC/EXN)*(1.+(mapl_epsilon)*(QT-QC)-QC)
+THV=(THL+get_alhl(T,ice_ramp)/mapl_cp*QC/EXN)*(1.+MAPL_VIREPS*(QT-QC)-QC)
+!THV=(THL+get_alhl(T,ice_ramp)/mapl_cp*QC/EXN)*(1.+(mapl_epsilon)*(QT-QC)-QC)
 wf=water_f(T,ice_ramp)
 
 end subroutine condensation_edmf
@@ -8626,7 +8627,8 @@ QC=0.
 T=EXN*THL
 
 do i=1,NITER
-   T=EXN*THV/(1.+mapl_epsilon*(QT-QC)-QC)
+   T=EXN*THV/(1.+MAPL_VIREPS*(QT-QC)-QC)
+!   T=EXN*THV/(1.+mapl_epsilon*(QT-QC)-QC)
    QS=geos_qsat(T,P,pascals=.true.,ramp=ice_ramp)
    QCOLD=QC
    QC=max(0.5*QC+0.5*(QT-QS),0.)

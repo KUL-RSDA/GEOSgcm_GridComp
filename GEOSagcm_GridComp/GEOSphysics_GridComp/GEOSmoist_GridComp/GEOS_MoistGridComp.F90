@@ -6566,7 +6566,7 @@ contains
       real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,hlqt_sec, au_full,wthv2tmp,wqtfacc,whlfacc
       real, dimension(IM,JM,0:LM) :: qtgrad!,wqtfac
       real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
-      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale
+      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale,usesgb
 
       real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU, CMNI
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
@@ -8225,11 +8225,12 @@ contains
       endif
 
 !      call MAPL_GetResource( STATE, QT2TSCALE, 'QT2TSCALE:',    DEFAULT= 2400.0, RC=STATUS )
-      call MAPL_GetResource( STATE, QT2SCALE, 'QT2SCALE:',    DEFAULT= 500.0, RC=STATUS )
-      call MAPL_GetResource( STATE, QT2TUNE,   'QT2TUNE:',    DEFAULT= 1.0, RC=STATUS )
-      call MAPL_GetResource( STATE, HL2TUNE,   'HL2TUNE:',    DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, QT2SCALE, 'QT2SCALE:',    DEFAULT= 2000.0, RC=STATUS )
+      call MAPL_GetResource( STATE, QT2TUNE,   'QT2TUNE:',    DEFAULT= 2.0, RC=STATUS )
+      call MAPL_GetResource( STATE, HL2TUNE,   'HL2TUNE:',    DEFAULT= 0.3, RC=STATUS )
       call MAPL_GetResource( STATE, HLQT2TUNE, 'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
       call MAPL_GetResource( STATE, RADBUOYFAC,'RADBUOYFAC:', DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, USESGB,    'USESGB:',     DEFAULT= 1.0, RC=STATUS )
 
 
       if( CNV_FRACTION_MAX > CNV_FRACTION_MIN ) then
@@ -9554,10 +9555,8 @@ contains
 
        !-------------------------------------------------------------------------
        ! This section only to diagnose buoyancy flux for SHOC TKE calculation
-
-!#define SGwthv
-#ifdef SGwthv
-       WTHV2 = 0.
+    if (useSGB/=0.) then
+       WTHV2tmp = 0.
        do i = 1,IM
          do j = 1,JM
            do k = 2,LM
@@ -9584,12 +9583,12 @@ contains
              end if
              alpha = 0.61*(Tl/PK(i,j,k))
              beta  = (1./PK(i,j,k))*(MAPL_ALHL/MAPL_CP) - 1.61*(Tl/PK(i,j,k))
-             WTHV2(i,j,k) = (0.5*(whl_sec(i,j,k-1)+whl_sec(i,j,k))/PK(i,j,k))*(1.+0.61*total_water(i,j,k)-beta*Bz*ac) &
+             WTHV2tmp(i,j,k) = (0.5*(whl_sec(i,j,k-1)+whl_sec(i,j,k))/PK(i,j,k))*(1.+0.61*total_water(i,j,k)-beta*Bz*ac) &
                              + 0.5*(wqt_sec(i,j,k-1)+wqt_sec(i,j,k))*(alpha+beta*Az*ac) ! for tke
            end do
          end do
        end do
-#endif
+    end if
        !-------------------------------------------------------------------------
 
 
@@ -9650,7 +9649,7 @@ contains
  !            qt2tscale = (500.*0.4*ZLO(:,:,k)/(0.4*ZLO(:,:,k)+500.)) / sqrt(tkeshoc(:,:,k))
 
  !            qtsec(:,:,k) = (QT2MEM(:,:,k) + DT_MOIST*0.5*(qt2_sec(:,:,kd)+qt2_sec(:,:,ku))-2.*DT_MOIST*edmf_wqt(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku))) / (1. + DT_MOIST/qt2tscale)
-             qtsec(:,:,k) = (QT2MEM(:,:,k) + DT_MOIST*0.5*(qt2_sec(:,:,kd)+qt2_sec(:,:,ku))-2.*DT_MOIST*edmf_wqt(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku))) / (1. + DT_MOIST*qt2tune*sqrt(tkeshoc(:,:,k))/(2.*qt2scale*0.4*ZLO(:,:,k)/(0.4*ZLO(:,:,k)+qt2scale)))
+             qtsec(:,:,k) = (QT2MEM(:,:,k) + DT_MOIST*0.5*(qt2_sec(:,:,kd)+qt2_sec(:,:,ku))-DT_MOIST*0.5*edmf_wqt(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku))) / (1. + DT_MOIST*qt2tune*sqrt(0.01+tkeshoc(:,:,k))/(qt2scale*0.4*ZLO(:,:,k)/(0.4*ZLO(:,:,k)+qt2scale)))
 
              QT2MEM(:,:,k) = qtsec(:,:,k)  ! qt2 on full levels
 !             print *,'k=',k,', qtsec=',qtsec(:,:,k),' qtgrad=',qtgrad(:,:,kd),' qt2_sec=',qt2_sec(:,:,kd)
@@ -9686,8 +9685,8 @@ contains
           hlsec(:,:,k) = max(min(hlsec(:,:,k),2.0),0.0025) 
 
           ! Ensure realizibility 
-          hlsec = max(hlsec,abs(whlsec*whlsec)/w2var)
-          qtsec = max(qtsec,abs(wqtsec*wqtsec)/w2var)
+!          hlsec = max(hlsec,whlsec*whlsec/max(w2var,0.1))
+!          qtsec = max(qtsec,wqtsec*wqtsec/max(w2var,0.1))
           hlqtsec(:,:,k) = sign( min( abs(hlqtsec(:,:,k)), sqrt(hlsec(:,:,k)*qtsec(:,:,k)) ), hlqtsec(:,:,k) )
 
        end do  
@@ -11022,7 +11021,6 @@ contains
 !         print *,"QLDET_SC=",QLDET_SC
 !         print *,"CNV_DQLDT=",CNV_DQLDT
 
-         wthv2tmp = 0.
          call  PROGNO_CLOUD (                    &
               IM*JM, LM         , &
               DT_MOIST          , &
@@ -11138,17 +11136,16 @@ contains
               PDF_AX, PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, & 
               PDF_SIGTH1, PDF_SIGTH2, PDF_TH1, PDF_TH2, &
               PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
-#ifdef SGwthv
-              PDF_RQTTH, PDF_RWTH, PDF_RWQT, WTHV2tmp, wqlsec, SKEW_QTX, &
-#else
               PDF_RQTTH, PDF_RWTH, PDF_RWQT, WTHV2, wqlsec, SKEW_QTX, &
-#endif
               TEMPOR2D, &
               DOSHLW,   &
               NACTL,    &
               NACTI,    &
               CONVPAR_OPTION )
 
+       if (useSGB/=0.) then
+          WTHV2 = WTHV2tmp
+       end if
 
 !        print *,'RAD_CF after progno=',RAD_CF
 

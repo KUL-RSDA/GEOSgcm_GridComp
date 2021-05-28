@@ -932,15 +932,18 @@ contains
               smixt3(i,j,k) = sqrt(wrk3)*9.4
               wrk1 = 1.0 / (1./wrk1 + 1./wrk2 + 1./wrk3)
               smixt(i,j,k) = min(max_eddy_length_scale, 9.4*sqrt(wrk1))
-!              if (zl(i,j,k).gt.2200.) smixt(i,j,k) = 10.
+!              if (zl(i,j,k).gt.1500.) smixt(i,j,k) = 10.
 !              smixt(i,j,k) = min(max_eddy_length_scale,  3.3*sqrt(wrk1))
            endif
            
            if (USE_SUS12LEN) then
-             wrk2 = 1./(400.*tkes)
-             wrk3 = brunt2(i,j,k)/(0.7*tkes)
-             wrk1 = 1./(wrk2+wrk3)
-             smixt(i,j,k) = wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.))
+             wrk2 = 1.5/(400.*tkes)
+             wrk3 = 1.5*sqrt(brunt2(i,j,k))/(0.7*tkes)
+             wrk1 = 1.0/(wrk2+wrk3)
+             smixt(i,j,k) = 9.4*exp(-zl(i,j,k)/1500.)*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
+             smixt1(i,j,k) = 9.4/wrk2
+             smixt2(i,j,k) = 9.4/wrk3
+             smixt3(i,j,k) = 9.4*vonk*zl(i,j,k)
            end if
 
 !           if (zl(i,j,k)<1500.) then

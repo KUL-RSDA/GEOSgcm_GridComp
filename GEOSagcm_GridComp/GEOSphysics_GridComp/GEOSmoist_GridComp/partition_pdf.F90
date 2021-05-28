@@ -80,10 +80,10 @@ module partition_pdf
                               wqls,         &
                               cld_sgs)
 
-   real, intent(   in)  :: DT          ! timestep [s]
-   real, intent(inout)  :: tabs        ! absolute temperature [K]
+   real, intent(in   )  :: DT          ! timestep [s]
+   real, intent(in   )  :: tabs        ! absolute temperature [K]
    real, intent(in   )  :: qwv         ! specific humidity [kg kg-1]
-   real, intent(inout)  :: qc          ! liquid+ice condensate [kg kg-1]
+   real, intent(  out)  :: qc          ! liquid+ice condensate [kg kg-1]
    real, intent(   in)  :: omega       ! resolved pressure velocity
    real, intent(   in)  :: zl          ! layer heights [m]
    real, intent(   in)  :: pval        ! layer pressure [Pa]
@@ -147,7 +147,7 @@ module partition_pdf
    real, parameter :: tbgmax = 273.16
    real, parameter :: a_bg   = 1.0/(tbgmax-tbgmin)
    real, parameter :: thl_tol = 1.e-2
-   real, parameter :: w_thresh = 0.0
+   real, parameter :: w_thresh = 0.001
    real, parameter :: rt_tol = 1.e-4
    real, parameter :: w_tol_sqd = 4.0e-04   ! Min vlaue of second moment of w
    real, parameter :: onebrvcp = 1.0/(rv*cp)
@@ -163,7 +163,7 @@ module partition_pdf
    real, parameter :: epsv=MAPL_H2OMW/MAPL_AIRMW
 
    real, parameter :: use_aterm_memory = 1.
-
+   real, parameter :: tauskew = 3600. 
 
 ! define conserved variables
 gamaz = gocp * zl
@@ -185,7 +185,7 @@ w_first = - rog * omega * thv / pval
           if (w_sec > 0.0) then
             sqrtw2   = sqrt(w_sec)
           else
-            sqrtw2   = 0.0
+            sqrtw2   = w_thresh
           endif
           if (thlsec > 0.0) then
             sqrtthl  = sqrt(thlsec)
@@ -211,18 +211,19 @@ w_first = - rog * omega * thv / pval
 
           if (mffrc>=0.01) then                ! if active updraft this timestep
             if (aterm<0.5) then                ! if distribution is skewed (recent updrafts)
-              aterm = mffrc
-              skew_qw = qt3/sqrtqt**3
+              aterm = max(mffrc,aterm*max(1.-DT/tauskew,0.0))
+              skew_qw = max(qt3/sqrtqt**3,skew_qw*max(1.-DT/tauskew,0.0))
             else                               ! if distribution unskewed
               aterm = mffrc
               skew_qw = qt3/sqrtqt**3
             end if
           else                                 ! if no active updraft
-            if (aterm.lt.0.5) then               ! but there is residual skewness
-              aterm = aterm*max(1.-DT/1200.,0.0)
-              skew_qw = skew_qw*max(1.-DT/1200.,0.0)
+            if (aterm.lt.0.5 .and. aterm.gt.0.01) then  ! but there is residual skewness
+              aterm = aterm*max(1.-DT/tauskew,0.0)
+              skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
             else
-              skew_qw = skew_qw*max(1.-DT/1200.,0.0)
+              aterm = 0.5
+              skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
             end if
           end if
 
@@ -230,6 +231,7 @@ w_first = - rog * omega * thv / pval
 
            aterm = mffrc
            aterm = max(0.01,min(0.99,aterm))
+           if (mffrc.lt.0.01) aterm = 0.5
 
            skew_qw = qt3/sqrtqt**3
          end if
@@ -237,14 +239,15 @@ w_first = - rog * omega * thv / pval
 
 
 ! If variance of w is too small or no skewness then
-          IF (w_sec <= w_tol_sqd .or. aterm<=0.01 .or. aterm>0.499) THEN ! If variance of w is too small then
+!          IF (w_sec <= w_tol_sqd .or. mffrc.lt.0.01) THEN ! If variance of w is too small then
+          IF (w_sec <= w_tol_sqd) THEN ! If variance of w is too small then
             Skew_w = 0.
             w1_1   = 0.
             w1_2   = 0.
             w2_1   = w_sec
             w2_2   = w_sec
-            aterm  = 0.5
-            onema  = 0.5
+!            aterm  = 0.5
+!            onema  = 0.5
           ELSE
 
 ! Proportionality coefficients between widths of each vertical velocity
@@ -297,8 +300,8 @@ w_first = - rog * omega * thv / pval
 
           ELSE
 
-            corrtest1 = max(-1.0,min(1.0,whlntrgs/(sqrtw2*sqrtthl)))
-!            corrtest1 = max(-1.0,min(1.0,wthlsec/(sqrtw2*sqrtthl)))
+!            corrtest1 = max(-1.0,min(1.0,whlntrgs/(sqrtw2*sqrtthl)))
+            corrtest1 = max(-1.0,min(1.0,wthlsec/(sqrtw2*sqrtthl)))
 
             thl1_1 = -corrtest1 / w1_2       ! A.7
             thl1_2 = -corrtest1 / w1_1       ! A.8
@@ -309,14 +312,16 @@ w_first = - rog * omega * thv / pval
             wrk1   = thl1_1 * thl1_1
             wrk2   = thl1_2 * thl1_2
             wrk3   = 1.0 - aterm*wrk1 - onema*wrk2
-            wrk4   = -skew_thl - aterm*wrk1*thl1_1 - onema*wrk2*thl1_2
+            wrk4   = skew_thl - aterm*wrk1*thl1_1 - onema*wrk2*thl1_2
             wrk    = 3. * (thl1_2-thl1_1)
             if (wrk /= 0.0) then
               thl2_1 = thlsec * min(100.,max(0.,( 3.*thl1_2*wrk3-wrk4)/(aterm*wrk))) ! A.9
               thl2_2 = thlsec * min(100.,max(0.,(-3.*thl1_1*wrk3+wrk4)/(onema*wrk))) ! A.10
             else
-              thl2_1 = 0.0
-              thl2_2 = 0.0
+!              thl2_1 = 0.0
+!              thl2_2 = 0.0
+              thl2_1 = thlsec
+              thl2_2 = thlsec
             endif
 
             thl1_1 = thl1_1*sqrtthl + thl_first    ! convert to physical units
@@ -328,18 +333,18 @@ w_first = - rog * omega * thv / pval
           ENDIF
 
           ! implied correlation coefficient
-          PDF_RWTH = ( wthlsec/sqrtw2-aterm*(thl1_1-thl_first)*(w1_1-w_first) &
+          PDF_RWTH = max(-1.,min(1.,( wthlsec/sqrtw2-aterm*(thl1_1-thl_first)*(w1_1-w_first) &
                      -onema*(thl1_2-thl_first)*(w1_2-w_first) )               &
-                     / (aterm*sqrt(thl2_1*w2_1)+onema*sqrt(thl2_2*w2_2))
+                     / (aterm*sqrt(thl2_1*w2_1)+onema*sqrt(thl2_2*w2_2)) ))
 
 !  FIND PARAMETERS FOR TOTAL WATER MIXING RATIO
 
           ! inter-gaussian flux, limited to 2x total flux
           wqtntrgs = max(min(wqtfac,2.*abs(wqwsec)),-2.*abs(wqwsec))
 
-          IF (qwsec <= rt_tol*rt_tol .or. abs(w1_2-w1_1) <= w_thresh) THEN
+          IF (qwsec <= rt_tol*rt_tol .or. abs(w1_2-w1_1) <= w_thresh) THEN ! if no active updrafts
 
-            if (aterm .lt. 0.01 .or. aterm.gt.0.499 .or. Skew_qw.eq.0.) then
+            if (aterm .lt. 0.01 .or. aterm.gt.0.499 .or. Skew_qw.eq.0.) then ! if no residual skewness
               qw1_1     = total_water
               qw1_2     = total_water
               qw2_1     = qwsec
@@ -348,18 +353,22 @@ w_first = - rog * omega * thv / pval
               sqrtqw2_2 = sqrt(qw2_2)
             else
               wrk1 = skew_qw*sqrtqt**3
-              qw1_1 = total_water + (wrk1/(2.*aterm-aterm**3/(1.-aterm)**2))**(1./3.)
-              qw1_2 = (total_water -aterm*qw1_1)/(1.-aterm)
-              qw2_1 = qwsec - (aterm/(1-aterm))*(qw1_1-total_water)**2
-              qw2_2 = qw2_1
+              qw1_1     = total_water
+              qw1_2     = total_water
+              qw2_1     = qwsec
+              qw2_2     = qwsec
+!              qw1_1 = total_water + (wrk1/(2.*aterm-aterm**3/onema**2))**(1./3.)
+!              qw1_2 = (total_water -aterm*qw1_1)/onema
+!              qw2_1 = qwsec - (aterm/onema)*(qw1_1-total_water)**2
+!              qw2_2 = qw2_1
               sqrtqw2_1 = sqrt(qw2_1)
               sqrtqw2_2 = sqrt(qw2_2)
             end if
 
-          ELSE
+          ELSE  ! active updrafts
 
-            corrtest2 = max(-1.0,min(1.0,wqtntrgs/(sqrtw2*sqrtqt)))
-!            corrtest2 = max(-1.0,min(1.0,0.5*wqwsec/(sqrtw2*sqrtqt)))
+!            corrtest2 = max(-1.0,min(1.0,wqtntrgs/(sqrtw2*sqrtqt)))
+            corrtest2 = max(-1.0,min(1.0,0.5*wqwsec/(sqrtw2*sqrtqt)))
 
             qw1_1 = - corrtest2 / w1_2            ! A.7
             qw1_2 = - corrtest2 / w1_1            ! A.8
@@ -376,8 +385,10 @@ w_first = - rog * omega * thv / pval
               qw2_1 = qwsec * min(100.,max(0.,( 3.*qw1_2*wrk3-wrk4)/(aterm*wrk))) ! A.10
               qw2_2 = qwsec * min(100.,max(0.,(-3.*qw1_1*wrk3+wrk4)/(onema*wrk))) ! A.11
             else
-              qw2_1 = 0.0
-              qw2_2 = 0.0
+!              qw2_1 = 0.0
+!              qw2_2 = 0.0
+              qw2_1 = qwsec
+              qw2_2 = qwsec
             endif
 
             qw1_1 = qw1_1*sqrtqt + total_water
@@ -389,9 +400,9 @@ w_first = - rog * omega * thv / pval
           ENDIF   ! if qwsec small
 
           ! implied correlation coefficient
-          PDF_RWQT = ( wqwsec/sqrtw2-aterm*(qw1_1-total_water)*(w1_1-w_first) &
+          PDF_RWQT = max(-1.,min(1.,( wqwsec/sqrtw2-aterm*(qw1_1-total_water)*(w1_1-w_first) &
                      -onema*(qw1_2-total_water)*(w1_2-w_first) )              &
-                     / (aterm*sqrt(qw2_1*w2_1)+onema*sqrt(qw2_2*w2_2))
+                     / (aterm*sqrt(qw2_1*w2_1)+onema*sqrt(qw2_2*w2_2)) ))
 
 !  CONVERT FROM TILDA VARIABLES TO "REAL" VARIABLES
 
@@ -611,13 +622,15 @@ w_first = - rog * omega * thv / pval
          cld_sgs = diag_frac
 
          if (sqrtqt>0.0 .AND. sqrtw2>0.0) then
-!            rwqt = (1.-0.5)*wqwsec/(sqrtqt*sqrtw2)
-            rwqt = (wqwsec)/(sqrtqt*sqrtw2)
+            rwqt = (1.-0.5)*wqwsec/(sqrtqt*sqrtw2)
+!            rwqt = (wqwsec)/(sqrtqt*sqrtw2)
+!            rwqt = max(-1.,min(1.,pdf_rwqt))
          else
             rwqt = 0.0
          end if
          if (sqrtthl>0.0 .AND. sqrtw2>0.0) then
-            rwthl = (wthlsec)/(sqrtthl*sqrtw2)
+            rwthl = wthlsec/(sqrtthl*sqrtw2)
+!            rwthl = max(-1.,min(1.,pdf_rwth))
          else
             rwthl = 0.0
          end if
