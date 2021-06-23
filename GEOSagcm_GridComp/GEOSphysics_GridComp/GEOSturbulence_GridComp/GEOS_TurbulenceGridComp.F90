@@ -760,6 +760,54 @@ contains
      VERIFY_(STATUS)
 
     call MAPL_AddExportSpec ( gc,                                 &
+         SHORT_NAME = 'QT',                                       &
+         LONG_NAME  = 'total_water_after_turbulence',             &
+         UNITS      = 'kg kg-1',                                  &
+         DIMS       = MAPL_DimsHorzVert,                          &
+         VLOCATION  = MAPL_VLocationCenter,              RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec ( gc,                                 &
+         SHORT_NAME = 'SL',                                       &
+         LONG_NAME  = 'liquid_water_static_energy_after_turbulence', &
+         UNITS      = 'J',                                        &
+         DIMS       = MAPL_DimsHorzVert,                          &
+         VLOCATION  = MAPL_VLocationCenter,              RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec ( gc,                                 &
+         SHORT_NAME = 'QTFLXTRB',                                 &
+         LONG_NAME  = 'total_water_flux_from_turbulence',         &
+         UNITS      = 'kg kg-1 m-1 s-1',                          &
+         DIMS       = MAPL_DimsHorzVert,                          &
+         VLOCATION  = MAPL_VLocationEdge,              RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec ( gc,                                 &
+         SHORT_NAME = 'SLFLXTRB',                                 &
+         LONG_NAME  = 'liquid_water_static_energy_flux_from_turbulence', &
+         UNITS      = 'J m-1 s-1',                          &
+         DIMS       = MAPL_DimsHorzVert,                          &
+         VLOCATION  = MAPL_VLocationEdge,              RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec ( gc,                                 &
+         SHORT_NAME = 'UFLXTRB',                                  &
+         LONG_NAME  = 'turbulent_flux_of_zonal_wind_component',   &
+         UNITS      = 'm2 s-2',                                   &
+         DIMS       = MAPL_DimsHorzVert,                          &
+         VLOCATION  = MAPL_VLocationEdge,              RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec ( gc,                                 &
+         SHORT_NAME = 'VFLXTRB',                                  &
+         LONG_NAME  = 'turbulent_flux_of_meridional_wind_component', &
+         UNITS      = 'm2 s-2',                                   &
+         DIMS       = MAPL_DimsHorzVert,                          &
+         VLOCATION  = MAPL_VLocationEdge,              RC=STATUS  )
+     VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec ( gc,                                 &
          SHORT_NAME = 'KETRB',                                    &
          LONG_NAME  = 'vertically_integrated_kinetic_energy_tendency_across_turbulence',&
          UNITS      = 'W m-2',                                    &
@@ -1063,7 +1111,16 @@ contains
 
     call MAPL_AddExportSpec(GC,                                              &
        LONG_NAME  = 'aerosol_boundary_layer_height',                         &
-       SHORT_NAME = 'ZPBLAERO',                                              &
+       SHORT_NAME = 'ZPBLAEROGR',                                            &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'aerosol_boundary_layer_height',                         &
+       SHORT_NAME = 'ZPBLAEROMX',                                            &
        UNITS      = 'm',                                                     &
        DIMS       = MAPL_DimsHorzOnly,                                       &
        VLOCATION  = MAPL_VLocationNone,                                      &
@@ -1151,9 +1208,37 @@ contains
                                                                   RC=STATUS  )
     VERIFY_(STATUS)
 
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'edge_height_above_surface',                             &
+       UNITS      = 'm',                                                     &
+       SHORT_NAME = 'ZLES',                                                  &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'height_above_surface',                                  &
+       UNITS      = 'm',                                                     &
+       SHORT_NAME = 'ZLS',                                                   &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
 
 
 ! !INTERNAL STATE:
+
+    call MAPL_AddInternalSpec(GC,                                            &
+       LONG_NAME  = 'diffusivity_for_flux_diagnostics',                      &
+       SHORT_NAME = 'KHFLX',                                                   &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationEdge,                                    &
+       RESTART    = MAPL_RestartSkip,                            &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
 
     call MAPL_AddInternalSpec(GC,                                            &
        LONG_NAME  = 'matrix_diagonal_ahat_for_scalars',                      &
@@ -1587,10 +1672,12 @@ contains
 
 ! Local variables
 
+    real, dimension(:,:,:), pointer     :: KHFLX
     real, dimension(:,:,:), pointer     :: AKS, BKS, CKS, DKS
     real, dimension(:,:,:), pointer     :: AKQ, BKQ, CKQ, DKQ
     real, dimension(:,:,:), pointer     :: AKV, BKV, CKV, DKV, EKV, FKV
     real, dimension(:,:,:), pointer     :: PLE, ZLE, SINC
+    real, dimension(:,:,:), pointer     :: ZLS, ZLES
     real, dimension(:,:  ), pointer     :: CU, CT, CQ, ZPBL
     integer                             :: IM, JM, LM
     real                                :: DT
@@ -1666,6 +1753,8 @@ contains
 ! Get pointers from internal state
 !---------------------------------
 
+    call MAPL_GetPointer(INTERNAL, KHFLX, 'KHFLX',   RC=STATUS)
+    VERIFY_(STATUS)
     call MAPL_GetPointer(INTERNAL, AKS,   'AKS',     RC=STATUS)
     VERIFY_(STATUS)
     call MAPL_GetPointer(INTERNAL, BKS,   'BKS',     RC=STATUS)
@@ -1874,7 +1963,8 @@ contains
      real, dimension(:,:  ), pointer     :: ZPBLHTKE => null()
      real, dimension(:,:,:), pointer     :: TKE => null()
      real, dimension(:,:  ), pointer     :: ZPBLRI => null()
-     real, dimension(:,:  ), pointer     :: ZPBLAERO => null()
+     real, dimension(:,:  ), pointer     :: ZPBLAEROGR => null()
+     real, dimension(:,:  ), pointer     :: ZPBLAEROMX => null()
      real, dimension(:,:  ), pointer     :: ZPBLRFRCT => null()
      real, dimension(:,:  ), pointer     :: ZPBLRI2 => null()
      real, dimension(:,:  ), pointer     :: ZPBLTHV => null()
@@ -1887,12 +1977,9 @@ contains
      real, dimension(:,:,:), pointer     :: AKVODT, CKVODT
 
 
-     logical, dimension(IM,JM     )      :: CONVECT
      logical                             :: ALLOC_TCZPBL, CALC_TCZPBL
      logical                             :: ALLOC_ZPBL2, CALC_ZPBL2
      logical                             :: ALLOC_ZPBL10p, CALC_ZPBL10p
-     logical                             :: ALLOC_ZPBLAERO
-     logical                             :: ALLOC_ZPBLRFRCT
 
      real                                :: LOUIS, ALHFAC, ALMFAC
      real                                :: LAMBDAM, LAMBDAM2
@@ -1940,7 +2027,7 @@ contains
 
      real(kind=MAPL_R8), dimension(IM,JM,LM) :: AERTOT
      real, dimension(:,:,:), pointer     :: S
-     integer :: NTR, K
+     integer :: NTR, K, LTOP
      real :: maxaero
 
 
@@ -2085,9 +2172,11 @@ contains
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,    ZPBLTHV,  'ZPBLTHV',           RC=STATUS)
      VERIFY_(STATUS)
-     call MAPL_GetPointer(EXPORT,    ZPBLAERO, 'ZPBLAERO',          RC=STATUS)
+     call MAPL_GetPointer(EXPORT,  ZPBLAEROGR, 'ZPBLAEROGR',        RC=STATUS)
      VERIFY_(STATUS)
-     call MAPL_GetPointer(EXPORT,    ZPBLRFRCT, 'ZPBLRFRCT',        RC=STATUS)
+     call MAPL_GetPointer(EXPORT,  ZPBLAEROMX, 'ZPBLAEROMX',        RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  ZPBLRFRCT,  'ZPBLRFRCT',         RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,   LWCRT,   'LWCRT', ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS)
@@ -2143,6 +2232,11 @@ contains
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  CKVODT,  'CKVODT',               RC=STATUS)
      VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,     ZLS,     'ZLS',               RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    ZLES,    'ZLES',               RC=STATUS)
+     VERIFY_(STATUS)
+
 
 ! Initialize some arrays
 
@@ -2207,6 +2301,9 @@ contains
       QA  = CLCN + CLLS ! Currently not used in REFRESHKS
       Z   = 0.5*(ZLE(:,:,0:LM-1)+ZLE(:,:,1:LM))
       PLO = 0.5*(PLE(:,:,0:LM-1)+PLE(:,:,1:LM))
+
+      if (associated(ZLS))  ZLS = Z
+      if (associated(ZLES)) ZLES = ZLE
 
       TV  = T *( 1.0 + MAPL_VIREPS * Q - QL - QI ) 
       THV = TV*(TH/T)
@@ -3016,9 +3113,7 @@ contains
 !=========================================================================
 !  PBL depth based on total aerosol profile
 !=========================================================================
-    if (associated(ZPBLAERO)) then
-
-      ZPBLAERO = MAPL_UNDEF  ! initialize with undef
+    if (associated(ZPBLAEROMX) .or. associated(ZPBLAEROGR)) then
 
       ! Loop over tracers to gather aerosol fields
       aertot = 0.
@@ -3046,6 +3141,10 @@ contains
 
        end do ! K tracer loop
 
+       if (associated(ZPBLAEROMX)) ZPBLAEROMX = MAPL_UNDEF  ! initialize with undef
+
+       if (associated(ZPBLAEROGR)) ZPBLAEROGR = MAPL_UNDEF
+
        do I = 1,IM
          do J = 1,JM
 
@@ -3054,18 +3153,45 @@ contains
            do while (Z(I,J,L).lt.3000.)
              L = L-1
            end do
-           maxaero = maxval(aertot(I,J,L:LM))
 
-           ! if sufficient aerosol, scan up from maximum and find level with 0.85*max
+           ! Smooth aerosol before finding maximum
+           temparray = 0.
+           temparray(LM) = 0.25*aertot(I,J,LM-2)+0.25*aertot(I,J,LM-1)+0.5*aertot(I,J,LM)
+           temparray(L:LM-1) = 0.25*aertot(I,J,L-1:LM-2)+0.25*aertot(I,J,L+1:LM)+0.5*aertot(I,J,L:LM-1)
+           maxaero = maxval(temparray(L:LM-1))
+           
+           ! if sufficient aerosol
            if (maxaero.gt.6e-9) then
 
-             L = L-1+maxloc( aertot(I,J,L:LM), DIM=1 ) ! index of maximum
-             do while (aertot(I,J,L).gt.0.85*maxaero .and. Z(I,J,L).lt.10000.)
+             ! Now use temparray for aerosol vertical gradient
+             temparray(1:LM) = 0.
+             temparray(2:LM-2) = (aertot(I,J,1:LM-3)-aertot(I,J,3:LM-1))/(Z(I,J,1:LM-3)-Z(I,J,3:LM-1))
+             temparray(LM-1) = (aertot(I,J,LM-2)-aertot(I,J,LM-1))/(Z(I,J,LM-2)-Z(I,J,LM-1))
+             ! Smooth gradient twice
+             temparray(2:LM-1) = 0.25*temparray(1:LM-2)+0.25*temparray(3:LM)+0.5*temparray(2:LM-1)
+             temparray(LM) = 0.25*temparray(LM-2)+0.25*temparray(LM-1)+0.5*temparray(LM)
+             temparray(2:LM-1) = 0.25*temparray(1:LM-2)+0.25*temparray(3:LM)+0.5*temparray(2:LM-1)
+             temparray(LM) = 0.25*temparray(LM-2)+0.25*temparray(LM-1)+0.5*temparray(LM)
+
+
+             L = L-1 + maxloc( aertot(I,J,L:LM), DIM=1 ) ! index of maximum
+             
+             ! Scan up from maximum until aerosol begins increasing or z=10km
+             LTOP = L
+             do while (Z(I,J,LTOP-1).lt.1e4 .and. temparray(LTOP-1).lt.0.1*maxaero/1e3)
+               LTOP = LTOP-1
+             end do
+             K = max( LTOP, min( LM, LTOP + minloc(temparray(LTOP:L),DIM=1) ) )
+!             K = LTOP + minloc(temparray(LTOP:L),DIM=1)
+             ZPBLAEROGR(I,J) = Z(I,J,K)
+
+             ! Scan up from maximum and find level with 0.85*max
+             do while (aertot(I,J,L).gt.0.85*maxaero .and. Z(I,J,L).le.1e4)
                 L = L-1
              end do
-             ! if level is above 10km, leave undefined. interpolate to height of 0.85*maxaero.
-             if (Z(I,J,L).lt.10000.) then   
-                ZPBLAERO(I,J) = Z(I,J,L) + (0.85*maxaero-aertot(I,J,L))*(aertot(I,J,L)-aertot(I,J,L+1))/(Z(I,J,L)-Z(I,J,L+1)) 
+             ! if level is above 10km, leave undefined. otherwise interpolate to height of 0.85*maxaero.
+             if (Z(I,J,L).lt.1e4) then   
+                ZPBLAEROMX(I,J) = Z(I,J,L) + (0.85*maxaero-aertot(I,J,L))*(aertot(I,J,L)-aertot(I,J,L+1))/(Z(I,J,L)-Z(I,J,L+1)) 
              end if
 
            end if ! maxaero threshold
@@ -3128,6 +3254,8 @@ contains
       ! ---------------------------------------------------------
 
       KH(:,:,LM) = CT * (PLE(:,:,LM)/(MAPL_RGAS * TV(:,:,LM))) / Z(:,:,LM)
+
+      KHFLX = KH
 
       ! Water vapor can differ at the surface
       !--------------------------------------
@@ -3254,8 +3382,6 @@ contains
       if(ALLOC_TCZPBL) deallocate(TCZPBL)
       if(ALLOC_ZPBL2) deallocate(ZPBL2)
       if(ALLOC_ZPBL10p) deallocate(ZPBL10p)
-!      if(ALLOC_ZPBLAERO) deallocate(ZPBLAERO)
-!      if(ALLOC_ZPBLRFRCT) deallocate(ZPBLRFRCT)
 
       RETURN_(ESMF_SUCCESS)
      end subroutine REFRESH
@@ -3657,12 +3783,14 @@ end subroutine RUN1
       real, dimension(:,:  ), pointer     :: KETRB, KESRF, KETOP, KEINT
       real, dimension(:,:,:), pointer     :: DKS, DKV, DKQ, DKX, EKV, FKV
       real, dimension(:,:,:), pointer     :: DPDTTRB
+      real, dimension(:,:,:), pointer     :: QTFLXTRB, SLFLXTRB, KHFLX, UFLXTRB, VFLXTRB, QTX, SLX
 
       integer                             :: KM, K, L, I, J
       logical                             :: FRIENDLY
       logical                             :: WEIGHTED
       real, dimension(IM,JM,LM)           :: DP, SX
       real, dimension(IM,JM,LM-1)         :: DF
+      real, dimension(IM,JM,LM)           :: QT,SL,U,V,ZLO
       integer, allocatable                :: KK(:)
 ! AMM pointer to export of S that update sees
       real, dimension(:,:,:), pointer     :: SAFUPDATE
@@ -3690,6 +3818,13 @@ end subroutine RUN1
 
 ! Pressure-weighted dissipation heating rates
 !--------------------------------------------
+
+      call MAPL_GetPointer(EXPORT, QTX      , 'QT'       , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, SLX      , 'SL'       , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, QTFLXTRB , 'QTFLXTRB' , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, SLFLXTRB , 'SLFLXTRB' , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, UFLXTRB  , 'UFLXTRB'  , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, VFLXTRB  , 'VFLXTRB'  , RC=STATUS); VERIFY_(STATUS)
 
       call MAPL_GetPointer(EXPORT, KETRB ,  'KETRB' , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, KESRF ,  'KESRF' , RC=STATUS); VERIFY_(STATUS)
@@ -3757,6 +3892,9 @@ end subroutine RUN1
 
 ! Get the tendecy sensitivities computed in RUN1
 !-----------------------------------------------
+
+      call MAPL_GetPointer(INTERNAL, KHFLX, 'KHFLX', RC=STATUS)
+      VERIFY_(STATUS)
 
       call MAPL_GetPointer(INTERNAL, DKS,   'DKS',   RC=STATUS)
       VERIFY_(STATUS)
@@ -3826,6 +3964,8 @@ end subroutine RUN1
 
       DP = PLE(:,:,1:LM)-PLE(:,:,0:LM-1)
 
+      ZLO = 0.5*(ZLE(:,:,1:LM)+ZLE(:,:,0:LM-1))
+
 ! Diagnostics
       call MAPL_GetPointer(EXPORT, HGTLM5 ,  'HGTLM5' , RC=STATUS); VERIFY_(STATUS)
       if(associated(HGTLM5)) then
@@ -3847,6 +3987,11 @@ end subroutine RUN1
             L200=L-1
          endwhere
       enddo
+
+      if (associated(QTFLXTRB).or.associated(QTX)) QT = 0.0
+      if (associated(SLFLXTRB).or.associated(SLX)) SL = 0.0
+      if (associated(UFLXTRB))  U = 0.0
+      if (associated(VFLXTRB))  V = 0.0
 
 ! Section 1 of 2. SHVC parameterization (W. Chao, J. Atmos. Sci., May 2012, P.1547) 
 !  Defining the top and bottom levels of the heat and moisture redistribution layer
@@ -4199,12 +4344,60 @@ end subroutine RUN1
             end if
          end if
 
+       if( name=='Q' .or. name=='QLLS' .or. name=='QLCN') then 
+          if(associated(QTFLXTRB)) QT = QT + SX
+       endif
+
+       if( name=='S' ) then
+           if(associated(SLFLXTRB)) SL = SL + SX
+       end if
+
+       if( name=='QLLS' .or. name=='QLCN' ) then 
+          if(associated(SLFLXTRB)) SL = SL - MAPL_ALHL*SX
+       endif
+
+       if( name=='U' ) then
+           if(associated(UFLXTRB)) U = U + SX
+       end if
+
+       if( name=='V' ) then
+           if(associated(VFLXTRB)) V = V + SX
+       end if
+
       enddo TRACERS
 
 ! End loop over all quantities to be diffused
 !--------------------------------------------
 
       deallocate(KK)
+
+      if (associated(QTX)) QTX = QT
+      if (associated(SLX)) SLX = SL
+
+      if (associated(QTFLXTRB)) then
+         QTFLXTRB(:,:,1:LM-1) = (QT(:,:,1:LM-1)-QT(:,:,2:LM))/(ZLO(:,:,1:LM-1)-ZLO(:,:,2:LM))
+         QTFLXTRB(:,:,1:LM-1) = -1.*KHFLX(:,:,1:LM-1)*QTFLXTRB(:,:,1:LM-1)
+         QTFLXTRB(:,:,LM) = QTFLXTRB(:,:,LM-1)
+         QTFLXTRB(:,:,0) = 0.0
+      end if
+      if (associated(SLFLXTRB)) then
+         SLFLXTRB(:,:,1:LM-1) = (SL(:,:,1:LM-1)-SL(:,:,2:LM))/(ZLO(:,:,1:LM-1)-ZLO(:,:,2:LM))
+         SLFLXTRB(:,:,1:LM-1) = -1.*KHFLX(:,:,1:LM-1)*SLFLXTRB(:,:,1:LM-1)
+         SLFLXTRB(:,:,LM) = SLFLXTRB(:,:,LM-1)
+         SLFLXTRB(:,:,0) = 0.0
+      end if
+      if (associated(UFLXTRB)) then
+         UFLXTRB(:,:,1:LM-1) = (U(:,:,1:LM-1)-U(:,:,2:LM))/(ZLO(:,:,1:LM-1)-ZLO(:,:,2:LM))
+         UFLXTRB(:,:,1:LM-1) = -1.*KHFLX(:,:,1:LM-1)*UFLXTRB(:,:,1:LM-1)
+         UFLXTRB(:,:,LM) = UFLXTRB(:,:,LM-1)
+         UFLXTRB(:,:,0) = 0.0
+      end if
+      if (associated(VFLXTRB)) then
+         VFLXTRB(:,:,1:LM-1) = (V(:,:,1:LM-1)-V(:,:,2:LM))/(ZLO(:,:,1:LM-1)-ZLO(:,:,2:LM))
+         VFLXTRB(:,:,1:LM-1) = -1.*KHFLX(:,:,1:LM-1)*VFLXTRB(:,:,1:LM-1)
+         VFLXTRB(:,:,LM) = VFLXTRB(:,:,LM-1)
+         VFLXTRB(:,:,0) = 0.0
+      end if
 
       RETURN_(ESMF_SUCCESS)
     end subroutine UPDATE

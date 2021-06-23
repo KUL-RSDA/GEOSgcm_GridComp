@@ -1301,6 +1301,15 @@ contains
          RC=STATUS  )
     VERIFY_(STATUS)
 
+    call MAPL_AddExportSpec(GC,                               &
+         SHORT_NAME = 'CLDBASEHGT',                                &
+         LONG_NAME = 'Height_of_cloud_base',                       &
+         UNITS     = 'm',                                          &
+         DIMS      = MAPL_DimsHorzOnly,                            &
+         VLOCATION = MAPL_VLocationNone,                           &
+         RC=STATUS  )
+    VERIFY_(STATUS)
+
     call MAPL_AddExportSpec(GC,                                    &
          SHORT_NAME= 'SHLW_PRC3 ',                                   &
          LONG_NAME = 'shallow_convective_rain',           &
@@ -5227,7 +5236,7 @@ contains
                                          PREL_SC, PBUP_SC
       real, pointer, dimension(:,:  ) :: WLCL_SC, QTSRC_SC, THLSRC_SC, &
                                          THVLSRC_SC, TKEAVG_SC, CLDTOP_SC, CUSH
-      real, pointer, dimension(:,:  ) :: CNT_SC, CNB_SC
+      real, pointer, dimension(:,:  ) :: CNT_SC, CNB_SC, CLDBASEHGT
 
       real, pointer, dimension(:,:,:) :: CNV_DQLDT            , &
            CNV_MF0              , &
@@ -5670,6 +5679,7 @@ contains
       real,    dimension(IM,JM)       :: LS_PRC2,CN_PRC2,AN_PRC2,SC_PRC2,ER_PRC2, TPREC, TVQX
       real,    dimension(IM,JM)       :: TPERT, QPERT, TSFCAIR, DTS, RASAL2_2d, NPRE_FRAC_2d
       integer, dimension(IM,JM)       :: IRAS, JRAS, KCBL
+      real,    dimension(IM,JM)       :: CLDBASEx
       real,    dimension(IM,JM,LM)    :: WGT0, WGT1
       real,    dimension(IM,JM,LM)    :: TRDLX
       integer, dimension(IM,JM,LM)    :: irccode
@@ -6423,6 +6433,7 @@ contains
       call MAPL_GetPointer(EXPORT, CLDREFFG, 'RG'      , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, CLDNCCN,  'CLDNCCN' , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT,DTDTFRIC, 'DTDTFRIC' , RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(EXPORT, CLDBASEHGT,'CLDBASEHGT', RC=STATUS); VERIFY_(STATUS)
 
 !!! shallow vars
       call MAPL_GetPointer(EXPORT, CBMF_SC,  'CBMF_SC' , RC=STATUS); VERIFY_(STATUS)
@@ -12465,6 +12476,22 @@ do K= 1, LM
          DQIDT   = DQIDT / DT_MOIST
       endif
          
+! Cloud base height is lowest height where fraction exceeds 1%, with 10km upper limit
+      if (associated(CLDBASEHGT)) then
+         CLDBASEx = MAPL_UNDEF
+         do i = 1,IM
+           do j = 1,JM
+             do k =  LM, 1, -1
+               if (ZLE(i,j,k).gt.10000.) exit
+               if ( ( RAD_CF(i,j,k) .ge. 1e-2 ) ) then
+                 CLDBASEx(i,j)  = ZLE(i,j,k)
+                 exit
+               end if
+             end do
+           end do
+         end do
+         CLDBASEHGT = CLDBASEx
+      end if
          
       CFX =100.*PLO*r_air/TEMP
 
