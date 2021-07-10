@@ -507,7 +507,7 @@ contains
     VERIFY_(STATUS)                                                                          
 
     call MAPL_AddInternalSpec(GC,                                  &
-         SHORT_NAME ='PDF_AX',                                       &
+         SHORT_NAME ='PDF_A',                                       &
           LONG_NAME = 'SHOC_PDF_relative_area_fraction',            &
          UNITS      ='1',                                           &       
          DIMS      = MAPL_DimsHorzVert,                             &
@@ -6566,13 +6566,13 @@ contains
       real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,hlqt_sec, au_full,wthv2tmp,wqtfacc,whlfacc
       real, dimension(IM,JM,0:LM) :: qtgrad!,wqtfac
       real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
-      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale,usesgb
+      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale,qt3_tscale,usesgb
 
       real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU, CMNI
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
        
       real :: sigmaqt, qcn, cfn, qsatn, dqlls, dqils, qt
-      real :: Tl,qs,s,Az,Bz,sigma_s,Qz,ac,ql,alpha,beta,dqsz
+      real :: Tl,qs,s,Az,Bz,sigma_s,Qz,ac,ql,alpha,beta,dqsz,tmp
 
       ! MATMAT CUDA Variables
 #ifdef _CUDA
@@ -6873,7 +6873,7 @@ contains
       call MAPL_GetPointer(INTERNAL, QICN,     'QICN'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(INTERNAL, NCPL,     'NCPL'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       call MAPL_GetPointer(INTERNAL, NCPI,     'NCPI'    , RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(INTERNAL, PDF_AX,   'PDF_AX'  , RC=STATUS); VERIFY_(STATUS) 
+      call MAPL_GetPointer(INTERNAL, PDF_A,    'PDF_A'   , RC=STATUS); VERIFY_(STATUS) 
       call MAPL_GetPointer(INTERNAL, SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
       call MAPL_GetPointer(INTERNAL, NRAIN,    'NRAIN'    , RC=STATUS); VERIFY_(STATUS)  
       call MAPL_GetPointer(INTERNAL, NSNOW,    'NSNOW'    , RC=STATUS); VERIFY_(STATUS)      
@@ -7066,7 +7066,7 @@ contains
 !!! DG PDF diagnostics
      call MAPL_GetPointer(EXPORT, SKEW_QT,    'SKEW_QT', RC=STATUS)
      VERIFY_(STATUS)  
-     call MAPL_GetPointer(EXPORT, PDF_A,      'PDF_A',   RC=STATUS)
+     call MAPL_GetPointer(EXPORT, PDF_AX,     'PDF_A',   RC=STATUS)
      VERIFY_(STATUS) 
      call MAPL_GetPointer(EXPORT, PDF_SIGW1,  'PDF_SIGW1', ALLOC=.TRUE.,  RC=STATUS)
      VERIFY_(STATUS) 
@@ -8224,13 +8224,13 @@ contains
         VERIFY_(STATUS)
       endif
 
-!      call MAPL_GetResource( STATE, QT2TSCALE, 'QT2TSCALE:',    DEFAULT= 2400.0, RC=STATUS )
-      call MAPL_GetResource( STATE, QT2SCALE, 'QT2SCALE:',    DEFAULT= 2000.0, RC=STATUS )
-      call MAPL_GetResource( STATE, QT2TUNE,   'QT2TUNE:',    DEFAULT= 2.0, RC=STATUS )
-      call MAPL_GetResource( STATE, HL2TUNE,   'HL2TUNE:',    DEFAULT= 0.3, RC=STATUS )
-      call MAPL_GetResource( STATE, HLQT2TUNE, 'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
-      call MAPL_GetResource( STATE, RADBUOYFAC,'RADBUOYFAC:', DEFAULT= 1.0, RC=STATUS )
-      call MAPL_GetResource( STATE, USESGB,    'USESGB:',     DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, QT3_TSCALE, 'QT3_TSCALE:', DEFAULT= 3600.0, RC=STATUS )
+      call MAPL_GetResource( STATE, QT2SCALE,   'QT2SCALE:',   DEFAULT= 2000.0, RC=STATUS )
+      call MAPL_GetResource( STATE, QT2TUNE,    'QT2TUNE:',    DEFAULT= 2.0, RC=STATUS )
+      call MAPL_GetResource( STATE, HL2TUNE,    'HL2TUNE:',    DEFAULT= 0.3, RC=STATUS )
+      call MAPL_GetResource( STATE, HLQT2TUNE,  'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, RADBUOYFAC, 'RADBUOYFAC:', DEFAULT= 1.0, RC=STATUS )
+      call MAPL_GetResource( STATE, USESGB,     'USESGB:',     DEFAULT= 1.0, RC=STATUS )
 
 
       if( CNV_FRACTION_MAX > CNV_FRACTION_MIN ) then
@@ -9599,12 +9599,6 @@ contains
        hlqtsec = 0.   
        wqtsec = 0.  
        whlsec = 0.  
-!       print *,'qt2mem=',QT2MEM
-!       print *,'qtgrad=',qtgrad
-!       print *,'qt2_sec=',qt2_sec
-!       print *,'edmf_wqt=',edmf_wqt
-!       print *,'edmf_frc=',edmf_frc
-!       print *,'edmf_qt3=',edmf_qt3
 
 !       wqtfac = 0.5
 !       where(abs(qtflxtrb).gt.1e-5)
@@ -9682,7 +9676,9 @@ contains
 
           ! Restrict QT variance, 1-25% of qstar.
           qtsec(:,:,k) = max(min(qtsec(:,:,k),(0.25*QSS(:,:,k))**2),(0.01*QSS(:,:,k))**2)
+!          qtsec(:,:,k) = (0.25e-3)**2
           hlsec(:,:,k) = max(min(hlsec(:,:,k),2.0),0.0025) 
+!          hlsec(:,:,k) = 0.15**2
 
           ! Ensure realizibility 
 !          hlsec = max(hlsec,whlsec*whlsec/max(w2var,0.1))
@@ -9691,7 +9687,62 @@ contains
 
        end do  
 
-!       print *,'wqtfac=',wqtfacc(:,:,LM-15:LM)
+       
+!       if (QT3_TSCALE/=0.) then   ! use memory in aterm and qt skewness
+!         do i = 1,IM
+!         do j = 1,JM
+!         do k = 1,LM
+!           tmp = max( 1e-4*total_water(i,j,k), sqrt(qtsec(i,j,k)) )
+!           tmp = tmp**3
+!           if (edmf_frc(i,j,k)>=0.01 .and. pdf_a(i,j,k)<0.5 .and. pdf_a(i,j,k)>0.01 ) then
+!             pdf_a(i,j,k) = max( edmf_frc(i,j,k), pdf_a(i,j,k)*max( 1. - DT/QT3_TSCALE, 0.0 ))
+!             skew_qtx(i,j,k) = max( edmf_qt3(i,j,k)/tmp, skew_qtx(i,j,k)*max(1. - DT/QT3_TSCALE, 0.0 ))
+!           else if (edmf_frc(i,j,k)>0.01) then
+!             pdf_a(i,j,k) = edmf_frc(i,j,k)
+!             skew_qtx(i,j,k) = edmf_qt3(i,j,k)/tmp
+!           else if ( pdf_a(i,j,k)<0.5 .and. pdf_a(i,j,k)>0.01 ) then
+!             pdf_a(i,j,k) = pdf_a(i,j,k)*max( 1. - DT/QT3_TSCALE, 0.0 )
+!             skew_qtx(i,j,k) = skew_qtx(i,j,k)*max( 1. - DT/QT3_TSCALE, 0.0 )
+!           else
+!             pdf_a(i,j,k) = 0.5
+!             skew_qtx(i,j,k) = skew_qtx(i,j,k)*max( 1. - DT/QT3_TSCALE, 0.0 )
+!           end if
+!         end do
+!         end do
+!         end do
+!       else
+!         pdf_a = edmf_frc
+!         where (edmf_frc<0.01) 
+!            pdf_a = 0.5
+!         endwhere
+!         pdf_a = max( 0.01, min(0.99,pdf_a) )
+!         skew_qtx = edmf_qt3/qtsec**1.5
+!       end if
+
+
+!       if (QT3_TSCALE/=0.) then   ! use memory in aterm and qt skewness
+!         where (edmf_frc>=0.01 .and. pdf_a<0.5 .and. pdf_a>0.01 )
+!             pdf_a = max( edmf_frc, pdf_a*max( 1. - DT/QT3_TSCALE, 0.0 ))
+!             skew_qtx = max( edmf_qt3/qtsec**1.5, skew_qtx*max(1. - DT/QT3_TSCALE, 0.0 ))
+!         elsewhere (edmf_frc>0.01) 
+!             pdf_a = edmf_frc
+!             skew_qtx = edmf_qt3/qtsec**1.5
+!         elsewhere ( pdf_a<0.5 .and. pdf_a>0.01 )
+!             pdf_a = pdf_a*max( 1. - DT/QT3_TSCALE, 0.0 )
+!             skew_qtx = skew_qtx*max( 1. - DT/QT3_TSCALE, 0.0 )
+!         elsewhere
+!             pdf_a = 0.5
+!             skew_qtx = skew_qtx*max( 1. - DT/QT3_TSCALE, 0.0 )
+!         endwhere
+!       else
+!         pdf_a = edmf_frc
+!         where (edmf_frc<0.01) 
+!            pdf_a = 0.5
+!         endwhere
+!         pdf_a = max( 0.01, min(0.99,pdf_a) )
+!         skew_qtx = edmf_qt3/qtsec**1.5
+!       end if
+
 
        ! Fill the exports
        if (associated(QT2SHOC))  QT2SHOC  = qtsec
@@ -11133,7 +11184,7 @@ contains
               VFALLWAT_AN_X,VFALLWAT_LS_X,    &
               VFALLSN_AN_X,VFALLSN_LS_X,VFALLSN_CN_X,VFALLSN_SC_X,  &
               VFALLRN_AN_X,VFALLRN_LS_X,VFALLRN_CN_X,VFALLRN_SC_X,  &
-              PDF_AX, PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, & 
+              PDF_A, PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, & 
               PDF_SIGTH1, PDF_SIGTH2, PDF_TH1, PDF_TH2, &
               PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
               PDF_RQTTH, PDF_RWTH, PDF_RWQT, WTHV2, wqlsec, SKEW_QTX, &
@@ -11189,7 +11240,7 @@ contains
 
          VERIFY_(STATUS)
 
-         if (associated(PDF_A)) PDF_A = PDF_AX
+         if (associated(PDF_AX)) PDF_AX = PDF_A
          if (associated(SKEW_QT)) SKEW_QT = SKEW_QTX
          if (associated(WQL)) WQL = wqlsec
 

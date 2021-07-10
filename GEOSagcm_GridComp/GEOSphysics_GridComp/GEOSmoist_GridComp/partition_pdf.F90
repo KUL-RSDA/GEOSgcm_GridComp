@@ -84,23 +84,23 @@ module partition_pdf
    real, intent(in   )  :: tabs        ! absolute temperature [K]
    real, intent(in   )  :: qwv         ! specific humidity [kg kg-1]
    real, intent(  out)  :: qc          ! liquid+ice condensate [kg kg-1]
-   real, intent(   in)  :: omega       ! resolved pressure velocity
-   real, intent(   in)  :: zl          ! layer heights [m]
-   real, intent(   in)  :: pval        ! layer pressure [Pa]
-   real, intent(   in)  :: total_water ! total water [kg kg-1]
-   real, intent(   in)  :: thl_first   ! liquid water potential temperature [K]
-   real, intent(   in)  :: wthlsec     ! thl flux [K m s-1]
-   real, intent(   in)  :: wqwsec      ! total water flux [kg kg-1 m s-1]
-   real, intent(   in)  :: wqtfac      !
-   real, intent(   in)  :: whlfac      !
-   real, intent(   in)  :: thlsec
-   real, intent(   in)  :: qwsec
-   real, intent(   in)  :: qwthlsec
-   real, intent(   in)  :: w3var       ! 3rd moment vertical velocity [m3 s-3]
-   real, intent(   in)  :: qt3         ! 3rd moment qt from mass flux
-   real, intent(   in)  :: hl3         ! 3rd moment hl from mass flux
-   real, intent(   in)  :: w_sec       ! 2nd moment vertical velocity [m2 s-2]
-   real, intent(   in)  :: mffrc       ! total EDMF updraft fraction
+   real, intent(in   )  :: omega       ! resolved pressure velocity
+   real, intent(in   )  :: zl          ! layer heights [m]
+   real, intent(in   )  :: pval        ! layer pressure [Pa]
+   real, intent(in   )  :: total_water ! total water [kg kg-1]
+   real, intent(in   )  :: thl_first   ! liquid water potential temperature [K]
+   real, intent(in   )  :: wthlsec     ! thl flux [K m s-1]
+   real, intent(in   )  :: wqwsec      ! total water flux [kg kg-1 m s-1]
+   real, intent(in   )  :: wqtfac      !
+   real, intent(in   )  :: whlfac      !
+   real, intent(in   )  :: thlsec
+   real, intent(in   )  :: qwsec
+   real, intent(in   )  :: qwthlsec
+   real, intent(in   )  :: w3var       ! 3rd moment vertical velocity [m3 s-3]
+   real, intent(in   )  :: qt3         ! 3rd moment qt from mass flux
+   real, intent(in   )  :: hl3         ! 3rd moment hl from mass flux
+   real, intent(in   )  :: w_sec       ! 2nd moment vertical velocity [m2 s-2]
+   real, intent(in   )  :: mffrc       ! total EDMF updraft fraction
 !   real, intent(inout)  :: qi         ! ice condensate [kg kg-1]
    real, intent(  out)  :: cld_sgs     ! cloud fraction
    real, intent(inout)  ::    skew_qw,      & ! skewness of total water
@@ -166,26 +166,28 @@ module partition_pdf
    real, parameter :: tauskew = 3600. 
 
 ! define conserved variables
-gamaz = gocp * zl
-thv   = tabs * (1.0+epsv*qwv)
-thv   = thv*(100000.0/pval) ** kapa
+   gamaz = gocp * zl
+   thv   = tabs * (1.0+epsv*qwv)
+   thv   = thv*(100000.0/pval) ** kapa
 
-w_first = - rog * omega * thv / pval
+   w_first = - rog * omega * thv / pval
 
 ! Initialize cloud variables to zero
-          diag_qn   = 0.0
-          diag_frac = 0.0
-          diag_ql   = 0.0
-          diag_qi   = 0.0
+   diag_qn   = 0.0
+   diag_frac = 0.0
+   diag_ql   = 0.0
+   diag_qi   = 0.0
 
-          pkap = (pval/100000.0) ** kapa
+   pkap = (pval/100000.0) ** kapa
 
 
 ! Compute square roots of some variables so we don't have to do it again
           if (w_sec > 0.0) then
             sqrtw2   = sqrt(w_sec)
+            Skew_w   = w3var / (sqrtw2*sqrtw2*sqrtw2)
           else
             sqrtw2   = w_thresh
+            Skew_w   = 0.
           endif
           if (thlsec > 0.0) then
             sqrtthl  = sqrt(thlsec)
@@ -200,16 +202,14 @@ w_first = - rog * omega * thv / pval
             sqrtqt   = 1e-4*total_water
           endif
 
-
 ! Find parameters of the double Gaussian PDF of vertical velocity
 
-       ! Skewness of vertical velocity
-         Skew_w = w3var / (sqrtw2*sqrtw2*sqrtw2)
+!          aterm = pdf_a
 
          if (use_aterm_memory/=0) then   ! use memory in aterm and qt skewness
           aterm = pdf_a
 
-          if (mffrc>=0.01) then                ! if active updraft this timestep
+          if (mffrc>=1e-3) then                ! if active updraft this timestep
             if (aterm<0.5) then                ! if distribution is skewed (recent updrafts)
               aterm = max(mffrc,aterm*max(1.-DT/tauskew,0.0))
               skew_qw = max(qt3/sqrtqt**3,skew_qw*max(1.-DT/tauskew,0.0))
@@ -218,7 +218,7 @@ w_first = - rog * omega * thv / pval
               skew_qw = qt3/sqrtqt**3
             end if
           else                                 ! if no active updraft
-            if (aterm.lt.0.5 .and. aterm.gt.0.01) then  ! but there is residual skewness
+            if (aterm.lt.0.5 .and. aterm.gt.1e-3) then  ! but there is residual skewness
               aterm = aterm*max(1.-DT/tauskew,0.0)
               skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
             else
@@ -230,11 +230,12 @@ w_first = - rog * omega * thv / pval
          else  ! don't use memory in aterm and qt skewness
 
            aterm = mffrc
-           aterm = max(0.01,min(0.99,aterm))
-           if (mffrc.lt.0.01) aterm = 0.5
+           aterm = max(1e-3,min(0.99,aterm))
+           if (mffrc.le.1e-3) aterm = 0.5
 
            skew_qw = qt3/sqrtqt**3
          end if
+
          onema = 1.0 - aterm
 
 
@@ -344,7 +345,7 @@ w_first = - rog * omega * thv / pval
 
           IF (qwsec <= rt_tol*rt_tol .or. abs(w1_2-w1_1) <= w_thresh) THEN ! if no active updrafts
 
-            if (aterm .lt. 0.01 .or. aterm.gt.0.499 .or. Skew_qw.eq.0.) then ! if no residual skewness
+            if (aterm .lt. 1e-3 .or. aterm.gt.0.499 .or. Skew_qw.eq.0.) then ! if no residual skewness
               qw1_1     = total_water
               qw1_2     = total_water
               qw2_1     = qwsec
@@ -352,15 +353,15 @@ w_first = - rog * omega * thv / pval
               sqrtqw2_1 = sqrt(qw2_1)
               sqrtqw2_2 = sqrt(qw2_2)
             else
-              wrk1 = skew_qw*sqrtqt**3
-              qw1_1     = total_water
-              qw1_2     = total_water
-              qw2_1     = qwsec
-              qw2_2     = qwsec
-!              qw1_1 = total_water + (wrk1/(2.*aterm-aterm**3/onema**2))**(1./3.)
-!              qw1_2 = (total_water -aterm*qw1_1)/onema
-!              qw2_1 = qwsec - (aterm/onema)*(qw1_1-total_water)**2
-!              qw2_2 = qw2_1
+!              qw1_1     = total_water
+!              qw1_2     = total_water
+!              qw2_1     = qwsec
+!              qw2_2     = qwsec
+              wrk1 = min(10.,skew_qw*sqrtqt**3)   ! third moment qt
+              qw1_1 = total_water + (wrk1/(2.*aterm-aterm**3/onema**2))**(1./3.)
+              qw1_2 = (total_water -aterm*qw1_1)/onema
+              qw2_1 = qwsec - min(0.5*qwsec,max(0.,(aterm/onema)*(qw1_1-total_water)**2))
+              qw2_2 = qw2_1
               sqrtqw2_1 = sqrt(qw2_1)
               sqrtqw2_2 = sqrt(qw2_2)
             end if
@@ -447,9 +448,8 @@ w_first = - rog * omega * thv / pval
             r_qwthl_1 = max(-1.0,min(1.0,(qwthlsec-aterm*(qw1_1-total_water)*(thl1_1-thl_first)-onema*(qw1_2-total_water)*(thl1_2-thl_first))/testvar)) ! A.12
           ENDIF
 
-!!! PDF params
           pdf_rqtth = r_qwthl_1
-!!! end PDF params
+
 
 !  BEGIN TO COMPUTE CLOUD PROPERTY STATISTICS
 ! This section follows Bogenschutz thesis Appendix A, based on
@@ -468,11 +468,6 @@ w_first = - rog * omega * thv / pval
           om2      = 1.
 
 ! Partition based on temperature for the first plume
-
-!!! temporary
-          Tl1_1 = max(min(Tl1_1,350.),170.)
-          Tl1_2 = max(min(Tl1_2,350.),170.)
-!!!
 
           IF (Tl1_1 >= tbgmax) THEN
             esval1_1 = MAPL_EQsat(Tl1_1)
@@ -525,8 +520,6 @@ w_first = - rog * omega * thv / pval
 
           cqt1  = 1.0 / (1.0+beta1*qs1)                                     ! A.19
           wrk   = (1.0+beta1*qw1_1) * cqt1
-! temporary
-!          if (abs(qs1*wrk-MAPL_EQsat(Tabs,pval))>0.001 .and. pval>2.*esval1_1 .and. pval>20000.) print *,'pval=',pval,' Tabs=',Tabs,' tl1_1=',Tl1_1,' qs1=',qs1*wrk
 
           s1    = qw1_1 - qs1* wrk                                          ! A.17
           cthl1 = cqt1*wrk*(cp/lcond)*beta1*qs1*pkap                        ! A.20
@@ -643,27 +636,17 @@ w_first = - rog * omega * thv / pval
           wqls = aterm * ((w1_1-w_first)*ql1+wql1) + onema * ((w1_2-w_first)*ql2+wql2)
           wqis = aterm * ((w1_1-w_first)*qi1) + onema * ((w1_2-w_first)*qi2)
 
-!         if (pval>95000.) print *,'aterm=',aterm,'  onema=',onema
-
-
 ! diagnostic buoyancy flux.  Includes effects from liquid water, ice
 ! condensate, liquid & ice precipitation
-!         wrk = epsv * basetemp
           wrk = epsv * thv
 
           bastoeps = (rv/rgas) * thv   ! thetav / epsilon
-
-!          if (pval>95000.) print *,'dblgss: wthlsec=',wthlsec,'  wqwsec=',wqwsec
-!          if (pval>95000.) print *,'dblgss: wrk=',wrk,'  bastoeps=',bastoeps
-!          if (pval>95000.) print *,'wqls=',wqls,'  wqis=',wqis
 
           wthv_sec = wthlsec + wrk*wqwsec                                     &
                    + (fac_cond-bastoeps)*wqls                                 &
                    + (fac_sub-bastoeps) *wqis
 
 !                          + ((lstarn1/cp)-thv(i,j,k))*0.5*(wqp_sec(i,j,kd)+wqp_sec(i,j,ku))
-
-!          if (pval>95000.) print *,'dblgss: wthv_sec=',wthv_sec
 
   end subroutine partition_dblgss
 

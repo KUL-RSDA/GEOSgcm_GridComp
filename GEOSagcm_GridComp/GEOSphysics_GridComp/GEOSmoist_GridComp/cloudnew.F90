@@ -2223,6 +2223,8 @@ contains
       QCn = QCx
       DQS = DQSx
 
+      ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
+
       HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
 !                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:) 
 !           QT = QVn+QCn
@@ -2266,8 +2268,10 @@ contains
 !             print *,'QT2=',QT2,'  HLQT=',HLQT,'  W3=',W3
 !           end if
 
-           ! Update the liquid water static energy
-           ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
+            ! Update the liquid water static energy
+            ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
+            HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
+!                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:)
 
            call partition_dblgss(DT/nmax,           &
                                  TEn,          &
