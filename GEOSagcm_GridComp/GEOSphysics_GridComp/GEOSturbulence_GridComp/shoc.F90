@@ -27,7 +27,7 @@ module shoc
 
  private
 
- public run_shoc
+ public run_shoc, update_moments
 
  contains
 
@@ -1526,5 +1526,171 @@ endif
   end function dtqsati
   
  end subroutine run_shoc
+
+
+ subroutine update_moments( IM, JM, LM, & ! in
+                             DT,      &  ! in
+                             SH,      &  ! in
+                             EVAP,    &  ! in
+                             ZL,      &  ! in
+                             ZLE,     &  ! in
+                             KH,      &  ! in
+                             TKE,     &  ! in
+                             ISOTROPY, &  ! in
+                             QT,      &  ! in
+                             HL,      &  ! in
+                             MFFRC,   &  ! in
+                             MFQT2,   &  ! in
+                             MFQT3,   &  ! in
+                             MFHL2,   &  ! in
+                             MFHL3,   &  ! in
+                             MFW2,    &  ! in
+                             MFW3,    &  ! in
+                             MFWQT,   &  ! in
+                             MFWHL,   &  ! in
+                             MFHLQT,  &  ! in
+                             qt2,     &  ! inout
+                             qt3,     &  ! inout
+                             hl2,     &  ! out
+                             hl3,     &  ! out
+                             w2,      &  ! out
+                             w3,      &  ! out
+                             wqt,     &  ! out
+                             whl,     &  ! out
+                             hlqt,    &  ! out
+                           hl2tune,   &  ! tuning parameters
+                           qt2tune,   &
+                           hlqt2tune, &
+                           qt2scale,  &
+                           qt3_tscale )
+
+
+    integer, intent(in   ) :: IM, JM, LM       ! dimensions
+    integer, intent(in   ) :: DT               ! timestep [s]
+    real,    intent(in   ) :: SH   (IM,JM)     ! surface sensible heat flux
+    real,    intent(in   ) :: EVAP (IM,JM)     ! surface evaporation
+    real,    intent(in   ) :: ZL   (IM,JM,LM)  ! heights [m]
+    real,    intent(in   ) :: ZLE  (IM,JM,LM+1)  ! edge heights [m]
+    real,    intent(in   ) :: KH   (IM,JM,LM+1)  ! diffusivity
+    real,    intent(in   ) :: TKE  (IM,JM,LM)  ! turbulent kinetic energy
+    real,    intent(in   ) :: ISOTROPY(IM,JM,LM)  ! isotropy timescale
+    real,    intent(in   ) :: QT   (IM,JM,LM)  ! total water
+    real,    intent(in   ) :: HL   (IM,JM,LM)  ! liquid water static energy
+    real,    intent(in   ) :: MFFRC(IM,JM,LM)  ! mass flux area fraction 
+    real,    intent(in   ) :: MFQT2(IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFQT3(IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFHL2(IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFHL3(IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFW2 (IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFW3 (IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFWQT(IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFWHL(IM,JM,LM)  ! 
+    real,    intent(in   ) :: MFHLQT(IM,JM,LM) ! 
+    real,    intent(inout) :: qt2  (IM,JM,LM)  ! total water variance
+    real,    intent(inout) :: qt3  (IM,JM,LM)  ! third moment of total water
+    real,    intent(  out) :: hl2  (IM,JM,LM)  ! liquid water static energy variance
+    real,    intent(  out) :: hl3  (IM,JM,LM)  ! third moment static energy
+    real,    intent(  out) :: w2   (IM,JM,LM)  ! vertical velocity variance
+    real,    intent(  out) :: w3   (IM,JM,LM)  ! third moment vertical velocity
+    real,    intent(  out) :: wqt  (IM,JM,LM)  ! vertical flux of total water 
+    real,    intent(  out) :: whl  (IM,JM,LM)  ! vertical flux of liquid water static energy
+    real,    intent(  out) :: hlqt (IM,JM,LM)  ! total water, static energy covariance
+    real,    intent(in   ) :: HL2TUNE,     &   ! tuning parameters
+                              HLQT2TUNE,   &
+                              QT2SCALE,    &
+                              QT2TUNE,     &
+                              QT3_TSCALE   
+   
+    real, parameter :: HL2MIN = 0.0025
+    real, parameter :: HL2MAX = 2.0
+
+    ! Local variables
+    integer :: k, kd, ku
+    real, dimension(IM,JM) :: wrk1, wrk2, wrk3
+    real, dimension(IM,JM) :: sm, onemmf
+    real, dimension(IM,JM,LM+1) :: qt2_edge, &
+                                   hl2_edge, &
+                                   wqt_edge, &
+                                   whl_edge, &
+                                   hlqt_edge,&
+                                   qtgrad
+
+    ! define resolved gradients on edges
+    do k=1,LM-1
+        wrk1 = 1.0 / (ZL(:,:,k)-ZL(:,:,k+1))
+        wrk3 = KH(:,:,k) * wrk1
+
+        sm   = 0.5*(ISOTROPY(:,:,k)+ISOTROPY(:,:,k+1))*wrk1*wrk3 !Tau*Kh/dz^2
+
+        ! SGS vertical flux liquid/ice water static energy. Eq 1 in BK13                                                        
+        wrk1            = HL(:,:,k) - HL(:,:,k+1)
+        whl_edge(:,:,k) = - wrk3 * wrk1
+
+        ! SGS vertical flux of total water. Eq 2 in BK13                                                                        
+        wrk2            = QT(:,:,k) - QT(:,:,k+1)
+        wqt_edge(:,:,k) = - wrk3 * wrk2
+
+        ! Second moment of liquid/ice water static energy. Eq 4 in BK13 
+        hl2_edge(:,:,k) = HL2TUNE * sm * wrk1 * wrk1
+
+        ! Second moment of total water mixing ratio.  Eq 3 in BK13
+        qtgrad(:,:,k)   = wrk2 / (ZL(:,:,k)-ZL(:,:,k+1))
+        qt2_edge(:,:,k) = KH(:,:,k)*qtgrad(:,:,k)**2
+
+        ! Covariance of total water mixing ratio and liquid/ice water static energy.  Eq 5 in BK13
+        hlqt_edge(:,:,k) = HLQT2TUNE * sm * wrk1 * wrk2
+    end do
+
+    ! set lower boundary conditions
+    whl_edge(:,:,LM)  = SH(:,:)/cp
+    wqt_edge(:,:,LM)  = EVAP(:,:)
+    hl2_edge(:,:,LM)  = hl2_edge(:,:,LM-1)
+    qt2_edge(:,:,LM)  = qt2_edge(:,:,LM-1)
+    hlqt_edge(:,:,LM) = hlqt_edge(:,:,LM-1)
+    qtgrad(:,:,LM)    = qtgrad(:,:,LM-1)
+    qtgrad(:,:,0)     = qtgrad(:,:,1)
+
+
+    do k=1,LM
+        kd = k-1
+        ku = k
+        if (k==1) kd = k
+
+        onemmf = 1.0 - MFFRC(:,:,k)
+
+        w2(:,:,k) = onemmf*0.667*TKE(:,:,k) + MFW2(:,:,k)
+
+        hl2(:,:,k) = onemmf*0.5*( hl2_edge(:,:,kd) + hl2_edge(:,:,ku) ) + MFHL2(:,:,k)
+
+        wrk1 = 0.5*(qt2_edge(:,:,kd)+qt2_edge(:,:,ku))              ! averaging ED gradient production term
+        wrk2 = 0.5*MFWQT(:,:,k)*0.5*(qtgrad(:,:,kd)+qtgrad(:,:,ku)) ! MF gradient production term
+        qt2(:,:,k) = qt2(:,:,k) + DT*(wrk1-wrk2) 
+
+        wrk3 = QT2TUNE*sqrt(0.01+TKE(:,:,k))/(QT2SCALE*0.4*ZL(:,:,k)/(0.4*ZL(:,:,k)+QT2SCALE))
+        qt2(:,:,k) = qt2(:,:,k) / (1. + DT*wrk3)
+
+        hlqt(:,:,k) = onemmf*0.5*( hlqt_edge(:,:,kd) + hlqt_edge(:,:,ku) ) + MFHLQT(:,:,k)
+
+        wqt(:,:,k)  = onemmf*0.5*( wqt_edge(:,:,kd) + wqt_edge(:,:,ku) ) + MFWQT(:,:,k)
+
+        whl(:,:,k)  = onemmf*0.5*( whl_edge(:,:,kd) + whl_edge(:,:,ku) ) + MFWHL(:,:,k)
+
+        ! Restrict QT variance, 1-25% of total water.
+        qt2(:,:,k) = max(min(qt2(:,:,k),(0.25*QT(:,:,k))**2),(0.01*QT(:,:,k))**2)
+        hl2(:,:,k) = max(min(hl2(:,:,k),HL2MAX),HL2MIN)
+
+        ! Ensure realizibility
+!        hl2 = max(hl2,whl*whl/max(w2,0.1))
+!        qt2 = max(qt2,wqt*wqt/max(w2,0.1))
+        hlqt(:,:,k) = sign( min( abs(hlqt(:,:,k)), sqrt(hl2(:,:,k)*qt2(:,:,k)) ), hlqt(:,:,k) )
+
+    end do
+
+    qt3 = max( MFQT3, qt3*(1.-DT/QT3_TSCALE) )
+
+    hl3 = MFHL3
+    w3  = MFW3 
+
+ end subroutine update_moments
 
 end module shoc
