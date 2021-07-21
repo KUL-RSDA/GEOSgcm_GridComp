@@ -1046,9 +1046,9 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                                              &
-       LONG_NAME  = 'edmf_qt_flux',                                            &
+       LONG_NAME  = 'edmf_qt_flux',                                          &
        UNITS      = 'kg m-2 s-1',                                            &
-       SHORT_NAME = 'edmf_wqt'    ,                                        &
+       SHORT_NAME = 'edmf_wqt'    ,                                          &
        DIMS       = MAPL_DimsHorzVert,                                       &
        VLOCATION  = MAPL_VLocationCenter,                                    &
                                                                   RC=STATUS  )
@@ -1149,6 +1149,51 @@ contains
        LONG_NAME  = 'w3_from_SHOC_canuto',                                  &
        UNITS      = 'm3 s-3',                                               &
        SHORT_NAME = 'w3_canuto'    ,                                           &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                &
+       SHORT_NAME = 'HLQT',                                      &
+       LONG_NAME  = 'covariance_of_liquid_static_energy_and_total_water', &
+       UNITS      = 'K',                                         &
+       DEFAULT    = 0.0,                                         &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'liquid_water_static_energy_variance',                   &
+       UNITS      = 'K2'    ,                                                &
+       SHORT_NAME = 'HL2'   ,                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'third_moment_liquid_water_static_energy',               &
+       UNITS      = 'K3'    ,                                                &
+       SHORT_NAME = 'HL3'   ,                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'third_moment_vertical_velocity',                        &
+       UNITS      = 'm3 s-3',                                                &
+       SHORT_NAME = 'W3'    ,                                                &
+       DIMS       = MAPL_DimsHorzVert,                                       &
+       VLOCATION  = MAPL_VLocationCenter,                                    &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'second_moment_vertical_velocity',                       &
+       UNITS      = 'm2 s-2',                                                &
+       SHORT_NAME = 'W2'    ,                                                &
        DIMS       = MAPL_DimsHorzVert,                                       &
        VLOCATION  = MAPL_VLocationCenter,                                    &
                                                                   RC=STATUS  )
@@ -2640,6 +2685,26 @@ contains
        VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
     VERIFY_(STATUS)
 
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'QT2',                                       &
+       LONG_NAME  = 'variance_of_total_water_specific_humidity', &
+       UNITS      = '1',                                         &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,             RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddInternalSpec(GC,                                &
+       SHORT_NAME = 'QT3',                                       &
+       LONG_NAME  = 'third_moment_total_water_specific_humidity',&
+       UNITS      = '1',                                         &
+       DEFAULT    = 0.0,                                         &
+       FRIENDLYTO = 'TURBULENCE',                                &
+       DIMS       = MAPL_DimsHorzVert,                           &
+       VLOCATION  = MAPL_VLocationCenter,               RC=STATUS  )
+    VERIFY_(STATUS)
+
     ! Start MYNN-related variables
     !
     if ( DO_MYNN /= 0 ) then
@@ -2657,16 +2722,6 @@ contains
             SHORT_NAME = 'HL2',                                       &
             LONG_NAME  = 'variance_of_liquid_water_static_energy',    &
             UNITS      = 'K+2',                                       &
-            DEFAULT    = 0.0,                                         &
-            FRIENDLYTO = 'TURBULENCE',                                &
-            DIMS       = MAPL_DimsHorzVert,                           &
-            VLOCATION  = MAPL_VLocationEdge,               RC=STATUS  )
-       VERIFY_(STATUS)
-
-       call MAPL_AddInternalSpec(GC,                                &
-            SHORT_NAME = 'QT2',                                       &
-            LONG_NAME  = 'variance_of_total_water_specific_humidity', &
-            UNITS      = '1',                                         &
             DEFAULT    = 0.0,                                         &
             FRIENDLYTO = 'TURBULENCE',                                &
             DIMS       = MAPL_DimsHorzVert,                           &
@@ -3085,7 +3140,7 @@ contains
     real, dimension(:,:,:), pointer    :: AKSS, BKSS, CKSS, YS
     real, dimension(:,:,:), pointer    :: AKQQ, BKQQ, CKQQ, YQV,YQL,YQI
     real, dimension(:,:,:), pointer    :: AKUU, BKUU, CKUU, YU,YV
-    real, dimension(:,:,:), pointer     ::DKSS, DKQQ, DKUU
+    real, dimension(:,:,:), pointer    :: DKSS, DKQQ, DKUU
     real, pointer, dimension(:,:)   :: LONS
     real, pointer, dimension(:,:)   :: LATS
 
@@ -3094,7 +3149,10 @@ contains
                                            LSHOC_CLD,BRUNTSHOC,ISOTROPY, &
                                            LSHOC1,LSHOC2,LSHOC3, & 
                                            SHEARSHOC,WTHV2,&
-                                           TKEBUOY,TKESHEAR,TKEDISS,TKETRANS
+                                           TKEBUOY,TKESHEAR,TKEDISS,TKETRANS, &
+                                           QT3, HL3, W2, W3!, QT2, HLQT
+
+  
 
 ! MYNN-related variables
     integer                         :: DO_MYNN, MYNN_LEVEL
@@ -3179,16 +3237,15 @@ contains
 ! Get pointers from internal state
 !---------------------------------
 
+       call MAPL_GetPointer(INTERNAL, QT3,          'QT3',       RC=STATUS)
+       VERIFY_(STATUS)
+       call MAPL_GetPointer(INTERNAL, QT2,          'QT2',       RC=STATUS)
+       VERIFY_(STATUS)
+
 ! MYNN-related variables
 !----------------------
     if ( DO_MYNN /= 0 ) then
        call MAPL_GetPointer(INTERNAL, TKE_NEW,      'TKE_NEW',   RC=STATUS)
-       VERIFY_(STATUS)
-       call MAPL_GetPointer(INTERNAL, HL2,          'HL2',       RC=STATUS)
-       VERIFY_(STATUS)
-       call MAPL_GetPointer(INTERNAL, QT2,          'QT2',       RC=STATUS)
-       VERIFY_(STATUS)
-       call MAPL_GetPointer(INTERNAL, HLQT,         'HLQT',      RC=STATUS)
        VERIFY_(STATUS)
        call MAPL_GetPointer(INTERNAL, BETA_HL,      'BETA_HL',   RC=STATUS)
        VERIFY_(STATUS)
@@ -3454,6 +3511,7 @@ contains
      real, dimension(IM,JM,1:LM-1)       :: TVE, RDZ
      real, dimension(IM,JM,LM)           :: THV, TV, Z, DMI, PLO, QL, QI, QA
      real, dimension(IM,JM,0:LM)         :: PKE
+     real, dimension(IM,JM,1:LM)         :: HL2b, HL3b, W2b, W3b,q2b, q3b
 
      ! Quantities for solving at half levels
      real, dimension(IM,JM,LM)           :: RDZ_HALF
@@ -3490,6 +3548,7 @@ contains
                                             edmf_whl, edmf_qt3, edmf_hl3, &
                                             w3_canuto, hle, qte, entx, &
                                             A_mynn, B_mynn, qsat_mynn, &
+                                            w2, w3, hl2, hl3,          &
                                             edmf_wqtavg, edmf_whlavg
    real, dimension(IM,JM,0:LM)          ::  ae3,aw3,aws3,awqv3,awql3,awqi3,awu3,awv3
 !   real, dimension(IM,JM,0:LM)          ::  awhl3, awqt3, awthv3 ! for EDMF contribution to MYNN
@@ -3581,7 +3640,7 @@ contains
      real,dimension(IM,JM) :: L02
      
 
-     real,dimension(IM,JM,LM)           :: QT,THL,EXF
+     real,dimension(IM,JM,LM)           :: QT,THL,HL,EXF
      real    :: alfac
 
 ! local mass-flux variables
@@ -3590,9 +3649,9 @@ contains
                                         edmfdrythl,edmfmoistthl, &
                                         edmfdryu,edmfmoistu,  &
                                         edmfdryv,edmfmoistv,  &
-                                        edmfmoistqc,          &
+                                        edmfmoistqc,    &
                                         WHL_tmp,WQT_tmp,WTHV_tmp,qti,hli 
-     real, dimension(im,jm,lm) :: sdry,sdrya,sdryb,sdryc
+     real, dimension(im,jm,lm) :: sdry,sdrya,sdryb,sdryc,MFFRC
      real, dimension(im,jm,lm) :: zlo,zlot,pk
      real, dimension(im,jm)    :: rhodz,edmfZCLD
      real, dimension(im,jm,0:lm) :: RHOE,RHOAW3
@@ -3625,7 +3684,10 @@ contains
      integer                             :: SHC_USE_MF_BUOY,SHC_BUOY_OPTION,SHC_USE_SUS12LEN
      real                                :: SHC_LAMBDA,SHC_TSCALE,SHC_VONK,SHC_CK, &
                                             SHC_CEFAC,SHC_CESFAC,SHC_THL2TUNE,    &
-                                            SHC_QW2TUNE,SHC_QWTHL2TUNE
+                                            SHC_QW2TUNE,SHC_QWTHL2TUNE,           &
+                                            HL2TUNE, QT2TUNE, HLQT2TUNE,          &
+                                            QT2SCALE, QT3_TSCALE
+     real    :: PDFSHAPE
 
      real    :: lambdadiss
 
@@ -3750,15 +3812,16 @@ contains
        call MAPL_GetResource (MAPL, SHC_DO_CLDLEN, trim(COMP_NAME)//"_SHC_DO_CLDLEN:", default=0,     RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_USE_MF_PDF, trim(COMP_NAME)//"_SHC_USE_MF_PDF:", default=0,     RC=STATUS)
        call MAPL_GetResource (MAPL, SHC_USE_MF_BUOY, trim(COMP_NAME)//"_SHC_USE_MF_BUOY:", default=0,     RC=STATUS)
-       call MAPL_GetResource (MAPL, SHC_USE_SUS12LEN, trim(COMP_NAME)//"_SHC_USE_SUS12LEN:", default=1,     RC=STATUS)
-!       call MAPL_GetResource (MAPL, PDFSHAPE,  'PDFSHAPE:',   DEFAULT=     1.0    )
-!       if (PDFSHAPE/=5) then
-!         call MAPL_GetResource (MAPL, SHC_BUOY_OPTION, trim(COMP_NAME)//"_SHC_BUOY_OPTION:", default=0,     RC=STATUS)
-!       else
-         call MAPL_GetResource (MAPL, SHC_BUOY_OPTION, trim(COMP_NAME)//"_SHC_BUOY_OPTION:", default=2,     RC=STATUS)
-!       end if
-!       if (SHC_BUOY_OPTION==2 .and. PDFSHAPE/=5) print *,'*** SHOC using inactive DG PDF for buoyancy!!! ***'
+       call MAPL_GetResource (MAPL, SHC_USE_SUS12LEN, trim(COMP_NAME)//"_SHC_USE_SUS12LEN:", default=1,     RC=STATUS)       
+       call MAPL_GetResource (MAPL, SHC_BUOY_OPTION, trim(COMP_NAME)//"_SHC_BUOY_OPTION:", default=2,     RC=STATUS)
      end if
+
+     call MAPL_GetResource (MAPL, PDFSHAPE,  'PDFSHAPE:',   DEFAULT = 1.0    )
+     call MAPL_GetResource (MAPL, HL2TUNE,   'HL2TUNE:',    DEFAULT = 1.0    )
+     call MAPL_GetResource (MAPL, QT2TUNE,   'QT2TUNE:',    DEFAULT = 1.0    )
+     call MAPL_GetResource (MAPL, HLQT2TUNE, 'HLQT2TUNE:',  DEFAULT = 1.0    )
+     call MAPL_GetResource (MAPL, QT2SCALE,  'QT2SCALE:',   DEFAULT = 2000.0    )
+     call MAPL_GetResource (MAPL, QT3_TSCALE,'QT3_TSCALE:', DEFAULT = 7200.0    )
 
 ! Get pointers from export state...
 !-----------------------------------
@@ -3875,11 +3938,21 @@ contains
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_w3,  'edmf_w3',   RC=STATUS)
      VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  hlqt,  'HLQT', ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_qt3,  'edmf_qt3',   RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_hl3,  'edmf_hl3',   RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  w3_canuto, 'w3_canuto',ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  w3, 'W3', ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  w2, 'W2', ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  hl3, 'HL3', ALLOC=.TRUE.,   RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,  hl2, 'HL2', ALLOC=.TRUE.,   RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,  edmf_wqt,'edmf_wqt', RC=STATUS)
      VERIFY_(STATUS)
@@ -4346,6 +4419,8 @@ IF(DoMF .eq. 1.) then
      if (associated(WQT_MF))  WQT_MF  = WQT_tmp
      if (associated(WTHV_MF)) WTHV_MF = WTHV_tmp
 
+     MFFRC = 0.5*(edmfdrya(:,:,0:LM-1)+edmfdrya(:,:,1:LM) + edmfmoista(:,:,0:LM-1)+edmfmoista(:,:,1:LM))
+
 !     mfhl2 = 0.
 !     mfqt2 = 0.
 !     mfw2 = 0.
@@ -4469,6 +4544,7 @@ ELSE
     if (associated(edmf_whl))       edmf_whl      =mfwhl
     if (associated(edmf_wqtavg))    edmf_wqtavg   =0.0
    
+    MFFRC = 0.
 
     ZPBLmf=0.
     KPBLmf=float(LM)
@@ -4516,7 +4592,7 @@ ENDIF
                        OMEGA(:,:,1:LM),       &
                        SH(:,:),               &
                        EVAP(:,:),             &
-                       BUOYF(:,:,1:LM),       &
+!                       BUOYF(:,:,1:LM),       &
                        T(:,:,1:LM),           &
                        Q(:,:,1:LM),           &
                        QI(:,:,1:LM),          &
@@ -4531,7 +4607,7 @@ ENDIF
                        TKH(:,:,1:LM),         &
                        !== Outputs ==
                        ISOTROPY(:,:,1:LM),    &
-                       W3_CANUTO(:,:,1:LM),   &
+!                       W3_CANUTO(:,:,1:LM),   &
                        !== Diagnostics ==  ! not used elsewhere
                        TKEDISS,               &
                        TKEBUOY,               &
@@ -5044,6 +5120,78 @@ ENDIF
 
       call MAPL_TimerOn (MAPL,"---POSTLOCK")
 
+
+
+      ! TKE 
+      if (associated(TKE)) then         ! Reminder: TKE is on model edges
+        if (DO_SHOC /= 0) then          !           TKESHOC is not.
+          TKE(:,:,1:LM-1) = 0.5*(TKESHOC(:,:,1:LM-1)+TKESHOC(:,:,2:LM))
+          TKE(:,:,0) = 1e-6
+          TKE(:,:,LM) = 1e-6
+        else
+          TKE = MAPL_UNDEF
+          do L = 1,LM-1
+            TKE(:,:,L) = ( LAMBDADISS * &
+            ( -1.*(KH(:,:,L)*MAPL_GRAV/((THV(:,:,L) + THV(:,:,L+1))*0.5) *  ((THV(:,:,L) - THV(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))) +  &
+            (KM(:,:,L)*((U(:,:,L) - U(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))*((U(:,:,L) - U(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1))))  +  &
+            (KM(:,:,L)*((V(:,:,L) - V(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))*((V(:,:,L) - V(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))) )) ** 2
+            TKE(:,:,L) = TKE(:,:,L) ** (1./3.)
+          enddo
+
+          ! If not running SHOC, estimate ISOTROPY from KH and TKE,
+          ! based on Eq. 7 from Bogenschutz and Krueger (2013).
+          ! This is a placeholder to allow use of the double-gaussian
+          ! PDF without SHOC, but should be tested and revised!!!
+          ISOTROPY(:,:,LM) = KH(:,:,LM-1) / max(0.01,0.1*TKE(:,:,LM-1))
+          ISOTROPY(:,:,1) = KH(:,:,1) / max(0.01,0.1*TKE(:,:,1))
+          do L = 2,LM-1
+            ISOTROPY(:,:,L) = (KH(:,:,L)+KH(:,:,L-1)) / (0.1*(TKE(:,:,L)+TKE(:,:,L-1)))
+          end do
+          ISOTROPY = max(10.,min(2000.,ISOTROPY))
+
+        end if
+      end if ! TKE
+
+
+      ! Update the higher order moments required for the ADG PDF
+      if (PDFSHAPE.eq.5) then
+      HL = T + (mapl_grav*Z - mapl_alhl*Q)/mapl_cp
+      call update_moments(IM, JM, LM, DT, &
+                          SH,             &  ! in
+                          EVAP,           &
+                          Z,              &
+                          ZLE,            &
+                          KH,             &
+                          TKESHOC,        &
+                          ISOTROPY,       &
+                          QT,             &
+                          HL,             &
+                          MFFRC,          &
+                          MFQT2,          &
+                          MFQT3,          &
+                          MFHL2,          &
+                          MFHL3,          &
+                          MFW2,           &
+                          MFW3,           &
+                          MFWQT,          &
+                          MFWHL,          &
+                          MFHLQT,         &
+                          qt2,            &  ! inout
+                          qt3,            &
+                          hl2b,            &  ! out
+                          hl3b,            &
+                          w2b,             &
+                          w3b,             &
+                          wqt_tmp(:,:,1:LM),        &
+                          whl_tmp(:,:,1:LM),        &
+                          hlqt,           &
+                          hl2tune,        &  ! tuning parameters
+                          qt2tune,        &
+                          hlqt2tune,      &
+                          qt2scale,       &
+                          qt3_tscale )
+       end if
+
       KPBLMIN  = count(PREF < 50000.)
 
                             ZPBL = MAPL_UNDEF
@@ -5180,36 +5328,6 @@ ENDIF
       if (associated(ZPBLHTKE)) then
          ZPBLHTKE = MAPL_UNDEF
       end if ! ZPBLHTKE
-
-      ! TKE 
-      if (associated(TKE)) then         ! Reminder: TKE is on model edges
-        if (DO_SHOC /= 0) then          !           TKESHOC is not.
-          TKE(:,:,1:LM-1) = 0.5*(TKESHOC(:,:,1:LM-1)+TKESHOC(:,:,2:LM))
-          TKE(:,:,0) = 1e-6
-          TKE(:,:,LM) = 1e-6
-        else
-          TKE = MAPL_UNDEF
-          do L = 1,LM-1
-            TKE(:,:,L) = ( LAMBDADISS * &
-            ( -1.*(KH(:,:,L)*MAPL_GRAV/((THV(:,:,L) + THV(:,:,L+1))*0.5) *  ((THV(:,:,L) - THV(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))) +  &
-            (KM(:,:,L)*((U(:,:,L) - U(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))*((U(:,:,L) - U(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1))))  +  &
-            (KM(:,:,L)*((V(:,:,L) - V(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))*((V(:,:,L) - V(:,:,L+1))/(Z(:,:,L) - Z(:,:,L+1)))) )) ** 2
-            TKE(:,:,L) = TKE(:,:,L) ** (1./3.)
-          enddo
-
-          ! If not running SHOC, estimate ISOTROPY from KH and TKE,
-          ! based on Eq. 7 from Bogenschutz and Krueger (2013).
-          ! This is a placeholder to allow use of the double-gaussian
-          ! PDF without SHOC, but should be tested and revised!!!
-          ISOTROPY(:,:,LM) = KH(:,:,LM-1) / max(0.01,0.1*TKE(:,:,LM-1))
-          ISOTROPY(:,:,1) = KH(:,:,1) / max(0.01,0.1*TKE(:,:,1))
-          do L = 2,LM-1
-            ISOTROPY(:,:,L) = (KH(:,:,L)+KH(:,:,L-1)) / (0.1*(TKE(:,:,L)+TKE(:,:,L-1)))
-          end do
-          ISOTROPY = max(10.,min(2000.,ISOTROPY))
-
-        end if
-      end if ! TKE
 
       ! RI local diagnostic for pbl height thresh 0.
       if (associated(ZPBLRI)) then

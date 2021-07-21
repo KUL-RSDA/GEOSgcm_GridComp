@@ -33,11 +33,12 @@ module shoc
 
  subroutine run_shoc( nx, ny, nzm, nz, dtn, dm_inv,              &  ! in
                  prsl_inv, phii_inv, phil_inv, u_inv, v_inv,     &  ! in
-                 omega_inv, hflx, evap, buoy_mf_inv,             &  ! in
+                 omega_inv, hflx, evap, & ! buoy_mf_inv,             &  ! in
                  tabs_inv, qwv_inv, qi_inv, qc_inv, qpi_inv,     &  ! in 
                  qpl_inv, cld_sgs_inv, wthv_sec_inv, prnum,      &  ! in
                  tke_inv, tkh_inv,                               &  ! inout
-                 isotropy_inv, w3_canuto_inv,                    &  ! out
+!                 isotropy_inv, w3_canuto_inv,                    &  ! out
+                 isotropy_inv,                                   &  ! out
                  tkesbdiss_inv, tkesbbuoy_inv,                   &  ! out
                  tkesbshear_inv,tkesbtrans_inv,                  &  ! out
                  smixt_inv,smixt_oc_inv,smixt_ic_inv,            &  ! out
@@ -93,7 +94,7 @@ module shoc
   real, intent(in   ) :: u_inv    (nx,ny,nzm) ! u-wind, m/s
   real, intent(in   ) :: v_inv    (nx,ny,nzm) ! v-wind, m/s
   real, intent(in   ) :: omega_inv(nx,ny,nzm) ! omega, Pa/s
-  real, intent(in   ) :: buoy_mf_inv(nx,ny,nzm) ! buoyancy flux MF, K*m/s
+!  real, intent(in   ) :: buoy_mf_inv(nx,ny,nzm) ! buoyancy flux MF, K*m/s
   real, intent(in   ) :: wthv_sec_inv(nx,ny,nzm) ! Buoyancy flux, K*m/s
 
   real, intent(in   ) :: tabs_inv   (nx,ny,nzm) ! temperature, K
@@ -108,7 +109,7 @@ module shoc
   real, intent(inout) :: prnum      (nx,ny,nzm) ! turbulent Prandtl number
 
   real, intent(  out) :: isotropy_inv(nx,ny,nzm) ! return to isotropy timescale
-  real, intent(  out) :: w3_canuto_inv(nx,ny,nz) ! canuto w3 estimate
+!  real, intent(  out) :: w3_canuto_inv(nx,ny,nz) ! canuto w3 estimate
 
   real, dimension(:,:,:), pointer :: tkesbdiss_inv  ! dissipation
   real, dimension(:,:,:), pointer :: tkesbbuoy_inv  ! buoyancy production 
@@ -197,7 +198,7 @@ module shoc
   real tke     (nx,ny,nzm)
   real tkh     (nx,ny,nzm)
   real wthv_sec(nx,ny,nzm)
-  real buoy_mf (nx,ny,nzm)
+!  real buoy_mf (nx,ny,nzm)
   real tkesbdiss(nx,ny,nzm)
   real tkesbbuoy(nx,ny,nzm)
   real tkesbshear(nx,ny,nzm)
@@ -212,7 +213,7 @@ module shoc
   real wqw_sec  (nx,ny,nzm) ! Turbulent flux of tot. wat. mix., kg/kg*m/s
   real wthl_sec (nx,ny,nzm) ! Turbulent flux of liquid/ice static energy, K*m/s
   real w_sec    (nx,ny,nzm) ! Second moment of vertical velocity, m**2/s**2
-  real w3       (nx,ny,nzm) ! Third moment of vertical velocity, m**3/s**3
+!  real w3       (nx,ny,nzm) ! Third moment of vertical velocity, m**3/s**3
   real wqp_sec  (nx,ny,nzm) ! Turbulent flux of precipitation, kg/kg*m/s
 
 ! Eddy length formulation 
@@ -286,11 +287,11 @@ module shoc
         cld_sgs(i,j,kinv)  = cld_sgs_inv(i,j,k)
         tke(i,j,kinv)      = tke_inv(i,j,k)
         wthv_sec(i,j,kinv) = wthv_sec_inv(i,j,k)
-        buoy_mf(i,j,kinv)  = USE_MF_BUOY*buoy_mf_inv(i,j,k)
+!        buoy_mf(i,j,kinv)  = USE_MF_BUOY*buoy_mf_inv(i,j,k)
       enddo
     enddo
   enddo
-  if (BUOY_OPTION==2 .and. USE_MF_PDF==1) buoy_mf = 0.0
+!  if (BUOY_OPTION==2 .and. USE_MF_PDF==1) buoy_mf = 0.0
 
            
   do k=1,nzm
@@ -317,7 +318,7 @@ module shoc
                                                - fac_fus *(qci(i,j,k)+qpi(i,j,k))
         hvl(i,j,k) = tabs(i,j,k)*(1.0+epsv*qv(i,j,k)-qcl(i,j,k))+gamaz(i,j,k) &
                      - fac_cond*qcl(i,j,k) - fac_fus *qci(i,j,k)
-        w3(i,j,k) = 0.0
+!        w3(i,j,k) = 0.0
       enddo
     enddo
   enddo
@@ -440,7 +441,7 @@ module shoc
 
 ! Diagnose the third moment of SGS vertical velocity
 
-  call canuto()
+!  call canuto()
 
 
 ! If using single-gaussian PDF for buoyancy flux,
@@ -457,7 +458,7 @@ end if
   isotropy_inv(:,:,1:nzm)  = isotropy(:,:,nzm:1:-1)
   tke_inv(:,:,1:nzm)       = tke(:,:,nzm:1:-1)
 
-  w3_canuto_inv(:,:,1:nzm) = w3(:,:,nzm:1:-1)
+!  w3_canuto_inv(:,:,1:nzm) = w3(:,:,nzm:1:-1)
 
   if (associated(tkesbdiss_inv))  tkesbdiss_inv(:,:,1:nzm)  = tkesbdiss(:,:,nzm:1:-1)
   if (associated(tkesbbuoy_inv))  tkesbbuoy_inv(:,:,1:nzm)  = tkesbbuoy(:,:,nzm:1:-1)
@@ -522,7 +523,7 @@ contains
      do j=1,ny
       fnsh=0
       do k=1,nzm
-        if (wthv_sec(i,j,k)+buoy_mf(i,j,k) .ge.0.01 .and. cnvl.eq.0) then ! if bot of conv layer
+        if (wthv_sec(i,j,k) .ge.0.01 .and. cnvl.eq.0) then ! if bot of conv layer
 !        if (mf(i,j,k).ge.0.001 .and. cnvl.eq.0) then ! if bot of conv layer
           cnvl = 1
           strt = k
@@ -530,7 +531,7 @@ contains
 
         ! if top of conv layer, relax tke within conv layer to
         ! pressure-weighted mean tke
-        if (cnvl.eq.1 .and. wthv_sec(i,j,k)+buoy_mf(i,j,k).lt.0.01) then
+        if (cnvl.eq.1 .and. wthv_sec(i,j,k).lt.0.01) then
 !        if (cnvl.eq.1 .and. mf(i,j,k).lt.0.001) then
           fnsh = k-1
           if (strt<fnsh) then
@@ -583,7 +584,7 @@ contains
 ! Moist GridComp. The value used here is from the previous time step
 
 !         a_prod_bu = bet(i,j,k)*wthv_sec(i,j,k)
-          a_prod_bu = (ggr / thv(i,j,k)) * (wthv_sec(i,j,k)+buoy_mf(i,j,k))
+          a_prod_bu = (ggr / thv(i,j,k)) * wthv_sec(i,j,k)
 
 ! If wthv_sec from subgrid PDF is not available use Brunt-Vaisalla frequency from eddy_length()
 !         wrk  = (0.5*ck)  * (tkh(i,j,ku)+tkh(i,j,kd))
@@ -1292,7 +1293,7 @@ endif
            if (abs(dum).eq.1e-16) print *,'c-1.2*X0+AA0=',dum
 !!! aab
 !           w3(i,j,k) = max(-cond, min(cond, (AA1-1.2*X1-1.5*f5)/dum))
-           w3(i,j,k) = (AA1-1.2*X1-1.5*f5)/(c-1.2*X0+AA0)
+!           w3(i,j,k) = (AA1-1.2*X1-1.5*f5)/(c-1.2*X0+AA0)
 !!! aab
 
 
@@ -1303,11 +1304,11 @@ endif
         end do
       end do
     end do
-    do j=1,ny
-      do i=1,nx
-        w3(i,j,1) = w3(i,j,2)
-      enddo
-    enddo
+!    do j=1,ny
+!      do i=1,nx
+!        w3(i,j,1) = w3(i,j,2)
+!      enddo
+!    enddo
     
   end subroutine canuto
 
@@ -1566,7 +1567,7 @@ endif
 
 
     integer, intent(in   ) :: IM, JM, LM       ! dimensions
-    integer, intent(in   ) :: DT               ! timestep [s]
+    real,    intent(in   ) :: DT               ! timestep [s]
     real,    intent(in   ) :: SH   (IM,JM)     ! surface sensible heat flux
     real,    intent(in   ) :: EVAP (IM,JM)     ! surface evaporation
     real,    intent(in   ) :: ZL   (IM,JM,LM)  ! heights [m]
