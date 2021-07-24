@@ -1297,26 +1297,25 @@ contains
 
     call MAPL_AddConnectivity ( GC,                                          &
          SHORT_NAME  = (/'KH           ', 'KPBL         ', 'KPBL_SC      ',     &
-                         'TKE          ', 'ISOTROPY     ', 'w3_canuto    ',     &
-                         'TKESHOC      ', 'edmf_wqtavg  ', 'edmf_whlavg  ',     &
-                         'edmf_qt2     ', 'edmf_qt3     ', 'edmf_hl2     ',     &
-                         'edmf_w3      ', 'edmf_wqt     ', 'edmf_dry_a   ',     &
-                         'edmf_moist_a ', 'edmf_qthl    ', 'edmf_whl     ',     &
-                         'edmf_w2      ', 'edmf_hl3     ',                      &
+                         'TKE          ', 'TKESHOC      ', 'EDMF_FRC     ',     &
+                         'edmf_wqtavg  ', 'edmf_whlavg  ',                      &
+                         'HL2          ', 'HL3          ', 'W2           ',     &
+                         'W3           ', 'HLQT         ', 'WQT          ',     &
+                         'WHL          ', 'QT2          ', 'QT3          ',     &
                          'au           ', 'hle          ', 'qte          '/),    &
          DST_ID      = MOIST,                                      &
          SRC_ID      = TURBL,                                      &
                                                         RC=STATUS  )
     VERIFY_(STATUS)
 
-    if ( DO_MYNN /= 0 ) then
-       call MAPL_AddConnectivity ( GC,                                        &
-            SHORT_NAME  = (/'HL2         ', 'QT2         ', 'HLQT        '/), &
-            DST_ID      = MOIST,                                      &
-            SRC_ID      = TURBL,                                      &
-                                                        RC=STATUS  )
-       VERIFY_(STATUS)
-    end if
+!    if ( DO_MYNN /= 0 ) then
+!       call MAPL_AddConnectivity ( GC,                                        &
+!            SHORT_NAME  = (/'HL2         ', 'QT2         ', 'HLQT        '/), &
+!            DST_ID      = MOIST,                                      &
+!            SRC_ID      = TURBL,                                      &
+!                                                        RC=STATUS  )
+!       VERIFY_(STATUS)
+!    end if
 
     call MAPL_AddConnectivity ( GC,                                &
          SHORT_NAME  = (/'TS   ','T2SRF','Q2SRF','TQSRF' /),                                  &

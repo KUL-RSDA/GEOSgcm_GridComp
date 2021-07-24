@@ -396,14 +396,13 @@ contains
          FRLANDICE_dev    , &
          FRLAND_dev       , &
          KH_dev           , &
-         ISOTROPY_dev     , &
          mf_frc_dev       , &
          au_dev           , &
          hle_dev          , &
          qte_dev          , &
-         hl2u_dev         , &
-         qt2u_dev         , &
-         hlqtu_dev        , &    
+!         hl2u_dev         , &
+!         qt2u_dev         , &
+!         hlqtu_dev        , &    
          wqtfac_dev       , &
          whlfac_dev       , &
          wqt_dev          , &
@@ -527,14 +526,13 @@ contains
       real, intent(in   ), dimension(IRUN     ) :: FRLANDICE_dev  ! FRLANDICE
       real, intent(in   ), dimension(IRUN     ) :: FRLAND_dev  ! FRLAND
       real, intent(in   ), dimension(IRUN,0:LM) :: KH_dev      ! KH
-      real, intent(in   ), dimension(IRUN,  LM) :: ISOTROPY_dev! ISOTROPY
       real, intent(in   ), dimension(IRUN,  LM) :: mf_frc_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: au_dev   !
       real, intent(in   ), dimension(IRUN,  LM) :: hle_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: qte_dev  !
-      real, intent(in   ), dimension(IRUN,  LM) :: hl2u_dev  !
-      real, intent(in   ), dimension(IRUN,  LM) :: qt2u_dev  !
-      real, intent(in   ), dimension(IRUN,  LM) :: hlqtu_dev !
+!      real, intent(in   ), dimension(IRUN,  LM) :: hl2u_dev  !
+!      real, intent(in   ), dimension(IRUN,  LM) :: qt2u_dev  !
+!      real, intent(in   ), dimension(IRUN,  LM) :: hlqtu_dev !
       real, intent(in   ), dimension(IRUN,  LM) :: wqtfac_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: whlfac_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: wqt_dev  !
@@ -1119,9 +1117,9 @@ contains
                   au_dev(I,K),     &
                   hle_dev(I,K),    &
                   qte_dev(I,K),    &
-                  hl2u_dev(I,K),   &
-                  qt2u_dev(I,K),   &
-                  hlqtu_dev(I,K),  &
+!                  hl2u_dev(I,K),   &
+!                  qt2u_dev(I,K),   &
+!                  hlqtu_dev(I,K),  &
                   whl_dev(I,K),        &
                   wqt_dev(I,K),        &
                   wqtfac_dev(I,K),     &
@@ -2117,9 +2115,9 @@ contains
          AU          , &
          HLE         , &
          QTE         , &
-         HL2U        , &
-         QT2U        , &
-         HLQTU       , &
+!         HL2U        , &
+!         QT2U        , &
+!         HLQTU       , &
          WHL         , &
          WQT         , &
          wqtfac      , &
@@ -2162,7 +2160,7 @@ contains
       real, intent(in)    :: NL,NI,CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND
 !      real, intent(in)    :: HL,WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
       real, intent(in)    :: WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3,MFHL3,wqtfac,whlfac
-      real, intent(in)    :: AU, HLE, QTE, HL2U, QT2U, HLQTU
+      real, intent(in)    :: AU, HLE, QTE !, HL2U, QT2U, HLQTU
       real, intent(out)   :: PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, &
                              PDF_SIGHL1, PDF_SIGHL2, PDF_HL1, PDF_HL2, &
                              PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
@@ -2351,9 +2349,9 @@ contains
                HLU = ( HL - ( 1. - au )*HLE )/au
                QTU = ( QT - ( 1. - au )*QTE )/au
 
-               call gaussian(ZL, 100.*PL, HLU, QTU, HL2U, QT2U, HLQTU, WQT, WHL, &
-                             Tcu, qlu, acu, wthv2, &
-                             A_mynn, B_mynn, qsat_mynn)
+!               call gaussian(ZL, 100.*PL, HLU, QTU, HL2U, QT2U, HLQTU, WQT, WHL, &
+!                             Tcu, qlu, acu, wthv2, &
+!                             A_mynn, B_mynn, qsat_mynn)
 
             end if
 
