@@ -393,12 +393,6 @@ contains
          FRLAND_dev       , &
          KH_dev           , &
          mf_frc_dev       , &
-         au_dev           , &
-         hle_dev          , &
-         qte_dev          , &
-!         hl2u_dev         , &
-!         qt2u_dev         , &
-!         hlqtu_dev        , &    
          wqtfac_dev       , &
          whlfac_dev       , &
          wqt_dev          , &
@@ -459,9 +453,6 @@ contains
          QDDF3_dev        , &
          CNV_FRACTION_dev , &
          TROPP_dev        , &
-         A_mynn           , &
-         B_mynn           , &
-         qsat_mynn        , &
          RHX_dev          , &
          REV_LS_dev       , &
          REV_AN_dev       , &
@@ -523,12 +514,6 @@ contains
       real, intent(in   ), dimension(IRUN     ) :: FRLAND_dev  ! FRLAND
       real, intent(in   ), dimension(IRUN,0:LM) :: KH_dev      ! KH
       real, intent(in   ), dimension(IRUN,  LM) :: mf_frc_dev  !
-      real, intent(in   ), dimension(IRUN,  LM) :: au_dev   !
-      real, intent(in   ), dimension(IRUN,  LM) :: hle_dev  !
-      real, intent(in   ), dimension(IRUN,  LM) :: qte_dev  !
-!      real, intent(in   ), dimension(IRUN,  LM) :: hl2u_dev  !
-!      real, intent(in   ), dimension(IRUN,  LM) :: qt2u_dev  !
-!      real, intent(in   ), dimension(IRUN,  LM) :: hlqtu_dev !
       real, intent(in   ), dimension(IRUN,  LM) :: wqtfac_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: whlfac_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: wqt_dev  !
@@ -664,9 +649,6 @@ contains
       real, intent(  out), dimension(IRUN,  LM) :: wql_dev
       real, intent(in   ), dimension(IRUN,  LM) :: NACTL_dev  ! NACTL
       real, intent(in   ), dimension(IRUN,  LM) :: NACTI_dev  ! NACTI
-      real, intent(  out), dimension(IRUN,  LM) :: A_mynn
-      real, intent(  out), dimension(IRUN,  LM) :: B_mynn
-      real, intent(  out), dimension(IRUN,  LM) :: qsat_mynn
 
 !!$      real, intent(  out), dimension(IRUN,  LM) :: LIQANMOVE_dev  ! LIQANMOVE
 !!$      real, intent(  out), dimension(IRUN,  LM) :: ICEANMOVE_dev  ! ICEANMOVE
@@ -1103,12 +1085,6 @@ contains
                   ANVFRC_dev(I,K), &
                   NACTL_dev(I,K),  &
                   NACTI_dev(I,K),  &
-                  au_dev(I,K),     &
-                  hle_dev(I,K),    &
-                  qte_dev(I,K),    &
-!                  hl2u_dev(I,K),   &
-!                  qt2u_dev(I,K),   &
-!                  hlqtu_dev(I,K),  &
                   whl_dev(I,K),        &
                   wqt_dev(I,K),        &
                   wqtfac_dev(I,K),     &
@@ -1139,11 +1115,7 @@ contains
                   PDF_RWQT_dev(I,K),   &
                   WTHV2_dev(I,K),      &
                   wql_dev(I,K),        &
-                  CNV_FRACTION_dev(I), SNOMAS_dev(I), FRLANDICE_dev(I), FRLAND_dev(I), &
-                  A_mynn(I,K),        &
-                  B_mynn(I,K),        &
-                  qsat_mynn(I,K))
- 
+                  CNV_FRACTION_dev(I), SNOMAS_dev(I), FRLANDICE_dev(I), FRLAND_dev(I) ) 
             else
             call hystpdf(          &
                   DT             , &
@@ -2100,9 +2072,9 @@ contains
          AF          , &
          NL          , &
          NI          , &
-         AU          , &
-         HLE         , &
-         QTE         , &
+!         AU          , &
+!         HLE         , &
+!         QTE         , &
 !         HL2U        , &
 !         QT2U        , &
 !         HLQTU       , &
@@ -2136,24 +2108,18 @@ contains
          PDF_RWQT,   &
          WTHV2,      &
          WQL,        &
-         CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND, &
-         A_mynn,    &
-         B_mynn,    &
-         qsat_mynn)
+         CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
 
       real, intent(in)    :: DT,ALPHA,PL,ZL
       integer, intent(in) :: pdfshape
       real, intent(inout) :: TE,QV,QCl,QCi,CF,QAl,QAi,AF,PDF_A
       real, intent(in)    :: NL,NI,CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND
-!      real, intent(in)    :: HL,WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
       real, intent(in)    :: WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3,MFHL3,wqtfac,whlfac
-      real, intent(in)    :: AU, HLE, QTE !, HL2U, QT2U, HLQTU
       real, intent(out)   :: PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, &
                              PDF_SIGHL1, PDF_SIGHL2, PDF_HL1, PDF_HL2, &
                              PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
                              PDF_RHLQT,  PDF_RWHL, PDF_RWQT
       real, intent(out)   :: WTHV2, WQL
-      real, intent(out)   :: A_mynn, B_mynn, qsat_mynn
 
       ! internal arrays
       real :: QCO, QVO, CFO, QAO, TAU,HL
@@ -2290,60 +2256,6 @@ contains
 
            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
 
-         elseif (pdfflag == 6) then ! Single gaussian
-            ! Update the liquid water static energy
-            ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
-            HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
-            QT = QVn + QCn
-
-            call gaussian(ZL, 100.*PL, HL, QT, HL2, QT2, HLQT, WQT, WHL, &
-                          TEn, QCn, CFn, wthv2, &
-                          A_mynn, B_mynn, qsat_mynn)
-            
-            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
-         elseif (pdfflag == 7) then ! Double Gaussian with consistent partitioning
-            ! Update the liquid water static energy
-            ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
-
-            HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
-            QT = QVn + QCn
-
-            !
-            ! Updraft ensemble
-            !
-            if ( au > 0. ) then
-               HLU = ( HL - ( 1. - au )*HLE )/au
-               QTU = ( QT - ( 1. - au )*QTE )/au
-
-!               call gaussian(ZL, 100.*PL, HLU, QTU, HL2U, QT2U, HLQTU, WQT, WHL, &
-!                             Tcu, qlu, acu, wthv2, &
-!                             A_mynn, B_mynn, qsat_mynn)
-
-            end if
-
-            !
-            ! Environment
-            !
-            
-            call gaussian(ZL, 100.*PL, HLE, QTE, HL2, QT2, HLQT, WQT, WHL, &
-                          Tce, qle, ace, wthv2, &
-                          A_mynn, B_mynn, qsat_mynn)
-
-            !
-            ! Combine upddraft and environment
-            !
-
-            if ( au > 0. ) then
-               TEn = au*Tcu + ( 1. - au )*Tce
-               QCn = au*qlu + ( 1. - au )*qle
-               CFn = au*acu + ( 1. - au )*ace
-            else
-               TEn = Tce
-               QCn = qle
-               CFn = ace
-            end if
-
-            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
          endif
 
 !         if (abs(QVn+QCn-QVp-QCp)>1e-6*(QVp+QCp) .and. QVp>0.0001) print *,'total water not conserved!'
@@ -2404,14 +2316,11 @@ contains
                +      fQi* (MAPL_ALHS/MAPL_CP)*( (QCn - QCp)*(1.-AF) + (QAo-QAx)*AF )
 
 !         if (abs(Ten - Tep) .lt. 0.00001) exit 
-!         if (abs(Ten-Tep)>2.0) print *,'Ten-Tep large, Ten=',Ten,'  Tep=',Tep,'  PL=',PL,'  n=',n,'  QCn=',QCn,'  QCp=',QCp,'  AF=',AF
 
          DQS  = DQSAT( TEn, PL, QSAT=QSn )
 
       enddo ! qsat iteration
 
-!      if (abs(TEo-TEn)>2.0) print *,'TEn=',TEn,' TEo=',TEo,' PL=',PL,' QCn=',QCn,' QCp=',QCp
-!      if (abs(QVo-QVn)>0.1*QVo .and. Qvo>0.001) print *,'QVo-QVn large, QVo=',Qvo,'  QVn=',QVn
 
       CFo = CFn
       CF = CFn

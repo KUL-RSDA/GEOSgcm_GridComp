@@ -194,8 +194,6 @@ contains
     integer      :: AVRGNINT
     integer      :: IQVAINC
     real         :: DT
-
-    integer ::  DO_MYNN
     
     character(len=ESMF_MAXSTR) :: FRIENDLIES_NCPL , FRIENDLIES_NCPI , &
                                   FRIENDLIES_NRAIN, FRIENDLIES_NSNOW, FRIENDLIES_NGRAUPEL
@@ -273,6 +271,7 @@ contains
     if (adjustl(CLDMICRO)=="2MOMENT") then
       call ESMF_ConfigGetAttribute( CF, MGVERSION, Label="MGVERSION:",  default=0.0, RC=STATUS)
     endif
+    call ESMF_ConfigGetAttribute( CF, DOSHLW, Label="DOSHLW:",  default=0, RC=STATUS)
 
     call ESMF_ConfigGetAttribute( CF, HYDROSTATIC, Label="HYDROSTATIC:",  default="TRUE", RC=STATUS)
     VERIFY_(STATUS)
@@ -288,12 +287,6 @@ contains
     VERIFY_(STATUS)
     if (adjustl(DIAGNOSE_PRECIP_TYPE)=="TRUE" ) LDIAGNOSE_PRECIP_TYPE=.true.
     if (adjustl(DIAGNOSE_PRECIP_TYPE)=="FALSE") LDIAGNOSE_PRECIP_TYPE=.false.
-
-    call ESMF_ConfigGetAttribute( CF, DOSHLW, Label="DOSHLW:",  default=0, RC=STATUS)
-
-    call ESMF_ConfigGetAttribute( CF, DO_MYNN, Label="TURBULENCE_DO_MYNN:",  default=0, RC=STATUS)
-
-       !call MAPL_GetResource(STATE, DOSHLW,             'DOSHLW:'  ,DEFAULT=0,        RC=STATUS)
 
     FRIENDLIES_NCPI     = trim(COMP_NAME)
     FRIENDLIES_NCPL     = trim(COMP_NAME)
@@ -516,26 +509,7 @@ contains
          RC=STATUS  )  
     VERIFY_(STATUS)                         
 
-!    call MAPL_AddInternalSpec(GC,                                    &
-!         SHORT_NAME ='SKEW_QTX',                                     &
-!         LONG_NAME  = 'SHOC_PDF_QT_skewness',                        &
-!         UNITS      ='1',                                            &       
-!         DIMS       = MAPL_DimsHorzVert,                             &
-!         VLOCATION  = MAPL_VLocationCenter,                          &
-!         DEFAULT    = 1.0,                                           &
-!         RC=STATUS  )  
-!    VERIFY_(STATUS)                         
-      
-!    call MAPL_AddInternalSpec(GC,                                  &
-!         SHORT_NAME ='QT2MEM',                                     &
-!          LONG_NAME = 'total_water_variance_memory',               &
-!         UNITS      ='kg2 kg-2',                                   &       
-!         DIMS      = MAPL_DimsHorzVert,                            &
-!         VLOCATION = MAPL_VLocationCenter,                         &
-!         DEFAULT= 0.0,                                             &
-!         FRIENDLYTO = 'TURBULENCE',                                &
-!         RC=STATUS  )  
-!         VERIFY_(STATUS)                         
+     
     
   if (DOSHLW /= 0) then
           
@@ -618,29 +592,6 @@ contains
          REFRESH_INTERVAL   = RFRSHINT,                             &
          RC=STATUS  )
     VERIFY_(STATUS)
-
-    call MAPL_AddImportSpec(GC,                                     &
-         SHORT_NAME = 'TKESHOC',                                    &
-         LONG_NAME  = 'turbulent_kinetic_energy_from_SHOC',         &
-         UNITS      = 'm+2 s-2',                                    &
-         DIMS       = MAPL_DimsHorzVert,                            &
-         VLOCATION  = MAPL_VLocationCenter,                         &
-         AVERAGING_INTERVAL = AVRGNINT,                             &
-         REFRESH_INTERVAL   = RFRSHINT,                             &
-         RC=STATUS  )
-    VERIFY_(STATUS)
-
-
-!    call MAPL_AddImportSpec(GC,                                     &
-!         SHORT_NAME = 'QTFLXTRB',                                   &
-!         LONG_NAME  = 'total_water_flux_from_turbulence',           &
-!         UNITS      = 'kg kg-1 m s-1',                              &
-!         DIMS       = MAPL_DimsHorzVert,                            &
-!         VLOCATION  = MAPL_VLocationEdge,                           &
-!         AVERAGING_INTERVAL = AVRGNINT,                             &
-!         REFRESH_INTERVAL   = RFRSHINT,                             &
-!         RC=STATUS  )
-!    VERIFY_(STATUS)
 
     call MAPL_AddImportSpec(GC,                                     &
          SHORT_NAME = 'edmf_wqtavg',                                &
@@ -730,9 +681,6 @@ contains
             RC=STATUS )
        VERIFY_(STATUS)
 
-    ! Import prognostic variables representing covariability of heat and moisture
-    !
-!    if ( DO_MYNN /= 0 ) then
        call MAPL_AddImportSpec(GC,                                  &
             SHORT_NAME = 'HL2',                                       &
             LONG_NAME  = 'variance_of_liquid_water_static_energy',    &
@@ -776,9 +724,6 @@ contains
             REFRESH_INTERVAL   = RFRSHINT,                            &
             RC=STATUS )
        VERIFY_(STATUS)
- !   end if
-    !
-    ! End import of prognostic variables
 
     call MAPL_AddImportSpec(GC,                             &
          SHORT_NAME = 'TH',                                        &
@@ -1226,45 +1171,7 @@ contains
     VERIFY_(STATUS)
 !-srf-gf-scheme
 
-!-mynn-edmf
-    call MAPL_AddImportSpec(GC,                                              &
-       LONG_NAME  = 'updraft_area_fraction',                                 &
-       UNITS      = '1',                                                     &
-       SHORT_NAME = 'au'    ,                                                &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationEdge,                                      &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddImportSpec(GC,                                              &
-       LONG_NAME  = 'sub-environmental_hl',                                  &
-       UNITS      = 'K',                                                     &
-       SHORT_NAME = 'hle',                                                   &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationCenter,                                    &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddImportSpec(GC,                                              &
-       LONG_NAME  = 'sub-environmental_qt',                                  &
-       UNITS      = 'kg+1kg-1',                                              &
-       SHORT_NAME = 'qte',                                                   &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationCenter,                                    &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-!-mynn-edmf
-
     ! !EXPORT STATE:
-
-!    call MAPL_AddExportSpec(GC,                                   &
-!         SHORT_NAME ='SKEW_QT',                                     &
-!          LONG_NAME = 'SHOC_PDF_QT_skewness',                       &
-!         UNITS      ='1',                                           &       
-!         DIMS      = MAPL_DimsHorzVert,                             &
-!         VLOCATION = MAPL_VLocationCenter,                          &
-!         RC=STATUS  )  
-!    VERIFY_(STATUS)                         
 
     call MAPL_AddExportSpec(GC,                                              &
        LONG_NAME  = 'SHOC_PDF_relative_area_fraction',                       &
@@ -1414,42 +1321,6 @@ contains
        SHORT_NAME = 'WTHV2',                                                 &
        LONG_NAME  = 'Buoyancy_flux_for_SHOC',                                &
        UNITS      = '1',                                                     &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationCenter,                                    &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddExportSpec(GC,                                              &
-       SHORT_NAME = 'WTHV2_RAD',                                                 &
-       LONG_NAME  = 'Buoyancy_flux_from_rad_cooling',                                &
-       UNITS      = '1',                                                     &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationCenter,                                    &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddExportSpec(GC,                                              &
-       SHORT_NAME = 'QT2SHOC',                                               &
-       LONG_NAME  = 'Total_water_variance',                                  &
-       UNITS      = 'kg2 kg-2',                                              &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationCenter,                                    &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddExportSpec(GC,                                              &
-       SHORT_NAME = 'HL2SHOC',                                               &
-       LONG_NAME  = 'Liquid_water_static_energy_variance',                   &
-       UNITS      = 'K2',                                                    &
-       DIMS       = MAPL_DimsHorzVert,                                       &
-       VLOCATION  = MAPL_VLocationCenter,                                    &
-                                                                  RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddExportSpec(GC,                                              &
-       SHORT_NAME = 'HLQTSHOC',                                              &
-       LONG_NAME  = 'Liquid_static_energy_total_water_covariance',           &
-       UNITS      = 'K kg kg-1',                                                    &
        DIMS       = MAPL_DimsHorzVert,                                       &
        VLOCATION  = MAPL_VLocationCenter,                                    &
                                                                   RC=STATUS  )
@@ -3820,15 +3691,6 @@ contains
          VLOCATION  = MAPL_VLocationCenter,             RC=STATUS  )  
     VERIFY_(STATUS)                                                                          
 
-    call MAPL_AddExportSpec(GC,                             &
-         SHORT_NAME = 'ZL',                                        &
-         LONG_NAME  = 'height',                     &
-         UNITS      = 'm',                                         &
-         DIMS       = MAPL_DimsHorzVert,                           &
-         VLOCATION  = MAPL_VLocationCenter,                        &
-         RC=STATUS  )
-    VERIFY_(STATUS)
-
     call MAPL_AddExportSpec(GC,                              &
          SHORT_NAME = 'KHX0',                                         &
          LONG_NAME  = 'scalar_diffusivity',                         &
@@ -5183,32 +5045,6 @@ contains
         VERIFY_(STATUS)
 !--kml--- activation for single-moment uphysics
 
-! Coefficients for determining relative contribution of sensible and latent
-! heat fluxes to bouyancy flux
-    call MAPL_AddExportSpec(GC,                                     &
-         SHORT_NAME         = 'A_mynn',                             &
-         LONG_NAME          = 'A-coefficient_for_moist_turbulence', & 
-         UNITS              = '?',                                  &
-         DIMS               = MAPL_DimsHorzVert,                    &
-         VLOCATION          = MAPL_VLocationCenter,     RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddExportSpec(GC,                                     &
-         SHORT_NAME         = 'B_mynn',                             &
-         LONG_NAME          = 'B-coefficient_for_moist_turbulence', & 
-         UNITS              = '?',                                  &
-         DIMS               = MAPL_DimsHorzVert,                    &
-         VLOCATION          = MAPL_VLocationCenter,     RC=STATUS  )
-    VERIFY_(STATUS)
-
-    call MAPL_AddExportSpec(GC,                                     &
-         SHORT_NAME         = 'qsat_mynn',                          &
-         LONG_NAME          = 'Saturation_specific_humidity',       & 
-         UNITS              = 'kg+1kg-1',                           &
-         DIMS               = MAPL_DimsHorzVert,                    &
-         VLOCATION          = MAPL_VLocationCenter,     RC=STATUS  )
-    VERIFY_(STATUS)
-
 !========================================================================================             
 
 
@@ -5689,15 +5525,10 @@ contains
                                           PDF_QT2,    &
                                           PDF_RQTTH,  &
                                           PDF_RWTH,   &
-                                          PDF_RWQT!,   &
-!                                          SKEW_QT,    &
-!                                          SKEW_QTX
+                                          PDF_RWQT
 
-    real, dimension(:,:,:),pointer     :: QT2SHOC,   &
-                                          HL2SHOC,   &
-                                          W2,        &
+    real, dimension(:,:,:),pointer     :: W2,        &
                                           W3,        &
-                                          HLQTSHOC,  &
                                           WQT,       &
                                           WQL,       &
                                           WHL 
@@ -5729,7 +5560,7 @@ contains
 
       real, pointer, dimension(:,:,:) :: T, PLE, U, V, W, TH
       real, pointer, dimension(:,:)   :: TROPP
-      real, pointer, dimension(:,:,:) :: DQDT, UI, VI, WI, TI, KH, TKE, TKESHOC
+      real, pointer, dimension(:,:,:) :: DQDT, UI, VI, WI, TI, KH, TKE
       real, pointer, dimension(:,:,:) :: edmf_wqtavg,edmf_whlavg !,qtflxtrb
       real, pointer, dimension(:,:,:) :: HL2, QT2, QT3, HLQT, HL3, EDMF_FRC
       real, pointer, dimension(    :) :: PREF
@@ -5789,7 +5620,7 @@ contains
       real, pointer, dimension(:,:)   :: PGENTOT , PREVTOT
 
       !Record vars at top pf moist
-      real, pointer, dimension(:,:,:) :: Ux0, Vx0, THx0, KHx0, ZL
+      real, pointer, dimension(:,:,:) :: Ux0, Vx0, THx0, KHx0
       real, pointer, dimension(:,:)   :: TSx0, FRLANDx0
       real, pointer, dimension(:,:,:) :: Qx0, QLLSx0, QLCNx0, CLLSx0, CLCNx0, QILSx0, QICNx0, QCLSX0, QCCNX0
 
@@ -5880,7 +5711,6 @@ contains
       real, pointer, dimension(:,:,:)       :: DTDT_BL
       real, pointer, dimension(:,:,:)       :: DQDT_BL
       real, pointer, dimension(:,:,:)       :: DQDT_GF,DTDT_GF,MUPDP,MUPSH,MUPMD,DTRDT_GF
-      real, pointer, dimension(:,:,:)       :: au, hle, qte ! for MYNN-EDMF
       real, pointer, dimension(:,:  )       :: USTAR,TSTAR,QSTAR,T2M,Q2M,TA,QA,SH,EVAP,PHIS
       real, pointer, dimension(:,:  )       :: MFDP,MFSH,MFMD,ERRDP,ERRSH,ERRMD
       real, pointer, dimension(:,:  )       :: AA0,AA1,AA2,AA3,AA1_BL,AA1_CIN,TAU_BL,TAU_EC
@@ -5889,8 +5719,6 @@ contains
 !--kml--- activation for single-moment uphysics
       real, pointer, dimension(:,:,:)       :: NACTL,NACTI
 !--kml--- activation for single-moment uphysics
-
-      real, pointer, dimension(:,:,:)       :: A_mynn, B_mynn, qsat_mynn
 
       ! Aerosol-Cloud interactions
 
@@ -6068,8 +5896,7 @@ contains
 
       real (ESMF_KIND_R8), dimension(3)       :: ccn_diag
       integer, dimension(IM, JM)              :: KCT
-
-
+            
       ! Subgrid velocity parameterization 
 
       real, dimension (1, 1:LM) :: tm_gw, pm_gw, nm_gw, rho_gw, theta_tr, khaux, qcaux, dummyW , &
@@ -6077,7 +5904,6 @@ contains
 	   
       real, dimension (1, 0:LM) :: pi_gw, rhoi_gw, ni_gw, ti_gw
       real                      :: maxkhpbl, tausurf_gw, overscale, fracover, cfc_aux 
-      real                      :: zcldtop,maxradf,density,E
       real (ESMF_KIND_R8)       :: tauxr8, fsoot_drop, fdust_drop, sigma_nuc_r8, rh1_r8, frachet_dust, &
                                    frachet_bc, frachet_org, frachet_ss
       logical                   :: ismarine, is_stable, use_average_v                  
@@ -6460,18 +6286,10 @@ contains
       real :: icefall
       real :: cNN, cNN_OCEAN, cNN_LAND, CONVERT
 
-
-      real, dimension(IM,JM,LM) :: hl,total_water,w3var,w2var,hlsec,qtsec,hlqtsec,wqtsec,whlsec,wqlsec
-      real, dimension(IM,JM,LM) :: whl_sec,wqt_sec,hl2_sec,qt2_sec,hlqt_sec, au_full,wthv2tmp,wqtfacc,whlfacc
-      real, dimension(IM,JM,0:LM) :: qtgrad!,wqtfac
-      real, dimension(IM,JM)    :: sm,wrk1,wrk2,wrk3
-      real kd,ku,qt2tune,hl2tune,hlqt2tune,radbuoyfac,qt2scale,qt3_tscale,usesgb
-
       real   , dimension(IM,JM)           :: CMDU, CMSS, CMOC, CMBC, CMSU, CMNI
       real   , dimension(IM,JM)           :: CMDUcarma, CMSScarma
        
       real :: sigmaqt, qcn, cfn, qsatn, dqlls, dqils, qt
-      real :: Tl,qs,s,Az,Bz,sigma_s,Qz,ac,ql,alpha,beta,dqsz,tmp
 
       ! MATMAT CUDA Variables
 #ifdef _CUDA
@@ -6553,8 +6371,6 @@ contains
 !!$      logical :: COPY_CUSNOWMOVE
 
 #endif
-
-      integer :: DO_MYNN, EDMF_CONSISTENT_TYPE
 
       !  Begin...
       !----------
@@ -6744,9 +6560,6 @@ contains
         call MAPL_GetResource(STATE, SHLWPARAMS%FRC_RASN,'FRC_RASN:'   ,DEFAULT=0.0, RC=STATUS)
       endif
 
-      call MAPL_GetResource(STATE, DO_MYNN, 'TURBULENCE_DO_MYNN:', default=0, RC=STATUS)
-      VERIFY_(STATUS)
-
       ! Get the time step from the alarm
       !---------------------------------
 
@@ -6773,11 +6586,10 @@ contains
       call MAPL_GetPointer(INTERNAL, NCPL,     'NCPL'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       call MAPL_GetPointer(INTERNAL, NCPI,     'NCPI'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(INTERNAL, PDF_A,    'PDF_A'   , RC=STATUS); VERIFY_(STATUS) 
-!      call MAPL_GetPointer(INTERNAL, SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
       call MAPL_GetPointer(INTERNAL, NRAIN,    'NRAIN'    , RC=STATUS); VERIFY_(STATUS)  
       call MAPL_GetPointer(INTERNAL, NSNOW,    'NSNOW'    , RC=STATUS); VERIFY_(STATUS)      
       call MAPL_GetPointer(INTERNAL, NGRAUPEL, 'NGRAUPEL'    , RC=STATUS); VERIFY_(STATUS)
-
+       
       if (DOSHLW /= 0) then
        call MAPL_GetPointer(INTERNAL, CUSH,  'CUSH'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       end if
@@ -6802,7 +6614,6 @@ contains
       call MAPL_GetPointer(IMPORT, PREF,    'PREF'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, KH,      'KH'      , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, TKE,     'TKE'     , RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT, TKESHOC, 'TKESHOC' , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, edmf_wqtavg, 'edmf_wqtavg', RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, edmf_whlavg, 'edmf_whlavg', RC=STATUS); VERIFY_(STATUS)
 !      call MAPL_GetPointer(IMPORT, qtflxtrb, 'QTFLXTRB', RC=STATUS); VERIFY_(STATUS)
@@ -6828,23 +6639,17 @@ contains
 
       ! Get pointers to prognostics second-order moments
 
-      call MAPL_GetPointer(IMPORT, W2 ,   'W2' ,    RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT, W3 ,   'W3' ,    RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT, WQT ,  'WQT',    RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT, WHL ,  'WHL',    RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(IMPORT, EDMF_FRC,'EDMF_FRC',RC=STATUS); VERIFY_(STATUS)
-!      if ( DO_MYNN /= 0 ) then
-         call MAPL_GetPointer(IMPORT, HL2 ,   'HL2',    RC=STATUS); VERIFY_(STATUS)
-         call MAPL_GetPointer(IMPORT, HL3 ,   'HL3',    RC=STATUS); VERIFY_(STATUS)
-         call MAPL_GetPointer(IMPORT, QT2  ,  'QT2',    RC=STATUS); VERIFY_(STATUS)
-         call MAPL_GetPointer(IMPORT, QT3  ,  'QT3',    RC=STATUS); VERIFY_(STATUS)
-         call MAPL_GetPointer(IMPORT, HLQT,   'HLQT',   RC=STATUS); VERIFY_(STATUS)
-!      end if
+      call MAPL_GetPointer(IMPORT, W2 ,    'W2' ,    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, W3 ,    'W3' ,    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, WQT ,   'WQT',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, WHL ,   'WHL',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, HL2 ,   'HL2',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, HL3 ,   'HL3',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, QT2  ,  'QT2',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, QT3  ,  'QT3',    RC=STATUS); VERIFY_(STATUS)
+      call MAPL_GetPointer(IMPORT, HLQT,   'HLQT',   RC=STATUS); VERIFY_(STATUS)
 
-      ! Get pointers to sub-environmental properties
-      call MAPL_GetPointer(IMPORT,   au,   'au', RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT,  hle,  'hle', RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(IMPORT,  qte,  'qte', RC=STATUS); VERIFY_(STATUS)
 
 
       ! Pointers to exports
@@ -6954,8 +6759,6 @@ contains
       call MAPL_GetPointer(EXPORT,DTDTFRIC, 'DTDTFRIC' , RC=STATUS); VERIFY_(STATUS)
 
 !!! DG PDF diagnostics
-!     call MAPL_GetPointer(EXPORT, SKEW_QT,    'SKEW_QT', RC=STATUS)
-!     VERIFY_(STATUS)  
      call MAPL_GetPointer(EXPORT, PDF_AX,     'PDF_A',   RC=STATUS)
      VERIFY_(STATUS) 
      call MAPL_GetPointer(EXPORT, PDF_SIGW1,  'PDF_SIGW1', ALLOC=.TRUE.,  RC=STATUS)
@@ -6990,16 +6793,7 @@ contains
      VERIFY_(STATUS) 
      call MAPL_GetPointer(EXPORT,  WTHV2,      'WTHV2',     ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS) 
-     call MAPL_GetPointer(EXPORT,  WTHV2_RAD,  'WTHV2_RAD', ALLOC=.TRUE., RC=STATUS)
-     VERIFY_(STATUS) 
-
-     call MAPL_GetPointer(EXPORT, QT2SHOC,  'QT2SHOC',  RC=STATUS)
-     VERIFY_(STATUS)
-     call MAPL_GetPointer(EXPORT, HL2SHOC,  'HL2SHOC',  RC=STATUS)
-     VERIFY_(STATUS)
-     call MAPL_GetPointer(EXPORT, HLQTSHOC, 'HLQTSHOC', RC=STATUS)
-     VERIFY_(STATUS)
-     call MAPL_GetPointer(EXPORT, WQL,      'WQL',      RC=STATUS)
+     call MAPL_GetPointer(EXPORT, WQL,        'WQL',        ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS)
 
 
@@ -7339,10 +7133,6 @@ contains
         call MAPL_GetPointer(EXPORT, NACTI,'NACTI' ,ALLOC = .TRUE. ,RC=STATUS); VERIFY_(STATUS);NACTI=0.0
 !!!      endif
 !--kml-----------------------------------------------------------------------------
-
-      call MAPL_GetPointer(EXPORT,    A_mynn,    'A_mynn', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(EXPORT,    B_mynn,    'B_mynn', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
-      call MAPL_GetPointer(EXPORT, qsat_mynn, 'qsat_mynn', ALLOC=.TRUE., RC=STATUS); VERIFY_(STATUS)
 
       ! Count the fields in TR...
       !--------------------------
@@ -7819,7 +7609,6 @@ contains
       call MAPL_GetPointer(EXPORT, QCCNx0,  'QCCNX0'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, QCLSx0,  'QCLSX0'    , RC=STATUS); VERIFY_(STATUS)
 
-      call MAPL_GetPointer(EXPORT, ZL,      'ZL'       , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, KHx0,    'KHX0'     , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, THx0,    'THX0'     , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(EXPORT, Ux0,     'UX0'      , RC=STATUS); VERIFY_(STATUS)
@@ -8000,8 +7789,6 @@ contains
       TSFCAIR  = TEMP(:,:,LM) + (MAPL_GRAV/MAPL_CP)*ZLO(:,:,LM)
       DTS      = TS - TSFCAIR
 
-      if(associated(ZL        )) ZL = ZLO
-
       IF (ASSOCIATED(DTSX)) DTSX = DTS
       IF (ASSOCIATED(KHX )) KHX  = KH(:,:,0:LM-1)
 
@@ -8106,14 +7893,6 @@ contains
         call MAPL_GetResource(STATE,STOCHASTIC_CNV, 'STOCHASTIC_CNV:', DEFAULT= 0, RC=STATUS)
         VERIFY_(STATUS)
       endif
-
-      call MAPL_GetResource( STATE, QT3_TSCALE, 'QT3_TSCALE:', DEFAULT= 3600.0, RC=STATUS )
-      call MAPL_GetResource( STATE, QT2SCALE,   'QT2SCALE:',   DEFAULT= 2000.0, RC=STATUS )
-      call MAPL_GetResource( STATE, QT2TUNE,    'QT2TUNE:',    DEFAULT= 2.0, RC=STATUS )
-      call MAPL_GetResource( STATE, HL2TUNE,    'HL2TUNE:',    DEFAULT= 0.3, RC=STATUS )
-      call MAPL_GetResource( STATE, HLQT2TUNE,  'HLQT2TUNE:',  DEFAULT= 1.0, RC=STATUS )
-      call MAPL_GetResource( STATE, RADBUOYFAC, 'RADBUOYFAC:', DEFAULT= 1.0, RC=STATUS )
-
 
       if( CNV_FRACTION_MAX > CNV_FRACTION_MIN ) then
          if (CNV_FRACTION_MAX < 1.0) then
@@ -9372,25 +9151,6 @@ contains
             enddo
          enddo
       endif
-
-
-!=== Calculate higher moments for double-gaussian cloud PDF ===!
-
-       call MAPL_GetResource(STATE, DO_MYNN, 'TURBULENCE_DO_MYNN:', default=0, RC=STATUS)
-       VERIFY_(STATUS)      
-       call MAPL_GetResource(STATE, EDMF_CONSISTENT_TYPE, 'EDMF_CONSISTENT_TYPE:', DEFAULT=0)
-       VERIFY_(STATUS)
-
-       ! Liquid water static energy (over cp)
-       hl = TEMP + (mapl_grav*ZLO - mapl_alhl*QLLS - mapl_alhf*QILS)/mapl_cp
-
-
-
-!==============================================================!
-
-
-
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!AER_CLOOUD
 
@@ -10716,11 +10476,8 @@ contains
               FRLAND            , &   ! <- surf
               KH                , &   ! <- turb
               EDMF_FRC          , &   ! <- turb
-              au_full           , &   ! <- turb
-              hle               , &   ! <- turb
-              qte               , &   ! <- turb
-              wqtfacc           , &   ! <- turb
-              whlfacc           , &   ! <- turb
+              edmf_wqtavg       , &   ! <- turb
+              edmf_whlavg       , &   ! <- turb
               WQT               , &   ! <- turb
               WHL               , &   ! <- turb
               QT2               , &   ! <- turb
@@ -10779,9 +10536,6 @@ contains
               QDDF3             , &
               CNV_FRACTION      , &
               TROPP             , &
-              A_mynn            , &
-              B_mynn            , &
-              qsat_mynn         , &
                                 ! Diagnostics
               RHX_X             , &
               REV_LS_X          , &
@@ -10814,59 +10568,17 @@ contains
               PDF_SIGTH1, PDF_SIGTH2, PDF_TH1, PDF_TH2, &
               PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
               PDF_RQTTH, PDF_RWTH, PDF_RWQT,            &
-              WTHV2, wqlsec, &
+              WTHV2, WQL, &
               TEMPOR2D, &
               DOSHLW,   &
               NACTL,    &
               NACTI,    &
               CONVPAR_OPTION )
 
-
-!        print *,'RAD_CF after progno=',RAD_CF
-
-       ! Identify cloud top and radiative cooling rate
-       ! For use in radiative buoyancy adjustment
-
-       hl = TEMP*(1.+MAPL_VIREPS*Q1-QLLS-QILS) + (mapl_grav*ZLO - mapl_alhl*QLLS - mapl_alhf*QILS)/mapl_cp
-
-       WTHV2_RAD = 0.
-       do i = 1,IM
-         do j = 1,JM
-           ! Identify cloud top index
-           ! 
-           kcldtop  = LM+1
-           do k = LM,2,-1
-             if ( ( QLLS(i,j,k)+QILS(i,j,k)  .ge. 1.0e-6 ) .and. ( QLLS(i,j,k-1)+QILS(i,j,k-1) .lt. 1.0e-6) .and. (hl(i,j,k-1) .gt. hl(i,j,k)) ) then
-                kcldtop  = k-2   
-                exit
-             end if
-           end do
-!           print *,'kcldtop=',kcldtop
-
-           ! Calculate velocity scale from rad cooling
-!           maxradf = -1.0*minval(RADLW(i,j,kcldtop-1:kcldtop+1))
-           density = 100.*PLO(i,j,kcldtop) / (MAPL_RGAS*TEMP(i,j,kcldtop))
-           maxradf = radbuoyfac*MAX(-1.0*minval(RADLW(i,j,kcldtop-1:kcldtop+1)),0.0)/density
-!           print *,'maxradf=',maxradf            
-
-           ! Set radiatively driven buoyancy perturbation
-           zcldtop = ZLO(i,j,kcldtop)
-!           E = (MAPL_ALHL/MAPL_CP)*(QLLS(i,j,kcldtop+1)+QILS(i,j,kcldtop+1)) &
-!                / (TEMP(i,j,kcldtop)*(1.+0.61*Q1(i,j,kcldtop))-TEMP(i,j,kcldtop+1)*(1.+0.61*Q1(i,j,kcldtop+1)))
-           do k = kcldtop,LM
-             WTHV2_RAD(i,j,k) = maxradf*1.5*max((zcldtop-ZLO(i,j,k))*(1.-(zcldtop-ZLO(i,j,k))/(0.66*zcldtop))**3,0.0)
-!             WTHV2_RAD(i,j,k) = 0.2*(1.+15.*E)*maxradf*(zcldtop-ZLO(i,j,k))*(1.-(zcldtop-ZLO(i,j,k))/zcldtop)**3
-             WTHV2(i,j,k) = WTHV2(i,j,k) + WTHV2_RAD(i,j,k) 
-           end do
-
-         end do
-       end do
-
          VERIFY_(STATUS)
 
          if (associated(PDF_AX)) PDF_AX = PDF_A
-!         if (associated(SKEW_QT)) SKEW_QT = SKEW_QTX
-         if (associated(WQL)) WQL = wqlsec
+!         if (associated(WQL)) WQL = wqlsec
 
          call MAPL_TimerOff(STATE,"--CLOUD_RUN",RC=STATUS)
          VERIFY_(STATUS)
