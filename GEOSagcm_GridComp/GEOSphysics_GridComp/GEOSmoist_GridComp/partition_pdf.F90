@@ -59,8 +59,7 @@ module partition_pdf
                               qt3,          &
                               hl3,          &
                               mffrc,        &
-                              skew_qw,      &  ! INOUT
-                              PDF_A,        &
+                              PDF_A,        &  ! INOUT
                               PDF_SIGW1,    &  ! OUT - diagnostic only
                               PDF_SIGW2,    &
                               PDF_W1,       &
@@ -103,8 +102,7 @@ module partition_pdf
    real, intent(in   )  :: mffrc       ! total EDMF updraft fraction
 !   real, intent(inout)  :: qi         ! ice condensate [kg kg-1]
    real, intent(  out)  :: cld_sgs     ! cloud fraction
-   real, intent(inout)  ::    skew_qw,      & ! skewness of total water
-                              PDF_A           ! fractional area of 1st gaussian
+   real, intent(inout)  ::    PDF_A           ! fractional area of 1st gaussian
    real, intent(  out)  ::    PDF_SIGW1,    & ! std dev w of 1st gaussian [m s-1]
                               PDF_SIGW2,    & ! std dev w of 2nd gaussian
                               PDF_W1,       & ! mean vertical velocity of 1st gaussian [m s-1]
@@ -132,7 +130,7 @@ module partition_pdf
    real pkap, diag_qn, diag_frac, diag_ql, diag_qi,w_first,                     &
         sqrtw2, sqrtthl, sqrtqt, w1_1, w1_2, w2_1, w2_2, thl1_1, thl1_2,        &
         thl2_1, thl2_2, qw1_1, qw1_2, qw2_1, qw2_2, aterm, onema, sm,           &
-        km1, skew_w, skew_thl, cond_w, sqrtw2t,                                 &
+        km1, skew_w, skew_qw, skew_thl, cond_w, sqrtw2t,                                 &
         sqrtthl2_1, sqrtthl2_2, sqrtqw2_1, sqrtqw2_2, corrtest1, corrtest2,     &
         tsign, testvar, r_qwthl_1, Tl1_1, Tl1_2, esval1_1, esval1_2, esval2_1,  &
         esval2_2, om1, om2, lstarn1, lstarn2, qs1, qs2, beta1, beta2, cqt1,     &
@@ -198,8 +196,10 @@ module partition_pdf
           endif
           if (qwsec > 0.0) then
             sqrtqt   = sqrt(qwsec)
+            skew_qw =  qt3/sqrtqt**3
           else
             sqrtqt   = 1e-4*total_water
+            skew_qw  = 0.
           endif
 
 ! Find parameters of the double Gaussian PDF of vertical velocity
@@ -212,18 +212,18 @@ module partition_pdf
           if (mffrc>=1e-3) then                ! if active updraft this timestep
             if (aterm<0.5) then                ! if distribution is skewed (recent updrafts)
               aterm = max(mffrc,aterm*max(1.-DT/tauskew,0.0))
-              skew_qw = max(qt3/sqrtqt**3,skew_qw*max(1.-DT/tauskew,0.0))
+!              skew_qw = max(qt3/sqrtqt**3,skew_qw*max(1.-DT/tauskew,0.0))
             else                               ! if distribution unskewed
               aterm = mffrc
-              skew_qw = qt3/sqrtqt**3
+!              skew_qw = qt3/sqrtqt**3
             end if
           else                                 ! if no active updraft
             if (aterm.lt.0.5 .and. aterm.gt.1e-3) then  ! but there is residual skewness
               aterm = aterm*max(1.-DT/tauskew,0.0)
-              skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
+!              skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
             else
               aterm = 0.5
-              skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
+!              skew_qw = skew_qw*max(1.-DT/tauskew,0.0)
             end if
           end if
 
@@ -233,7 +233,7 @@ module partition_pdf
            aterm = max(1e-3,min(0.99,aterm))
            if (mffrc.le.1e-3) aterm = 0.5
 
-           skew_qw = qt3/sqrtqt**3
+!           skew_qw = qt3/sqrtqt**3
          end if
 
          onema = 1.0 - aterm

@@ -5168,7 +5168,7 @@ ENDIF
 
       ! Update the higher order moments required for the ADG PDF
       if (PDFSHAPE.eq.5) then
-      HL = T + (mapl_grav*Z - mapl_alhl*Q)/mapl_cp
+      HL = T + (mapl_grav*Z - mapl_alhl*QLLS)/mapl_cp
       call update_moments(IM, JM, LM, DT, &
                           SH,             &  ! in
                           EVAP,           &
@@ -5191,11 +5191,11 @@ ENDIF
                           MFHLQT,         &
                           qt2,            &  ! inout
                           qt3,            &
-                          hl2b,            &  ! out
-                          hl3b,            &
-                          w2b,             &
-                          w3b,             &
-                          wqt,             &
+                          hl2,            &  ! out
+                          hl3,            &
+                          w2,             &
+                          w3,             &
+                          wqt,            &
                           whl,            &
                           hlqt,           &
                           hl2tune,        &  ! tuning parameters

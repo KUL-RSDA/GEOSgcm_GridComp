@@ -339,10 +339,6 @@ module cloudnew
    integer :: FR_LS_WAT, FR_LS_ICE, FR_AN_WAT, FR_AN_ICE
    real    :: maxrhcritland
    integer :: pdfflag
-   real    :: thl2tune
-   real    :: qw2tune
-   real    :: qwthl2tune
-   real    :: fac_cond, fac_fus
 #endif
 
    real, parameter :: T_ICE_MAX    = MAPL_TICE-10.0
@@ -414,7 +410,6 @@ contains
          w3_dev           , &
          qt3_dev          , &
          hl3_dev          , &
-         TKE_dev          , &
          DTS_dev          , &
          RMFDTR_dev       , &
          QLWDTR_dev       , &              
@@ -497,7 +492,8 @@ contains
          PDF_A_dev, PDF_SIGW1_dev, PDF_SIGW2_dev, PDF_W1_dev, PDF_W2_dev, & 
          PDF_SIGTH1_dev, PDF_SIGTH2_dev, PDF_TH1_dev, PDF_TH2_dev, &
          PDF_SIGQT1_dev, PDF_SIGQT2_dev, PDF_QT1_dev, PDF_QT2_dev, &
-         PDF_RQTTH_dev, PDF_RWTH_dev, PDF_RWQT_dev, WTHV2_dev, wql_dev, SKEW_QT_dev, &
+         PDF_RQTTH_dev, PDF_RWTH_dev, PDF_RWQT_dev, &
+         WTHV2_dev, wql_dev, &
          TEMPOR_dev, DOSHLW, &
          NACTL_dev,    &
          NACTI_dev,    &
@@ -544,7 +540,6 @@ contains
       real, intent(in   ), dimension(IRUN,  LM) :: w3_dev   !
       real, intent(in   ), dimension(IRUN,  LM) :: qt3_dev  !
       real, intent(in   ), dimension(IRUN,  LM) :: hl3_dev  !
-      real, intent(in   ), dimension(IRUN,  LM) :: tke_dev  !
       real, intent(in   ), dimension(IRUN     ) :: DTS_dev     ! DTS
       real, intent(in   ), dimension(IRUN,  LM) :: RMFDTR_dev  ! CNV_MFD
       real, intent(in   ), dimension(IRUN,  LM) :: QLWDTR_dev  ! CNV_DQLDT
@@ -667,7 +662,6 @@ contains
       real, intent(  out), dimension(IRUN,  LM) :: PDF_RWQT_dev
       real, intent(  out), dimension(IRUN,  LM) :: WTHV2_dev
       real, intent(  out), dimension(IRUN,  LM) :: wql_dev
-      real, intent(inout), dimension(IRUN,  LM) :: SKEW_QT_dev
       real, intent(in   ), dimension(IRUN,  LM) :: NACTL_dev  ! NACTL
       real, intent(in   ), dimension(IRUN,  LM) :: NACTI_dev  ! NACTI
       real, intent(  out), dimension(IRUN,  LM) :: A_mynn
@@ -810,11 +804,6 @@ contains
          FAC_RI        = CLDPARAMS%FAC_RI
          CFPBL_EXP     = CLDPARAMS%CFPBL_EXP
          PDFFLAG       = INT(CLDPARAMS%PDFSHAPE)
-         thl2tune      = 1.0
-         qw2tune       = 1.0
-         qwthl2tune    = 1.0
-         fac_cond      = MAPL_ALHL/MAPL_CP
-         fac_fus       = MAPL_ALHF/MAPL_CP
 #endif
 
       use_autoconv_timescale = .false.
@@ -1150,7 +1139,6 @@ contains
                   PDF_RWQT_dev(I,K),   &
                   WTHV2_dev(I,K),      &
                   wql_dev(I,K),        &
-                  SKEW_QT_dev(I,K),    &
                   CNV_FRACTION_dev(I), SNOMAS_dev(I), FRLANDICE_dev(I), FRLAND_dev(I), &
                   A_mynn(I,K),        &
                   B_mynn(I,K),        &
@@ -2148,7 +2136,6 @@ contains
          PDF_RWQT,   &
          WTHV2,      &
          WQL,        &
-         SKEW_QT,    &
          CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND, &
          A_mynn,    &
          B_mynn,    &
@@ -2156,7 +2143,7 @@ contains
 
       real, intent(in)    :: DT,ALPHA,PL,ZL
       integer, intent(in) :: pdfshape
-      real, intent(inout) :: TE,QV,QCl,QCi,CF,QAl,QAi,AF,SKEW_QT,PDF_A
+      real, intent(inout) :: TE,QV,QCl,QCi,CF,QAl,QAi,AF,PDF_A
       real, intent(in)    :: NL,NI,CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND
 !      real, intent(in)    :: HL,WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3
       real, intent(in)    :: WHL,WQT,HL2,QT2,HLQT,W3,W2,MF_FRC,MFQT3,MFHL3,wqtfac,whlfac
@@ -2224,7 +2211,6 @@ contains
       ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
 
       HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
-!                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:) 
 !           QT = QVn+QCn
 
       do n=1,nmax
@@ -2240,17 +2226,14 @@ contains
             sigmaqt1  = ALPHA*QSn
             sigmaqt2  = ALPHA*QSn
 
-         elseif(pdfflag.eq.2) then
+         elseif(pdfflag.eq.2) then  ! triangular
             ! for triangular, symmetric: sigmaqt1 = sigmaqt2 = alpha*qsn (alpha is half width)
             ! for triangular, skewed r : sigmaqt1 < sigmaqt2
             ! try: skewed right below 500 mb
-!!!       if(pl.lt.500.) then
             sigmaqt1  = ALPHA*QSn
             sigmaqt2  = ALPHA*QSn
-!!!       else
-!!!       sigmaqt1  = 2*ALPHA*QSn*0.4
-!!!       sigmaqt2  = 2*ALPHA*QSn*0.6
-!!!       endif
+!         elseif(pdffrac .eq. 3) then ! single gaussian
+
          elseif(pdfflag .eq. 4) then !lognormal (sigma is dimmensionless)
             sigmaqt1 =  max(ALPHA/sqrt(3.0), 0.001)
          endif
@@ -2259,17 +2242,10 @@ contains
            call pdffrac(PDFSHAPE,qt,sigmaqt1,sigmaqt2,qsn,CFn)
            call pdfcondensate(PDFSHAPE,qt,sigmaqt1,sigmaqt2,qsn,QCn)
          elseif (pdfflag.eq.5) then
-!           if (ZL<400.) then
-!             print *,'n=',n,'  ZL=',ZL,'  TEn=',TEn
-!             print *,'HL=',HL,'  QT=',QT,'  QV=',QVn 
-!             print *,'WHL=',WHL,'  WQT=',WQT,'  HL2=',HL2
-!             print *,'QT2=',QT2,'  HLQT=',HLQT,'  W3=',W3
-!           end if
 
             ! Update the liquid water static energy
             ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
             HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
-!                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:)
 
            call partition_dblgss(DT/nmax,           &
                                  TEn,          &
@@ -2292,7 +2268,6 @@ contains
                                  MFQT3,        &
                                  MFHL3,        &
                                  MF_FRC,       &
-                                 SKEW_QT,      &
                                  PDF_A,        &
                                  PDF_SIGW1,    &
                                  PDF_SIGW2,    &
@@ -2313,21 +2288,12 @@ contains
                                  WQL,          &
                                  CFn)
 
-
            fQi = ice_fraction( TEn, CNV_FRACTION, SNOMAS, FRLANDICE, FRLAND )
 
-! TEMP:  overwrite ADG with uniform PDF
-!           sigmaqt1  = ALPHA*QSn
-!           sigmaqt2  = ALPHA*QSn
-!           qt = qvp+qcp
-!           call pdffrac(PDFSHAPE,qt,sigmaqt1,sigmaqt2,qsn,CFn)
-!           call pdfcondensate(PDFSHAPE,qt,sigmaqt1,sigmaqt2,qsn,QCn)
-! end TEMP
          elseif (pdfflag == 6) then ! Single gaussian
             ! Update the liquid water static energy
             ALHX = (1.0-fQi)*MAPL_ALHL + fQi*MAPL_ALHS
             HL = TEn + (mapl_grav/mapl_cp)*ZL - (ALHX/MAPL_CP)*QCn
-!                fac_cond*QLW_LS_dev(I,:) - fac_fus*QIW_LS_dev(I,:)
             QT = QVn + QCn
 
             call gaussian(ZL, 100.*PL, HL, QT, HL2, QT2, HLQT, WQT, WHL, &

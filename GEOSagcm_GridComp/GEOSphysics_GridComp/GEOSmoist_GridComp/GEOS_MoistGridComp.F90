@@ -516,15 +516,15 @@ contains
          RC=STATUS  )  
     VERIFY_(STATUS)                         
 
-    call MAPL_AddInternalSpec(GC,                                    &
-         SHORT_NAME ='SKEW_QTX',                                     &
-         LONG_NAME  = 'SHOC_PDF_QT_skewness',                        &
-         UNITS      ='1',                                            &       
-         DIMS       = MAPL_DimsHorzVert,                             &
-         VLOCATION  = MAPL_VLocationCenter,                          &
-         DEFAULT    = 1.0,                                           &
-         RC=STATUS  )  
-    VERIFY_(STATUS)                         
+!    call MAPL_AddInternalSpec(GC,                                    &
+!         SHORT_NAME ='SKEW_QTX',                                     &
+!         LONG_NAME  = 'SHOC_PDF_QT_skewness',                        &
+!         UNITS      ='1',                                            &       
+!         DIMS       = MAPL_DimsHorzVert,                             &
+!         VLOCATION  = MAPL_VLocationCenter,                          &
+!         DEFAULT    = 1.0,                                           &
+!         RC=STATUS  )  
+!    VERIFY_(STATUS)                         
       
 !    call MAPL_AddInternalSpec(GC,                                  &
 !         SHORT_NAME ='QT2MEM',                                     &
@@ -1257,14 +1257,14 @@ contains
 
     ! !EXPORT STATE:
 
-    call MAPL_AddExportSpec(GC,                                   &
-         SHORT_NAME ='SKEW_QT',                                     &
-          LONG_NAME = 'SHOC_PDF_QT_skewness',                       &
-         UNITS      ='1',                                           &       
-         DIMS      = MAPL_DimsHorzVert,                             &
-         VLOCATION = MAPL_VLocationCenter,                          &
-         RC=STATUS  )  
-    VERIFY_(STATUS)                         
+!    call MAPL_AddExportSpec(GC,                                   &
+!         SHORT_NAME ='SKEW_QT',                                     &
+!          LONG_NAME = 'SHOC_PDF_QT_skewness',                       &
+!         UNITS      ='1',                                           &       
+!         DIMS      = MAPL_DimsHorzVert,                             &
+!         VLOCATION = MAPL_VLocationCenter,                          &
+!         RC=STATUS  )  
+!    VERIFY_(STATUS)                         
 
     call MAPL_AddExportSpec(GC,                                              &
        LONG_NAME  = 'SHOC_PDF_relative_area_fraction',                       &
@@ -5689,9 +5689,9 @@ contains
                                           PDF_QT2,    &
                                           PDF_RQTTH,  &
                                           PDF_RWTH,   &
-                                          PDF_RWQT,   &
-                                          SKEW_QT,    &
-                                          SKEW_QTX
+                                          PDF_RWQT!,   &
+!                                          SKEW_QT,    &
+!                                          SKEW_QTX
 
     real, dimension(:,:,:),pointer     :: QT2SHOC,   &
                                           HL2SHOC,   &
@@ -6773,7 +6773,7 @@ contains
       call MAPL_GetPointer(INTERNAL, NCPL,     'NCPL'    , RC=STATUS); VERIFY_(STATUS)  !DONIF
       call MAPL_GetPointer(INTERNAL, NCPI,     'NCPI'    , RC=STATUS); VERIFY_(STATUS)
       call MAPL_GetPointer(INTERNAL, PDF_A,    'PDF_A'   , RC=STATUS); VERIFY_(STATUS) 
-      call MAPL_GetPointer(INTERNAL, SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
+!      call MAPL_GetPointer(INTERNAL, SKEW_QTX, 'SKEW_QTX', RC=STATUS); VERIFY_(STATUS) 
       call MAPL_GetPointer(INTERNAL, NRAIN,    'NRAIN'    , RC=STATUS); VERIFY_(STATUS)  
       call MAPL_GetPointer(INTERNAL, NSNOW,    'NSNOW'    , RC=STATUS); VERIFY_(STATUS)      
       call MAPL_GetPointer(INTERNAL, NGRAUPEL, 'NGRAUPEL'    , RC=STATUS); VERIFY_(STATUS)
@@ -6954,8 +6954,8 @@ contains
       call MAPL_GetPointer(EXPORT,DTDTFRIC, 'DTDTFRIC' , RC=STATUS); VERIFY_(STATUS)
 
 !!! DG PDF diagnostics
-     call MAPL_GetPointer(EXPORT, SKEW_QT,    'SKEW_QT', RC=STATUS)
-     VERIFY_(STATUS)  
+!     call MAPL_GetPointer(EXPORT, SKEW_QT,    'SKEW_QT', RC=STATUS)
+!     VERIFY_(STATUS)  
      call MAPL_GetPointer(EXPORT, PDF_AX,     'PDF_A',   RC=STATUS)
      VERIFY_(STATUS) 
      call MAPL_GetPointer(EXPORT, PDF_SIGW1,  'PDF_SIGW1', ALLOC=.TRUE.,  RC=STATUS)
@@ -10730,7 +10730,6 @@ contains
               W3                , &   ! <- turb
               QT3               , &
               HL3               , &
-              TKESHOC           , &   ! <- turb
               DTS               , &
               CNV_MFD           , &   ! <- ras
               CNV_DQLDT         , &   ! <- ras              
@@ -10814,7 +10813,8 @@ contains
               PDF_A, PDF_SIGW1, PDF_SIGW2, PDF_W1, PDF_W2, & 
               PDF_SIGTH1, PDF_SIGTH2, PDF_TH1, PDF_TH2, &
               PDF_SIGQT1, PDF_SIGQT2, PDF_QT1, PDF_QT2, &
-              PDF_RQTTH, PDF_RWTH, PDF_RWQT, WTHV2, wqlsec, SKEW_QTX, &
+              PDF_RQTTH, PDF_RWTH, PDF_RWQT,            &
+              WTHV2, wqlsec, &
               TEMPOR2D, &
               DOSHLW,   &
               NACTL,    &
@@ -10865,7 +10865,7 @@ contains
          VERIFY_(STATUS)
 
          if (associated(PDF_AX)) PDF_AX = PDF_A
-         if (associated(SKEW_QT)) SKEW_QT = SKEW_QTX
+!         if (associated(SKEW_QT)) SKEW_QT = SKEW_QTX
          if (associated(WQL)) WQL = wqlsec
 
          call MAPL_TimerOff(STATE,"--CLOUD_RUN",RC=STATUS)

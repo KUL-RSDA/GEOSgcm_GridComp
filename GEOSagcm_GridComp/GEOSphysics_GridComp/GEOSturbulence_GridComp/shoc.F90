@@ -1687,8 +1687,7 @@ endif
 
     end do
 
-    qt3 = max( MFQT3, qt3*(1.-DT/QT3_TSCALE) )
-
+    qt3 = max( MFQT3, qt3*max(1.-DT/QT3_TSCALE,0.0) )
     hl3 = MFHL3
     w3  = MFW3 
 
