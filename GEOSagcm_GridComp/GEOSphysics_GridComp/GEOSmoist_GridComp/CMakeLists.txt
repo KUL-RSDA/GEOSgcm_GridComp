@@ -17,13 +17,13 @@ endif ()
 
 esma_add_library (${this}
   SRCS ${srcs}
-  DEPENDENCIES GEOS_Shared GMAO_mpeu MAPL Chem_Shared Chem_Base
+  DEPENDENCIES GEOS_Shared GMAO_mpeu MAPL Chem_Shared Chem_Base FMS::FMS
   INCLUDES ${INC_ESMF})
 
-get_target_property (extra_incs fms_r4 INCLUDE_DIRECTORIES)
-target_include_directories(${this} PRIVATE
-   $<BUILD_INTERFACE:${extra_incs}>
-   )
+#get_target_property (extra_incs fms_r4 INCLUDE_DIRECTORIES)
+#target_include_directories(${this} PRIVATE
+#$<BUILD_INTERFACE:${extra_incs}>
+#)
 
 file (GLOB_RECURSE rc_files CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rc)
 foreach ( file ${rc_files} )
