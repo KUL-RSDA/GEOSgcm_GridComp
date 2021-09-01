@@ -132,6 +132,7 @@ list( APPEND MOM6_SRCS
    src/initialization/MOM_state_initialization.F90
    src/initialization/MOM_tracer_initialization_from_Z.F90
    src/ocean_data_assim/MOM_oda_driver.F90
+   src/ocean_data_assim/MOM_oda_incupd.F90
    src/parameterizations/lateral/MOM_hor_visc.F90
    src/parameterizations/lateral/MOM_internal_tides.F90
    src/parameterizations/lateral/MOM_lateral_mixing_coeffs.F90
@@ -182,6 +183,7 @@ list( APPEND MOM6_SRCS
    src/tracer/MOM_tracer_hor_diff.F90
    src/tracer/MOM_tracer_registry.F90
    src/tracer/MOM_tracer_Z_init.F90
+   src/tracer/nw2_tracers.F90
    src/tracer/oil_tracer.F90
    src/tracer/pseudo_salt_tracer.F90
    src/tracer/RGC_tracer.F90
@@ -430,19 +432,19 @@ list( APPEND MOM6_SRCS
    pkg/GSW-Fortran/toolbox/gsw_util_sort_real.f90
    pkg/GSW-Fortran/toolbox/gsw_util_xinterp1.f90
    pkg/GSW-Fortran/toolbox/gsw_z_from_p.f90
-#  choose FMS1 interface
-   config_src/infra/FMS1/MOM_coms_infra.F90
-   config_src/infra/FMS1/MOM_constants.F90
-   config_src/infra/FMS1/MOM_couplertype_infra.F90
-   config_src/infra/FMS1/MOM_cpu_clock_infra.F90
-   config_src/infra/FMS1/MOM_data_override_infra.F90
-   config_src/infra/FMS1/MOM_diag_manager_infra.F90
-   config_src/infra/FMS1/MOM_domain_infra.F90
-   config_src/infra/FMS1/MOM_ensemble_manager_infra.F90
-   config_src/infra/FMS1/MOM_error_infra.F90
-   config_src/infra/FMS1/MOM_interp_infra.F90
-   config_src/infra/FMS1/MOM_io_infra.F90
-   config_src/infra/FMS1/MOM_time_manager.F90
+   #  choose FMS2 interface
+   config_src/infra/FMS2/MOM_coms_infra.F90
+   config_src/infra/FMS2/MOM_constants.F90
+   config_src/infra/FMS2/MOM_couplertype_infra.F90
+   config_src/infra/FMS2/MOM_cpu_clock_infra.F90
+   config_src/infra/FMS2/MOM_data_override_infra.F90
+   config_src/infra/FMS2/MOM_diag_manager_infra.F90
+   config_src/infra/FMS2/MOM_domain_infra.F90
+   config_src/infra/FMS2/MOM_ensemble_manager_infra.F90
+   config_src/infra/FMS2/MOM_error_infra.F90
+   config_src/infra/FMS2/MOM_interp_infra.F90
+   config_src/infra/FMS2/MOM_io_infra.F90
+   config_src/infra/FMS2/MOM_time_manager.F90
 )
 
 list( APPEND MOM6_SRCS
@@ -467,11 +469,11 @@ endforeach ()
 
 esma_add_library (${this}
   SRCS ${SRCS}
-  DEPENDENCIES FMS::FMS NetCDF::NetCDF_Fortran
+  DEPENDENCIES FMS::fms_r8
   INCLUDES
   $<BUILD_INTERFACE:${MOM6_path}/config_src/memory/dynamic_nonsymmetric> 
-#  choose FMS1 interface
-  $<BUILD_INTERFACE:${MOM6_path}/config_src/infra/FMS1>
+  #  choose FMS2 interface
+  $<BUILD_INTERFACE:${MOM6_path}/config_src/infra/FMS2>
   $<BUILD_INTERFACE:${MOM6_path}/src/framework>
   TYPE SHARED
 )
