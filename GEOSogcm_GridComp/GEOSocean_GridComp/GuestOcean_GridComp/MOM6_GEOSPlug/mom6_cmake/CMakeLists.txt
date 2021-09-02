@@ -1,5 +1,18 @@
 esma_set_this (OVERRIDE mom6)
 
+# This is for selecting the MOM6 infrastructure interface
+## We default to FMS1 and look if something is passed in...
+set (DEFAULT_MOM6_INFRA "FMS1")
+if (NOT MOM6_INFRA)
+  set (MOM6_INFRA ${DEFAULT_MOM6_INFRA})
+endif ()
+
+## ... and make sure it is allowed
+set (ALLOWED_MOM6_INFRA "FMS1" "FMS2")
+if (NOT MOM6_INFRA IN_LIST ALLOWED_MOM6_INFRA)
+  message (FATAL_ERROR "The only allowed values for MOM6_INFRA are ${ALLOWED_MOM6_INFRA}")
+endif ()
+
 list( APPEND MOM6_SRCS
    src/ALE/coord_adapt.F90
    src/ALE/coord_hycom.F90
@@ -432,19 +445,19 @@ list( APPEND MOM6_SRCS
    pkg/GSW-Fortran/toolbox/gsw_util_sort_real.f90
    pkg/GSW-Fortran/toolbox/gsw_util_xinterp1.f90
    pkg/GSW-Fortran/toolbox/gsw_z_from_p.f90
-   #  choose FMS2 interface
-   config_src/infra/FMS2/MOM_coms_infra.F90
-   config_src/infra/FMS2/MOM_constants.F90
-   config_src/infra/FMS2/MOM_couplertype_infra.F90
-   config_src/infra/FMS2/MOM_cpu_clock_infra.F90
-   config_src/infra/FMS2/MOM_data_override_infra.F90
-   config_src/infra/FMS2/MOM_diag_manager_infra.F90
-   config_src/infra/FMS2/MOM_domain_infra.F90
-   config_src/infra/FMS2/MOM_ensemble_manager_infra.F90
-   config_src/infra/FMS2/MOM_error_infra.F90
-   config_src/infra/FMS2/MOM_interp_infra.F90
-   config_src/infra/FMS2/MOM_io_infra.F90
-   config_src/infra/FMS2/MOM_time_manager.F90
+   #  choose MOM6_INFRA interface
+   config_src/infra/${MOM6_INFRA}/MOM_coms_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_constants.F90
+   config_src/infra/${MOM6_INFRA}/MOM_couplertype_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_cpu_clock_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_data_override_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_diag_manager_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_domain_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_ensemble_manager_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_error_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_interp_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_io_infra.F90
+   config_src/infra/${MOM6_INFRA}/MOM_time_manager.F90
 )
 
 list( APPEND MOM6_SRCS
@@ -469,11 +482,11 @@ endforeach ()
 
 esma_add_library (${this}
   SRCS ${SRCS}
-  DEPENDENCIES FMS::fms_r8
+  DEPENDENCIES fms_r8
   INCLUDES
   $<BUILD_INTERFACE:${MOM6_path}/config_src/memory/dynamic_nonsymmetric> 
-  #  choose FMS2 interface
-  $<BUILD_INTERFACE:${MOM6_path}/config_src/infra/FMS2>
+  #  choose MOM6_infra interface
+  $<BUILD_INTERFACE:${MOM6_path}/config_src/infra/${MOM6_INFRA}>
   $<BUILD_INTERFACE:${MOM6_path}/src/framework>
   TYPE SHARED
 )
