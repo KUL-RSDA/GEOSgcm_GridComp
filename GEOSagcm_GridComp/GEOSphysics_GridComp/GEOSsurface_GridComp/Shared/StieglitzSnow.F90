@@ -48,6 +48,8 @@ module StieglitzSnow
   real,   private,  parameter :: RHOMA         = 500.    ! kg/m^3  maximum snow density
   real,   private,  parameter :: SNWALB_VISMIN = 0.5
   real,   private,  parameter :: SNWALB_NIRMIN = 0.3
+  real,   public,   parameter :: cpw_pub = 2065.22 !  @ 0 C [J/kg/K] !jpark50
+  real,   public,   parameter :: RHOMA_pub = 500.  ! kg/m^3 maximum snow density !jpark50
 
 !================================ Added by Teppei Yasunari ==================================
 !--------------------------------------------------------------------------------------------
