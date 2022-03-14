@@ -1792,6 +1792,42 @@ contains
     VERIFY_(STATUS)
 
     call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'planetary_boundary_layer_height_qv',                    &
+       SHORT_NAME = 'ZPBLQV',                                                &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'boundary_layer_height_from_refractivity_gradient',      &
+       SHORT_NAME = 'ZPBLRFRCT',                                             &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'surface_based_inversion_frequency',                     &
+       SHORT_NAME = 'SBIFRQ',                                                &
+       UNITS      = '1',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
+       LONG_NAME  = 'surface_based_inversion_top_height',                    &
+       SHORT_NAME = 'SBITOP',                                                &
+       UNITS      = 'm',                                                     &
+       DIMS       = MAPL_DimsHorzOnly,                                       &
+       VLOCATION  = MAPL_VLocationNone,                                      &
+                                                                  RC=STATUS  )
+    VERIFY_(STATUS)
+
+    call MAPL_AddExportSpec(GC,                                              &
        LONG_NAME  = 'pbltop_level',                                          &
        SHORT_NAME = 'KPBL',                                                  &
        UNITS      = '1',                                                     &
@@ -2607,6 +2643,7 @@ contains
     call MAPL_GetPointer(IMPORT, PHIS,   'PHIS',    RC=STATUS)
     VERIFY_(STATUS)
 
+
 !----- Variables for idealized SCM surface layer ------
 #ifdef USE_SCM_SURF
     call MAPL_GetPointer(INTERNAL, cu_scm,    'cu_scm', RC=STATUS)
@@ -2847,6 +2884,10 @@ contains
      real, dimension(:,:  ), pointer     :: ZPBLRI => null()
      real, dimension(:,:  ), pointer     :: ZPBLRI2 => null()
      real, dimension(:,:  ), pointer     :: ZPBLTHV => null()
+     real, dimension(:,:  ), pointer     :: ZPBLQV => null()
+     real, dimension(:,:  ), pointer     :: ZPBLRFRCT => null()
+     real, dimension(:,:  ), pointer     :: SBIFRQ => null()
+     real, dimension(:,:  ), pointer     :: SBITOP => null()
      real, dimension(:,:  ), pointer     :: KPBL => null()
      real, dimension(:,:  ), pointer     :: KPBL_SC => null()
      real, dimension(:,:  ), pointer     :: WEBRV,VSCBRV,DSIEMS,CHIS,ZCLDTOP,DELSINV,SMIXT,ZRADBS,CLDRF,VSCSFC,RADRCODE
@@ -2909,7 +2950,7 @@ contains
      real                                :: PRANDTLSFC,PRANDTLRAD,BETA_RAD,BETA_SURF,KHRADFAC,TPFAC_SURF,ENTRATE_SURF
      real                                :: PCEFF_SURF, KHSFCFAC_LND, KHSFCFAC_OCN, ZCHOKE
 
-     integer                             :: I,J,L,LOCK_ON,ITER
+     integer                             :: I,J,K,L,LOCK_ON,ITER
      integer                             :: KPBLMIN,PBLHT_OPTION
 
 #ifdef USE_SCM_SURF
@@ -2973,7 +3014,8 @@ contains
                                    thl_plume5,thl_plume6,thl_plume7,            &
                                    thl_plume8,thl_plume9,thl_plume10
 #endif
-
+     real                                :: a1,a2
+     real,               dimension(IM,JM,LM) :: dum3d,tmp3d,WVP
      real,               dimension(LM+1) :: temparray, htke
      real,               dimension(IM,JM,LM  ) :: tcrib !TransCom bulk Ri
      real,               dimension(LM+1) :: thetav
@@ -3094,7 +3136,7 @@ contains
        call MAPL_GetResource (MAPL, SHOCPARAMS%CEFAC,    trim(COMP_NAME)//"_SHC_CEFAC:",        default=1.,   RC=STATUS)
        call MAPL_GetResource (MAPL, SHOCPARAMS%CESFAC,   trim(COMP_NAME)//"_SHC_CESFAC:",       default=4.,   RC=STATUS)
        call MAPL_GetResource (MAPL, SHOCPARAMS%CLDLEN,   trim(COMP_NAME)//"_SHC_DO_CLDLEN:",    default=0,    RC=STATUS)
-       call MAPL_GetResource (MAPL, SHOCPARAMS%SUS12LEN, trim(COMP_NAME)//"_SHC_USE_SUS12LEN:", default=1,    RC=STATUS)       
+       call MAPL_GetResource (MAPL, SHOCPARAMS%LENOPT,   trim(COMP_NAME)//"_SHC_LENOPT:",       default=2,    RC=STATUS)       
        call MAPL_GetResource (MAPL, SHOCPARAMS%BUOYOPT,  trim(COMP_NAME)//"_SHC_BUOY_OPTION:",  default=2,    RC=STATUS)
      end if
 
@@ -3149,6 +3191,14 @@ contains
      call MAPL_GetPointer(EXPORT,    ZPBLRI2,  'ZPBLRI2',           RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,    ZPBLTHV,  'ZPBLTHV',           RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    ZPBLQV,  'ZPBLQV',           RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    ZPBLRFRCT, 'ZPBLRFRCT',           RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    SBIFRQ,  'SBIFRQ',           RC=STATUS)
+     VERIFY_(STATUS)
+     call MAPL_GetPointer(EXPORT,    SBITOP,  'SBITOP',           RC=STATUS)
      VERIFY_(STATUS)
      call MAPL_GetPointer(EXPORT,   LWCRT,   'LWCRT', ALLOC=.TRUE., RC=STATUS)
      VERIFY_(STATUS)
@@ -3590,7 +3640,7 @@ contains
     IF(DoMF /= 0) then
 
       call RUN_EDMF(1, IM*JM, 1, LM, DT,      & ! in
-               PHIS, Z, ZLE, PLE, RHOE,       & ! in
+               PHIS, Z, ZLE, PLE, RHOE, TKESHOC,       & ! in
                NUMUP, U, V, T, THL, THV, QT,  & ! in
                Q, QL, QI, USTAR,              & ! in
                SH, EVAP, frland, zpbl,        & ! in
@@ -3799,6 +3849,7 @@ contains
                        QPL(:,:,1:LM),         &
                        QA(:,:,1:LM),          &
                        WTHV2(:,:,1:LM),       &
+                       BUOYF(:,:,1:LM),       &
                        PRANDTLSHOC(:,:,1:LM), &
                        !== Input-Outputs ==
                        TKESHOC(:,:,1:LM),     &
@@ -4539,6 +4590,96 @@ contains
          end do 
       end if ! ZPBLTHV
 
+!=========================================================================                                      
+!  ZPBL defined by minimum in vertical gradient of refractivity.                                                
+!  As shown in Ao, et al, 2012: "Planetary boundary layer heights from                                          
+!  GPS radio occultation refractivity and humidity profiles", Climate and                                       
+!  Dynamics.  https://doi.org/10.1029/2012JD017598                                                              
+!=========================================================================                                      
+    if (associated(ZPBLRFRCT)) then
+
+      a1 = 0.776    ! K/Pa                                                                                      
+      a2 = 3.73e3   ! K2/Pa                                                                                     
+
+      WVP = Q * PLO / (Q*(1.-0.622)+0.622)  ! water vapor partial pressure                                      
+
+      ! Pressure gradient term                                                                                  
+      dum3d(:,:,2:LM-1) = (PLO(:,:,1:LM-2)-PLO(:,:,3:LM)) / (Z(:,:,1:LM-2)-Z(:,:,3:LM))
+      dum3d(:,:,1) = (PLO(:,:,1)-PLO(:,:,2)) / (Z(:,:,1)-Z(:,:,2))
+      dum3d(:,:,LM) = (PLO(:,:,LM-1)-PLO(:,:,LM)) / (Z(:,:,LM-1)-Z(:,:,LM))
+      tmp3d = a1 * dum3d / T
+
+      ! Add Temperature gradient term                                                                           
+      dum3d(:,:,2:LM-1) = (T(:,:,1:LM-2)-T(:,:,3:LM)) / (Z(:,:,1:LM-2)-Z(:,:,3:LM))
+      dum3d(:,:,1) = (T(:,:,1)-T(:,:,2)) / (Z(:,:,1)-Z(:,:,2))
+      dum3d(:,:,LM) = (T(:,:,LM-1)-T(:,:,LM)) / (Z(:,:,LM-1)-Z(:,:,LM))
+      tmp3d = tmp3d - (a1*plo/T**2 + 2.*a2*WVP/T**3)*dum3d
+
+      ! Add vapor pressure gradient term                                                                        
+      dum3d(:,:,2:LM-1) = (WVP(:,:,1:LM-2)-WVP(:,:,3:LM)) / (Z(:,:,1:LM-2)-Z(:,:,3:LM))
+      dum3d(:,:,1) = (WVP(:,:,1)-WVP(:,:,2)) / (Z(:,:,1)-Z(:,:,2))
+      dum3d(:,:,LM) = (WVP(:,:,LM-1)-WVP(:,:,LM)) / (Z(:,:,LM-1)-Z(:,:,LM))
+      tmp3d = tmp3d + (a2/T**2)*dum3d
+
+      ! ZPBL is height of minimum in refractivity (tmp3d)                                                       
+      do I = 1,IM
+        do J = 1,JM
+          K = MINLOC(tmp3d(I,J,:),DIM=1,BACK=.TRUE.)   ! return last index, if multiple                         
+          ZPBLRFRCT(I,J) = Z(I,J,K)
+        end do
+      end do
+
+    end if  ! ZPBLRFRCT 
+
+
+      ! PBL height diagnostic based on specific humidity gradient
+      ! PBLH defined as level with minimum QV gradient
+      if (associated(ZPBLQV)) then
+         ZPBLQV = MAPL_UNDEF
+
+         do I = 1, IM
+            do J = 1, JM
+
+               maxdthvdz = 0  ! re-using variables from ZPBLTHV calc above
+
+               do L=LM-1,1,-1
+                  if(Z(I,J,L)<=Z(I,J,KPBLMIN)) then
+                     dthvdz = -1.*(Q(I,J,L+1)-Q(I,J,L))/(Z(I,J,L+1)-Z(I,J,L))
+                     if(dthvdz>maxdthvdz) then
+                        maxdthvdz = dthvdz
+                        ZPBLQV(I,J) = 0.5*(Z(I,J,L+1)+Z(I,J,L))
+                     end if
+                  end if
+               end do
+
+            end do 
+         end do 
+      end if ! ZPBLQV
+
+
+     if (associated(SBITOP) .or. associated(SBIFRQ) ) then
+
+        SBIFRQ = 0.
+        SBITOP = MAPL_UNDEF
+
+        do I = 1, IM
+           do J = 1, JM
+              if (T(I,J,LM-1).gt.T(I,J,LM)) then
+                 SBIFRQ(I,J) = 1.
+                 do L = LM-1,1,-1
+                    if (T(I,J,L).gt.T(I,J,L+1)) then
+                       SBITOP(I,J) = Z(I,J,L)
+                    else
+                       exit
+                    end if
+                 end do
+              end if
+           end do
+        end do
+
+     end if ! SBITOP, SBIFRQ
+
+
       SELECT CASE(PBLHT_OPTION)
 
       CASE( 1 )
@@ -5140,6 +5281,7 @@ if ((trim(name) /= 'S') .and. (trim(name) /= 'Q') .and. (trim(name) /= 'QLLS') &
              end if
 #endif
        end if
+
 
 ! Create tendencies
 !------------------

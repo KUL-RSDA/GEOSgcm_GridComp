@@ -4,7 +4,7 @@ module SHOCPARAMS
 
  type SHOCPARAMS_TYPE
     integer :: CLDLEN
-    integer :: SUS12LEN
+    integer :: LENOPT
     integer :: BUOYOPT
     real    :: LAMBDA
     real    :: TSCALE

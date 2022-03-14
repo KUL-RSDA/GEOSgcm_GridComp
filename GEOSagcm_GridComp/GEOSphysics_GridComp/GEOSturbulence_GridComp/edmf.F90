@@ -29,7 +29,7 @@ public run_edmf
 contains
 
 SUBROUTINE RUN_EDMF(its,ite,kts,kte,dt,phis, &
-              zlo3,zw3,pw3,rhoe3,nup,&
+              zlo3,zw3,pw3,rhoe3,tke3,nup,&
               u3,v3,t3,thl3,thv3,qt3,qv3,ql3,qi3,&
               ust2,wthl2,wqt2,frland,pblh2, &
 !              mfsrcthl, mfsrcqt, mfw, mfarea, &
@@ -80,7 +80,7 @@ SUBROUTINE RUN_EDMF(its,ite,kts,kte,dt,phis, &
 
        type (EDMFPARAMS_TYPE), INTENT(IN) :: PARAMS
        INTEGER, INTENT(IN) :: ITS,ITE,KTS,KTE,NUP!,DOCLASP
-       REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(IN) :: U3,V3,T3,THL3,QT3,THV3,QV3,QL3,QI3,ZLO3
+       REAL,DIMENSION(ITS:ITE,KTS:KTE), INTENT(IN) :: U3,V3,T3,THL3,QT3,THV3,QV3,QL3,QI3,ZLO3,TKE3
        REAL,DIMENSION(ITS:ITE,KTS-1:KTE), INTENT(IN) :: ZW3,PW3, rhoe3
        REAL,DIMENSION(ITS:ITE,KTS:KTE) :: mfsrcqt,mfsrcthl,mfw,mfarea
        REAL,DIMENSION(ITS:ITE), INTENT(IN) :: UST2,WTHL2,WQT2,PBLH2,FRLAND,PHIS
@@ -363,10 +363,11 @@ if (L0 .gt. 0. ) then
     do i=1,Nup
      do k=kts,kte
        ENT(k,i) = (1.-PARAMS%STOCHFRAC) * PARAMS%Ent0/L0 &
-                + PARAMS%STOCHFRAC * real(ENTi(k,i))*PARAMS%Ent0/(ZW(k)-ZW(k-1))
+                + PARAMS%STOCHFRAC * real(ENTi(k,i))*PARAMS%Ent0/(ZW(k)-ZW(k-1)) !&
+!                + 4.*tke3(ih,kte-k+kts)/L0
      enddo
     enddo
-    ENT = (1.+frland(IH))*ENT  ! double entrainment over land to reduce PBLH
+!    ENT = (1.+frland(IH))*ENT  ! double entrainment over land to reduce PBLH
 
 
 ! increase entrainment if local minimum of THV
@@ -431,6 +432,7 @@ end if
           UPQT(kts-1,I)=QT(kts)+MFSRCQT(IH,I)
           UPTHV(kts-1,I)=THV(kts)+MFSRCTHL(IH,I)
         else
+!          UPQT(kts-1,I)=QT(kts)-(-1.**I)*0.32*UPW(kts-1,I)*sigmaQT/sigmaW
           UPQT(kts-1,I)=QT(kts)+0.32*UPW(kts-1,I)*sigmaQT/sigmaW
           UPTHV(kts-1,I)=THV(kts)+0.58*UPW(kts-1,I)*sigmaTH/sigmaW
         end if
@@ -492,6 +494,8 @@ end if
 
               ! condensation
                call condensation_edmf(QTn,THLn,P(K),THVn,QCn,wf,params%ice_ramp)
+!               QTn = QTn - max(0.,QCn-1e-3)  ! remove condensate >1g/kg as "precipitation"
+!               QCn = min(1e-3,QCn)
 
              ! vertical velocity
               B=mapl_grav*(0.5*(THVn+UPTHV(k-1,I))/THV(k)-1.)
@@ -532,6 +536,8 @@ end if
   ! CFL condition: Check that mass flux does not exceed layer mass at any level
   ! If it does, rescale updraft area.
   ! See discussion in Beljaars et al 2018 [ECMWF Tech Memo]
+
+         UPA = 0.4*UPA   ! rescale area preemtively to reduce sensitivity to vertical resolution
 
          factor = 1.0
          DO k=KTS,KTE

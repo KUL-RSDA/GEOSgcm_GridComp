@@ -37,7 +37,7 @@ module shoc
                  prsl_inv, phii_inv, phil_inv, u_inv, v_inv,     &  ! in
                  omega_inv,                                      &  ! in       
                  tabs_inv, qwv_inv, qi_inv, qc_inv, qpi_inv,     &  ! in 
-                 qpl_inv, cld_sgs_inv, wthv_sec_inv, prnum,      &  ! in
+                 qpl_inv, cld_sgs_inv, wthv_sec_inv, wthv_mf_inv, prnum, &  ! in
                  tke_inv, tkh_inv,                               &  ! inout
                  isotropy_inv,                                   &  ! out
                  tkesbdiss_inv, tkesbbuoy_inv,                   &  ! out
@@ -83,6 +83,7 @@ module shoc
   real, intent(in   ) :: v_inv    (nx,ny,nzm) ! v-wind, m/s
   real, intent(in   ) :: omega_inv(nx,ny,nzm) ! omega, Pa/s
   real, intent(in   ) :: wthv_sec_inv(nx,ny,nzm) ! Buoyancy flux, K*m/s
+  real, intent(in   ) :: wthv_mf_inv(nx,ny,nzm) ! Buoyancy flux, K*m/s
 
   real, intent(in   ) :: tabs_inv   (nx,ny,nzm) ! temperature, K
   real, intent(in   ) :: qwv_inv    (nx,ny,nzm) ! water vapor mixing ratio, kg/kg
@@ -174,6 +175,7 @@ module shoc
   real tke     (nx,ny,nzm)
   real tkh     (nx,ny,nzm)
   real wthv_sec(nx,ny,nzm)
+  real wthv_mf(nx,ny,nzm)
   real tkesbdiss(nx,ny,nzm)
   real tkesbbuoy(nx,ny,nzm)
   real tkesbshear(nx,ny,nzm)
@@ -195,14 +197,14 @@ module shoc
 
   real, dimension(nx,ny,nzm) :: total_water, brunt2, def2, thv, brunt_smooth
 
-  real, dimension(nx,ny)     :: denom, numer, l_inf, cldarr, zcb
+  real, dimension(nx,ny)     :: denom, numer, l_inf, l_mix, cldarr, zcb, l_par
 
   real lstarn,    depth,    omn,      betdz,    bbb,        &
        term,      qsatt,    dqsat,    thedz,    conv_var,   &  
        tkes,      pval,     pkap,     thlsec,   qwsec,      &
        qwthlsec,  wqwsec,   wthlsec,  dum,      sm,         &
        prespot,   wrk,      wrk1,     wrk2,     wrk3,       & 
-       tkeavg,    dtqw,     dtqi
+       tkeavg,    dtqw,     dtqi,     tep,      qsp
 
   integer i,j,k,km1,ku,kd,ka,kb,kinv,strt,fnsh,cnvl
 
@@ -243,6 +245,7 @@ module shoc
         cld_sgs(i,j,kinv)  = cld_sgs_inv(i,j,k)
         tke(i,j,kinv)      = tke_inv(i,j,k)
         wthv_sec(i,j,kinv) = wthv_sec_inv(i,j,k)
+        wthv_mf(i,j,kinv) = wthv_mf_inv(i,j,k)
       enddo
     enddo
   enddo
@@ -377,10 +380,10 @@ contains
         do i=1,nx
           grd = adzl(i,j,k)             !  adzl(k) = zi(k+1)-zi(k)
 
-! TKE boyancy production term. wthv_sec (buoyancy flux) is calculated in
-! Moist GridComp. The value used here is from the previous time step
+! TKE boyancy production term. wthv_sec (buoyancy flux) is calculated in Moist GridComp. 
 
 !         a_prod_bu = bet(i,j,k)*wthv_sec(i,j,k)
+!          a_prod_bu = (ggr / thv(i,j,k)) * (wthv_sec(i,j,k)-wthv_mf(i,j,k))
           a_prod_bu = (ggr / thv(i,j,k)) * wthv_sec(i,j,k)
 
           wrk  = 0.5 * (tkh(i,j,ku)+tkh(i,j,kd))
@@ -573,7 +576,7 @@ contains
           endif
           betdz = bet(i,j,k) / thedz
 
-          brunt_smooth(i,j,k) = max(1e-5, betdz*(thv(i,j,kc)-thv(i,j,kb)) )  !g/thv/dz *(thv-thv)
+          brunt_smooth(i,j,k) = max(1e-6, betdz*(thv(i,j,kc)-thv(i,j,kb)) )  !g/thv/dz *(thv-thv)
 
 ! Reinitialize the mixing length related arrays to zero
           smixt(i,j,k)    = 1.0   ! shoc_mod module variable smixt
@@ -610,11 +613,23 @@ contains
         else
           l_inf(i,j) = 100.
         endif
-!        kk = 2
-!        do while (zl(i,j,kk).lt.1200. .and. cld_sgs(i,j,kk)<0.01 )
+
+!        kk = 4
+!        do while (thv(i,j,3)+0.1 .gt. thv(i,j,kk))
 !          kk = kk+1
 !        end do
-!        zcb(i,j) = max(200.,zl(i,j,kk))
+!        l_mix(i,j) = max(min(zl(i,j,kk-1),1200.),100.)
+
+        tep = tabs(i,j,1)
+        qsp = MAPL_EQsat(tabs(i,j,1),prsl(i,j,1),dtqw)
+        kk = 1
+        do while (qsp .gt. total_water(i,j,1) .and. zl(i,j,kk).lt.1500.)
+          kk = kk+1
+          tep = tep - ggr*( zl(i,j,kk)-zl(i,j,kk-1) )/cp
+          qsp = MAPL_EQsat(tep,prsl(i,j,kk),dtqw)
+        end do
+        zcb(i,j) = max(200.,zl(i,j,kk-1))  !kk-1 is highest level *before* condensation
+        if (nx.eq.1) print *,'zcb=',zcb(i,j)
       enddo
     enddo
     
@@ -695,18 +710,12 @@ contains
 ! Reduction of mixing length in the stable regions (where B.-V. freq. > 0) is required.
 ! Here we find regions of Brunt-Vaisalla freq. > 0 for later use. 
 
-            if (brunt(i,j,k) >= 1e-5) then
+            if (brunt(i,j,k) >= 1e-6) then
               brunt2(i,j,k) = brunt(i,j,k)
             else
-              brunt2(i,j,k) = 1e-5
+              brunt2(i,j,k) = 1e-6
             endif
  
-            ! Calculate depth of unstable surface layer
-            kk = 2
-            do while (brunt_smooth(i,j,kk).le.1e-5 .and. zl(i,j,kk).lt.1500.)
-              kk = kk+1
-            end do
-            zdecay = max(300.,zl(i,j,kk))
 
 !            if (brunt_simple(i,j,k) >= 1e-5) then
 !              brunt2(i,j,k) = brunt_simple(i,j,k)
@@ -728,50 +737,111 @@ contains
 ! tscale is the eddy turnover time scale in the boundary layer and is 
 ! an empirically derived constant 
 
-           if (shocparams%SUS12LEN==0 ) then
+           if ( shocparams%LENOPT==0 ) then
+              wrk2 = (tscale*tkes*0.1*l_inf(i,j))
+           end if
+
+           if (shocparams%LENOPT==1 ) then
               kk=k
-              if (brunt_smooth(i,j,k).le.1e-5) then
-                do while (brunt_smooth(i,j,kk).le.1e-5 .and. kk.lt.nzm)
+              if (brunt_smooth(i,j,k).le.1.e-6 ) then
+                do while (brunt_smooth(i,j,kk).le.1.e-6 .and. kk.lt.nzm)
                   kk=kk+1
                 end do
                 ktop=kk
                 kk=k
-                do while (brunt_smooth(i,j,kk).le.1e-5 .and. kk.gt.1)
+                do while (brunt_smooth(i,j,kk).le.1.e-6 .and. kk.gt.1)
                   kk=kk-1
                 end do
-                l_inf(i,j) = max(100.,min(1500.,zl(i,j,ktop)-zl(i,j,kk) ))
+                l_inf(i,j) = max(50.,min(1000.,zl(i,j,ktop)-zl(i,j,kk) ))
               else
-                l_inf(i,j) = 100.
+                l_inf(i,j) = 50.
               end if
+
+              if (zl(i,j,k).lt.zcb(i,j)) then
+                 wrk2 = (tscale*tkes*0.2*zcb(i,j))
+              else
+                 wrk2 = (tscale*tkes*0.05*l_inf(i,j))
+              end if
+           end if
+
+          !----------------------------------
+          ! calculate parcel mixing length
+          !----------------------------------
+           if (shocparams%LENOPT==2) then
+              kk = k
+!              tep = thv(i,j,k)+0.5*max(0.,wthv_sec(i,j,k)-wthv_mf(i,j,k)) / tkes
+              tep = thv(i,j,k)+0.5*max(0.,wthv_sec(i,j,k)) / tkes
+              do while (tep .gt. thv(i,j,kk) .and. kk.lt.nzm)
+                kk = kk+1
+              end do
+              ktop = kk
+              l_par(i,j) = zl(i,j,ktop) + (thv(i,j,ktop-1)-tep)* &
+                              ((zl(i,j,ktop)-zl(i,j,ktop-1)))/(thv(i,j,ktop)-thv(i,j,ktop-1))
+              kk = k
+!              tep = thv(i,j,k)-0.5*max(0.,wthv_sec(i,j,k)-wthv_mf(i,j,k)) / tkes
+              tep = thv(i,j,k)-0.5*max(0.,wthv_sec(i,j,k)) / tkes
+              do while (tep .lt. thv(i,j,kk) .and. kk .gt. 1)
+                kk = kk-1
+              end do
+              l_par(i,j) = l_par(i,j) - zl(i,j,kk) - (thv(i,j,kk+1)-tep)* &
+                              ((zl(i,j,kk)-zl(i,j,kk+1)))/(thv(i,j,kk)-thv(i,j,kk+1))
+              l_par(i,j) = max(min(l_par(i,j),1500.),50.)
+
+              wrk2 = (tscale*tkes*0.1*l_par(i,j))
+            end if
+
+          !-------------------------
+          ! combine SHOC length scales
+          !-------------------------
+            if ( shocparams%LENOPT<3 ) then
 
               if ( tkes > 0.0 .and. l_inf(i,j) > 0.0) then
                  wrk1 = (tscale*tkes*vonk*zl(i,j,k))
-                 wrk2 = (tscale*tkes*0.1*l_inf(i,j))
-                 wrk3 = tke(i,j,k) /(1.0 * brunt2(i,j,k))
+!                 if (zl(i,j,k).lt.zcb(i,j)) then
+!                   wrk2 = (tscale*tkes*0.2*zcb(i,j))
+!                   wrk2 = (tscale*tkes*0.1*l_par(i,j))
+!                 else
+!                   wrk2 = (tscale*tkes*0.1*l_par(i,j))
+!                 end if
+!                 if (nx.eq.1 .and. zl(i,j,k).lt.1500.) print *,'zl=',zl(i,j,k),' lmix=',l_mix(i,j),' linf=',l_inf(i,j),' lpar=',l_par(i,j)
+!                 wrk2 = (0.1*l_inf(i,j))**2
+                 wrk3 = tke(i,j,k) /(4.0 * brunt_smooth(i,j,k)) !*exp(-1.0*max(0.,zl(i,j,k)-1.5*zcb(i,j))/zcb(i,j))
                  smixt1(i,j,k) = sqrt(wrk1)*3.3
                  smixt2(i,j,k) = sqrt(wrk2)*3.3
                  smixt3(i,j,k) = sqrt(wrk3)*3.3
-                 if (brunt2(i,j,k).gt.1e-5) then
+!                 if (brunt2(i,j,k).gt.1e-5) then
                     wrk1 = 1.0 / (1./wrk1 + 1./wrk2 + 1./wrk3)
-                 else
-                    wrk1 = 1.0 / (1./wrk1 + 1./wrk2)
-                 end if
+!                 else
+!                    wrk1 = 1.0 / (1./wrk1 + 1./wrk2)
+!                 end if
        
                  smixt(i,j,k) = min(max_eddy_length_scale, 3.3*sqrt(wrk1))
+!                 smixt(i,j,k) = min(max_eddy_length_scale, 9.5*sqrt(wrk1))
+!                 if (zl(i,j,k).gt.1500.) smixt(i,j,k) = 1.
               endif
-           else
+           else if (shocparams%LENOPT==3) then
+
+              ! Calculate depth of unstable surface layer
+              kk = 2
+              do while (brunt_smooth(i,j,kk).le.1e-6 .and. zl(i,j,kk).lt.1500.)
+                kk = kk+1
+              end do
+              zdecay = max(300.,zl(i,j,kk))
+
               wrk2 = 1.5/(400.*tkes)
 !              wrk2 = 10.0/(zcb(i,j)*exp(-max(0.,zl(i,j,k)-zcb(i,j))/zcb(i,j)))
 !              wrk3 = 1.5*sqrt(brunt2(i,j,k))*exp(-0.5*zl(i,j,k)/zdecay)/(0.7*tkes)
               wrk3 = 1.5*sqrt(brunt2(i,j,k))/(0.7*tkes)
               wrk1 = 1.0/(wrk2+wrk3)
 !              smixt(i,j,k) = 9.4*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
-              smixt(i,j,k) = 9.4*exp(-0.5*zl(i,j,k)/zdecay)*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
-!              smixt(i,j,k) = 9.4*exp(-max(0.,zl(i,j,k)-zcb(i,j))/zcb(i,j))*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
-!             smixt(i,j,k) = 9.4*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
+!              smixt(i,j,k) = 9.4*exp(-0.5*zl(i,j,k)/zdecay)*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
+!              smixt(i,j,k) = 9.4*exp(-2.0*max(0.,zl(i,j,k)-zcb(i,j)-200.)/zcb(i,j))*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
+              smixt(i,j,k) = 9.4*(wrk1 + (vonk*zl(i,j,k)-wrk1)*exp(-zl(i,j,k)/(0.1*800.)))
               smixt1(i,j,k) = 9.4/wrk2
               smixt2(i,j,k) = 9.4/wrk3
-              smixt3(i,j,k) = 9.4*vonk*zl(i,j,k)
+              smixt3(i,j,k) = 9.4*vonk*zl(i,j,k)              
+           else
+
            end if
 
          smixt_outcld(i,j,k) = smixt(i,j,k)
