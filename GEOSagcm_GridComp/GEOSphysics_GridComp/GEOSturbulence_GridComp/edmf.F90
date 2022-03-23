@@ -537,13 +537,13 @@ end if
   ! If it does, rescale updraft area.
   ! See discussion in Beljaars et al 2018 [ECMWF Tech Memo]
 
-         UPA = 0.4*UPA   ! rescale area preemtively to reduce sensitivity to vertical resolution
+!         UPA = 0.4*UPA   ! rescale area preemtively to reduce sensitivity to vertical resolution
 
          factor = 1.0
          DO k=KTS,KTE
             mf = SUM(RHOE(K)*UPA(K,:)*UPW(K,:))
-            if (mf .gt. dp(K)/(MAPL_GRAV*dt)) then
-               factor = min(factor,dp(K)/(mf*MAPL_GRAV*dt) )
+            if (mf .gt. 2.*dp(K)/(MAPL_GRAV*dt)) then
+               factor = min(factor,2.*dp(K)/(mf*MAPL_GRAV*dt) )
             end if
          ENDDO
          UPA = factor*UPA
