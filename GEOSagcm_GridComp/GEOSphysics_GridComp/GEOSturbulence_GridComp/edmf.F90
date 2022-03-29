@@ -537,19 +537,19 @@ end if
   ! If it does, rescale updraft area.
   ! See discussion in Beljaars et al 2018 [ECMWF Tech Memo]
 
-!         UPA = 0.4*UPA   ! rescale area preemtively to reduce sensitivity to vertical resolution
+         UPA = 0.5*UPA   ! rescale area preemtively to reduce sensitivity to vertical resolution
 
          factor = 1.0
          DO k=KTS,KTE
             mf = SUM(RHOE(K)*UPA(K,:)*UPW(K,:))
-            if (mf .gt. 2.*dp(K)/(MAPL_GRAV*dt)) then
-               factor = min(factor,2.*dp(K)/(mf*MAPL_GRAV*dt) )
+            if (mf .gt. 1.5*dp(K)/(MAPL_GRAV*dt)) then
+               factor = min(factor,1.5*dp(K)/(mf*MAPL_GRAV*dt) )
             end if
          ENDDO
-         UPA = factor*UPA
+         UPA = factor*UPA 
 
          DO k=KTS,KTE
-            edmfmf(IH,k) = rhoe(K)*SUM(upa(K,:)*upw(K,:))
+            edmfmf(IH,KTE-k+KTS) = rhoe(K)*SUM(upa(K,:)*upw(K,:))
          ENDDO
 
   !
