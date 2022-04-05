@@ -384,9 +384,14 @@ contains
 
 !         a_prod_bu = bet(i,j,k)*wthv_sec(i,j,k)
 !          a_prod_bu = (ggr / thv(i,j,k)) * (wthv_sec(i,j,k)-wthv_mf(i,j,k))
-          a_prod_bu = (ggr / thv(i,j,k)) * wthv_sec(i,j,k)
 
           wrk  = 0.5 * (tkh(i,j,ku)+tkh(i,j,kd))
+
+          if (shocparams%BUOYOPT==1) then
+            a_prod_bu = -1.*wrk*brunt(i,j,k)
+          else if (shocparams%BUOYOPT==2) then 
+            a_prod_bu = (ggr / thv(i,j,k)) * wthv_sec(i,j,k)
+          end if
 
           buoy_sgs = brunt(i,j,k)
 !          buoy_sgs = - a_prod_bu / (wrk + 0.0001)   ! tkh is eddy thermal diffussivity
@@ -806,16 +811,16 @@ contains
 !                 if (nx.eq.1 .and. zl(i,j,k).lt.1500.) print *,'zl=',zl(i,j,k),' lmix=',l_mix(i,j),' linf=',l_inf(i,j),' lpar=',l_par(i,j)
 !                 wrk2 = (0.1*l_inf(i,j))**2
                  wrk3 = tke(i,j,k) /(4.0 * brunt_smooth(i,j,k)) !*exp(-1.0*max(0.,zl(i,j,k)-1.5*zcb(i,j))/zcb(i,j))
-                 smixt1(i,j,k) = sqrt(wrk1)*3.3
-                 smixt2(i,j,k) = sqrt(wrk2)*3.3
-                 smixt3(i,j,k) = sqrt(wrk3)*3.3
+                 smixt1(i,j,k) = sqrt(wrk1)*3.3*shocparams%LENFAC
+                 smixt2(i,j,k) = sqrt(wrk2)*3.3*shocparams%LENFAC
+                 smixt3(i,j,k) = sqrt(wrk3)*3.3*shocparams%LENFAC
 !                 if (brunt2(i,j,k).gt.1e-5) then
                     wrk1 = 1.0 / (1./wrk1 + 1./wrk2 + 1./wrk3)
 !                 else
 !                    wrk1 = 1.0 / (1./wrk1 + 1./wrk2)
 !                 end if
        
-                 smixt(i,j,k) = min(max_eddy_length_scale, 3.3*sqrt(wrk1))
+                 smixt(i,j,k) = min(max_eddy_length_scale, 3.3*shocparams%LENFAC*sqrt(wrk1))
 !                 smixt(i,j,k) = min(max_eddy_length_scale, 9.5*sqrt(wrk1))
 !                 if (zl(i,j,k).gt.1500.) smixt(i,j,k) = 1.
               endif

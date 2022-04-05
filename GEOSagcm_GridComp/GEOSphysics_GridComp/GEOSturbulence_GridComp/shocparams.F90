@@ -12,6 +12,7 @@ module SHOCPARAMS
     real    :: CKVAL
     real    :: CEFAC
     real    :: CESFAC
+    real    :: LENFAC
  endtype SHOCPARAMS_TYPE
 
 end module SHOCPARAMS
