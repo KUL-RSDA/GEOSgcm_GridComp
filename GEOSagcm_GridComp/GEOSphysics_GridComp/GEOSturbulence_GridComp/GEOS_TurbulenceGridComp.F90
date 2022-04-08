@@ -3137,7 +3137,7 @@ contains
        call MAPL_GetResource (MAPL, SHOCPARAMS%CESFAC,   trim(COMP_NAME)//"_SHC_CESFAC:",       default=4.,   RC=STATUS)
        call MAPL_GetResource (MAPL, SHOCPARAMS%CLDLEN,   trim(COMP_NAME)//"_SHC_DO_CLDLEN:",    default=0,    RC=STATUS)
        call MAPL_GetResource (MAPL, SHOCPARAMS%LENOPT,   trim(COMP_NAME)//"_SHC_LENOPT:",       default=2,    RC=STATUS)       
-       call MAPL_GetResource (MAPL, SHOCPARAMS%LENFAC,   trim(COMP_NAME)//"_SHC_LENFAC:",       default=1,    RC=STATUS)       
+       call MAPL_GetResource (MAPL, SHOCPARAMS%LENFAC,   trim(COMP_NAME)//"_SHC_LENFAC:",       default=1.0,  RC=STATUS)       
        call MAPL_GetResource (MAPL, SHOCPARAMS%BUOYOPT,  trim(COMP_NAME)//"_SHC_BUOY_OPTION:",  default=2,    RC=STATUS)
      end if
 
