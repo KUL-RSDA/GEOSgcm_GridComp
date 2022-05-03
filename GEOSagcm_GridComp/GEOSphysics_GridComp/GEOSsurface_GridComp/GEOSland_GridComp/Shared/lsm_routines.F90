@@ -37,8 +37,7 @@ MODULE lsm_routines
        FSN               => CATCH_FSN,           &       
        SHR               => CATCH_SHR,           &
        N_SM              => CATCH_N_ZONES,       &
-       PEATCLSM_POROS_THRESHOLD,                 &
-       PEATCLSM_ZBARMAX_4_SYSOIL
+       PEATCLSM_POROS_THRESHOLD
   
   USE SURFPARAMS,        ONLY:                   &
        LAND_FIX, CSOIL_2, WEMIN, AICEV, AICEN,   &
@@ -598,9 +597,23 @@ CONTAINS
           ! to avoid extrapolation errors due to the non-optimal
           ! (linear) approximation with the bf1-bf2-CLSM function,
           ! theoretical SYSOIL curve levels off approximately at 0 m and 0.45 m.
-          ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )  
-          SYSOIL = (2.*bf1(n)*amin1(amax1(zbar1,0.),PEATCLSM_ZBARMAX_4_SYSOIL) + 2.*bf1(n)*bf2(n))/1000.
-          SYSOIL = amin1(SYSOIL,poros(n))
+          ! 0.45 m (for tropics 0.80 and 0.65).          
+          
+          ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+         
+          ! PEATCLSM Tropics drained
+          IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80) +2*bf1(n)*bf2(n))/1000.
+          ! PEATCLSM Tropics natural
+          ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.65) +2*bf1(n)*bf2(n))/1000.
+          ! PEATCLSM NORTH natural
+          ELSE IF (POROS(N) .GE. 0.90) THEN
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
+          ENDIF
+
+          SYSOIL = amin1(SYSOIL,poros(n))    
+
           ! Calculate fraction of RZFLW removed/added to catdef
           RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*RZFLW/(1.*AR1eq+SYSOIL*(1.-AR1eq))
           CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
@@ -693,7 +706,7 @@ CONTAINS
 
 
       INTEGER N
-      REAL ZBAR, ashift, CFRICE,Ksz_zero,m_Ivanov,v_slope,Ta,dztmp,SYSOIL,BFLOW_CATDEF,ICERAMP,AR1eq
+      REAL ZBAR, ashift, CFRICE,Ksz_zero,m_Ivanov,v_slope,Ta,Lditch,zditch,wstrip, dztmp,SYSOIL,BFLOW_CATDEF,ICERAMP,AR1eq
 
       data ashift/0./
 
@@ -726,12 +739,34 @@ CONTAINS
             ! Ksz0  in  m/s
             ! m_Ivanov [-]  value depends on unit of Ksz0 and z
             ! v_slope in m^(-1)
-            Ksz_zero=10.
-            m_Ivanov=3.0
-            v_slope = 1.5e-05
+            ! PEATCLSM Tropics drained
+            IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+              Ksz_zero=7.0
+              m_Ivanov=3.0
+              v_slope = 1.5e-05
+            ! PEATCLSM Northern natural
+            ELSE IF (POROS(N) .GE. 0.90) THEN
+              Ksz_zero=10.0
+              m_Ivanov=3.0
+              v_slope = 1.5e-05
+            ENDIF
             ! Ta in m2/s, BFLOW in mm/s
             Ta = (Ksz_zero*(1.+100.*amax1(0.,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
+            IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+              Ksz_zero = 5. ! m/day macro saturated conductivity
+              zditch = 68. ! cm ditch depth
+              wstrip = 32. ! m ditch distance
+              Lditch = 32. ! m/ha drainage density length/surface
+              IF ((ZBAR*100) .GE. zditch) THEN
+                   BFLOW(N)=0
+              ELSE IF (((ZBAR*100) .GT. 0.) .AND.  ((ZBAR*100) .LT. zditch)) THEN
+                   BFLOW(N) =(4.*Ksz_zero*(zditch-(ZBAR*100))**2.*Lditch/wstrip)/1000/86400
+              ELSE
+                   BFLOW(N) =(4.*Ksz_zero*(zditch)**2.*Lditch/wstrip+(-ZBAR*100))/1000/86400
+              ENDIF
+            ENDIF
+
             ! handling numerical instability due to extreme snow melt events on partly frozen ground
             ! --> allow BFLOW/DISCHARGE for zbar .LE. 0.05
             ICERAMP= AMAX1(0., AMIN1(1., ZBAR/0.05))
@@ -744,7 +779,16 @@ CONTAINS
                ! MB: accounting for water ponding on AR1
                ! same approach as for RZFLW (see subroutine RZDRAIN for
                ! comments)
-               SYSOIL = (2.*bf1(N)*amin1(amax1(zbar,0.),PEATCLSM_ZBARMAX_4_SYSOIL) + 2.*bf1(N)*bf2(N))/1000.
+               ! PEATCLSM Tropics
+               IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+                 SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.80) +2*bf1(N)*bf2(N))/1000.
+               ! PEATCLSM Tropics natural
+               ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+                 SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.65) +2*bf1(N)*bf2(N))/1000.
+               ! PEATCLSM NORTH natural
+               ELSE IF (POROS(N) .GE. 0.90) THEN
+                 SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.45) +2*bf1(N)*bf2(N))/1000.
+               ENDIF
                SYSOIL = amin1(SYSOIL,poros(n))
                !MB2021: use AR1eq, equilibrium assumption between water level in soil hummocks and surface water level in hollows
                AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
@@ -948,12 +992,21 @@ CONTAINS
            ! MB: AR4 (wilting fraction) for peatland depending on water table depth
            !ZBAR defined here positive below ground and in meter
            ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )  
-           AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
+           ! PEATCLSM TROPICS drained
+           IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-1.54)/(1.31)))
+           ! PEATCLSM TROPICS natural
+           ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.70)/(1.12)))
+           ! PEATCLSM NORTH natural
+           ELSE IF (POROS(N) .GE. 0.90) THEN
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
+           ENDIF
            ARREST = 1.0 - AR1(N)
            AR4(N)=amin1(ARREST,AR4(N))
            AR2(N)=1.0-AR4(n)-AR1(N)
-           ENDIF
-
+        ENDIF
+           
         RZI(N)=RZEQYI
 
         SWSRF1(N)=1.
@@ -971,16 +1024,27 @@ CONTAINS
         SWSRF2(N)=((SWSRF2(N)**(-BEE(N))) - (.5/PSIS(N)))**(-1./BEE(N))
         SWSRF4(N)=((SWSRF4(N)**(-BEE(N))) - (.5/PSIS(N)))**(-1./BEE(N))
         ELSE
-
-             ! PEAT
-             ! MB: for peatlands integrate across surface soil moisture distribution
-             ! coefficients fitted for equilibrium conditions
-             ! SWSRF2 and SWSRF4 as wetness (not moisture)
-             ! MB: bug April 2018, AMIN1 function due to problems when spin up from
-             ! scratch (i.e. dry soil at time=0)
-             SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + &
+            ! PEAT
+            ! MB: for peatlands integrate across surface soil moisture
+            ! distribution
+            ! coefficients fitted for equilibrium conditions
+            ! SWSRF2 and SWSRF4 as wetness (not moisture)
+            ! MB: bug April 2018, AMIN1 function due to problems when spin up from
+            ! scratch (i.e. dry soil at time=0)
+            ! PEATCLSM Tropics drained
+            IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+              SWSRF2(N)=0.92524664 - 0.40941739*AMIN1(3.0,ZBAR) + 0.28382861*(AMIN1(3.0,ZBAR))**2 - &
+                     0.09602305*(AMIN1(3.0,ZBAR))**3 + 0.01214020*(AMIN1(3.0,ZBAR))**4
+            ! PEATCLSM Tropics natural
+            ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+              SWSRF2(N)=0.85495671 - 0.51432256 * AMIN1(2.0,ZBAR) + 0.39039086 * (AMIN1(2.0,ZBAR))**2 - &
+                     0.14508113*(AMIN1(2.0,ZBAR))**3 + 0.02017389 * (AMIN1(2.0,ZBAR))**4
+            ! PEATCLSM NORTH natural
+            ELSE IF (POROS(N) .GE. 0.90) THEN
+              SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + & 
                      0.04186*(AMIN1(1.5,ZBAR))**3 - 0.15042*(AMIN1(1.5,ZBAR))**4
-             SWSRF4(N)=SWSRF2(N)
+            ENDIF
+            SWSRF4(N)=SWSRF2(N)
         ENDIF
 
 ! srfmx is the maximum amount of water that can be added to the surface layer
