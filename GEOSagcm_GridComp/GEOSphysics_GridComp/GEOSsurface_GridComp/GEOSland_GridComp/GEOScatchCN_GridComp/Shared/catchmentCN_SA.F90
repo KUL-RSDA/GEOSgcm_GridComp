@@ -2245,12 +2245,24 @@ CONTAINS
              ! MB: accounting for water ponding on AR1
              ! same approach as for RZFLW (see subroutine RZDRAIN for
              ! comments)
-             ZBAR1  = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )  
-             SYSOIL = (2.*bf1(N)*amin1(amax1(zbar1,0.),0.45) + 2.*bf1(N)*bf2(N))/1000.
-             SYSOIL = amin1(SYSOIL,poros(N))
-             ET_CATDEF = SYSOIL*(EVSURF(N) + EVROOT(N))*ESATFR(N)/(1.*AR1(N)+SYSOIL*(1.-AR1(N)))
-             AR1eq = (1.+ars1(N)*(catdef(N)))/(1.+ars2(N)*(catdef(N))+ars3(N)*(catdef(N))**2)
-             CATDEF(N) = CATDEF(N) + (1.-AR1eq)*ET_CATDEF
+
+            ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+
+            ! PEATCLSM Tropics drained
+            IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+              SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
+            ! PEATCLSM Tropics natural
+            ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+              SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.65)+2*bf1(n)*bf2(n))/1000.
+            ! PEATCLSM NORTH natural
+            ELSE IF (POROS(N) .GE. 0.90) THEN
+              SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45)+2*bf1(n)*bf2(n))/1000.
+            ENDIF
+
+            SYSOIL = amin1(SYSOIL,poros(N))
+            ET_CATDEF = SYSOIL*(EVSURF(N) + EVROOT(N))*ESATFR(N)/(1.*AR1(N)+SYSOIL*(1.-AR1(N)))
+            AR1eq = (1.+ars1(N)*(catdef(N)))/(1.+ars2(N)*(catdef(N))+ars3(N)*(catdef(N))**2)
+            CATDEF(N) = CATDEF(N) + (1.-AR1eq)*ET_CATDEF
           ENDIF
        ELSE
           CAPAC(N) = AMAX1(0., CAPAC(N) - EVINT(N)*DTSTEP)

@@ -146,16 +146,12 @@ module catch_constants
   !     NLv5                  | PEATMAP                   | poros=0.93
   !
   ! - reichle, 26 Jan 2022
-  !
-  ! Poros threshold is changed to 0.67 (lower than the porosity of
-  ! PEATCLSM_Trop,Drained but higher than all mineral porosities, allowing to
-  ! differentiate between PEATCLSM modules in the source code based on poros in bcs.
-  !
-  ! Removed the constant PEATCLSM_ZBARMAX_4_SYSOIL because this differs for the
-  ! PEATCLSM modules and specific value is used based on porosity
-  ! - SApers, 18 Apr 2022
+  
+  REAL, PARAMETER, PUBLIC :: PEATCLSM_POROS_THRESHOLD  = 0.90    ! [m3/m3]
 
-  REAL, PARAMETER, PUBLIC :: PEATCLSM_POROS_THRESHOLD  = 0.67    ! [m3/m3]
+  ! max zbar for specific yield calc in PEATCLSM
+  
+  REAL, PARAMETER, PUBLIC :: PEATCLSM_ZBARMAX_4_SYSOIL = 0.45    ! [m] 
 
 contains
 
@@ -195,6 +191,7 @@ contains
     write (logunit,*) 'CATCH_SATCAPFR             = ', CATCH_SATCAPFR
     write (logunit,*)
     write (logunit,*) 'PEATCLSM_POROS_THRESHOLD   = ', PEATCLSM_POROS_THRESHOLD
+    write (logunit,*) 'PEATCLSM_ZBARMAX_4_SYSOIL  = ', PEATCLSM_ZBARMAX_4_SYSOIL
     write (logunit,*)
     write (logunit,*) 'Constants from SURFPARAMS:'
     write (logunit,*)
