@@ -2720,7 +2720,7 @@
           IF (POROS(CHNO) < PEATCLSM_POROS_THRESHOLD) THEN
              CATDEF(CHNO) = CATDEF(CHNO) + (ESOI(CHNO) + EVEG(CHNO))*ESATFR
           ELSE
-             ! PEAT
+             ! PEAT ! MB: Check for TN
              ! MB: accounting for water ponding on AR1
              ! same approach as for RZFLW (see subroutine RZDRAIN for
              ! comments)
