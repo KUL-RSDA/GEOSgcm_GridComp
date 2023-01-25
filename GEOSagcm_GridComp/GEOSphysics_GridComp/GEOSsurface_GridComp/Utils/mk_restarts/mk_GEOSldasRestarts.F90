@@ -72,10 +72,9 @@ PROGRAM mk_GEOSldasRestarts
   integer, parameter :: ntiles_cn = 1684725, ntiles_cat = 1653157
   character(len=300), parameter :: &
        InCNRestart = '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/CatchCN/M09/20151231/catchcn_internal_rst', &
-       InCNTilFile = '/discover/nobackup/ltakacs/bcs/Heracles-NL/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til',                        &
+       InCNTilFile = '/dodrio/scratch/projects/2022_200/project_output/rsda/vsc32460/CLSM_params/NL5/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til', &
        InCatRestart= '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/Catch/M09/20170101/catch_internal_rst', &
-       InCatTilFile= '/discover/nobackup/projects/gmao/ssd/land/l_data/geos5/bcs/CLSM_params/mkCatchParam_SMAP_L4SM_v002/' &
-                      //'SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til',                                                   &        
+       InCatTilFile= '/dodrio/scratch/projects/2022_200/project_output/rsda/vsc32460/CLSM_params/NL5/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til', &        
        InCatRest45 = '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/Catch/M09/20170101/catch_internal_rst', &
        InCatTil45  = '/discover/nobackup/projects/gmao/ssd/land/l_data/geos5/bcs/CLSM_params/mkCatchParam_SMAP_L4SM_v002/' &
                       //'SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til'            
@@ -1187,7 +1186,7 @@ contains
        allocate (latg   (ntiles))
        allocate (ld_reorder(ntiles_smap)) 
 
-       call ReadTileFile_RealLatLon ('InData/OutTileFile', i, long, latg); VERIFY_(i-ntiles)
+       call ReadTileFile_RealLatLon (trim(EXPDIR)//'InData/OutTileFile', i, long, latg); VERIFY_(i-ntiles)
        ! ---------------------------------------------
        ! Read exact lonc, latc from offline .til File 
        ! ---------------------------------------------
