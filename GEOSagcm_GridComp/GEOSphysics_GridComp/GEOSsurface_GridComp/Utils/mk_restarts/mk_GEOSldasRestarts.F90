@@ -1186,7 +1186,7 @@ contains
        allocate (latg   (ntiles))
        allocate (ld_reorder(ntiles_smap)) 
 
-       call ReadTileFile_RealLatLon (trim(EXPDIR)//'InData/OutTileFile', i, long, latg); VERIFY_(i-ntiles)
+       ! call ReadTileFile_RealLatLon (trim(EXPDIR)//'InData/OutTileFile', i, long, latg); VERIFY_(i-ntiles)
        ! ---------------------------------------------
        ! Read exact lonc, latc from offline .til File 
        ! ---------------------------------------------
