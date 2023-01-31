@@ -73,7 +73,8 @@ PROGRAM mk_GEOSldasRestarts
   character(len=300), parameter :: &
        InCNRestart = '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/CatchCN/M09/20151231/catchcn_internal_rst', &
        InCNTilFile = '/dodrio/scratch/projects/2022_200/project_output/rsda/vsc32460/CLSM_params/NL5/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til', &
-       InCatRestart= '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/Catch/M09/20170101/catch_internal_rst', &
+       InCatRestart= '/data/leuven/324/vsc32460/projects/GEOSldas/SMAP_Nature_v8.3/output/SMAP_EASEv2_M09_GLOBAL/rs/ens0000/' &
+                        //'Y2000/M01/SMAP_Nature_v8.3.catch_internal_rst.20000101_0000', &
        InCatTilFile= '/dodrio/scratch/projects/2022_200/project_output/rsda/vsc32460/CLSM_params/NL5/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til', &        
        InCatRest45 = '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/Catch/M09/20170101/catch_internal_rst', &
        InCatTil45  = '/discover/nobackup/projects/gmao/ssd/land/l_data/geos5/bcs/CLSM_params/mkCatchParam_SMAP_L4SM_v002/' &
@@ -539,6 +540,7 @@ contains
 
         filetype = 0
         call MAPL_NCIOGetFileType(rst_file, filetype,__RC__)
+        print *, 'SA: filetype is (should be 0): ', filetype
         if(filetype == 0) then
            ! GEOSldas CATCH/CATCHCN or CATCHCN LDASsa
            call  put_land_vars  (NTILES, ntiles_rst, id_glb, ld_reorder, model,  rst_file)
@@ -1186,7 +1188,7 @@ contains
        allocate (latg   (ntiles))
        allocate (ld_reorder(ntiles_smap)) 
 
-       ! call ReadTileFile_RealLatLon (trim(EXPDIR)//'InData/OutTileFile', i, long, latg); VERIFY_(i-ntiles)
+       call ReadTileFile_RealLatLon ('InData/OutTileFile', i, long, latg); VERIFY_(i-ntiles)
        ! ---------------------------------------------
        ! Read exact lonc, latc from offline .til File 
        ! ---------------------------------------------
@@ -2558,7 +2560,8 @@ contains
         endif
      endif
      if(trim(model) == 'catch'  ) then
-        call InFmt%open(trim(InCatRestart), pFIO_READ, __RC__)  
+           print *, 'SA: Restart path for rewriting: ', InCatRestart
+           call InFmt%open(trim(InCatRestart), pFIO_READ, __RC__)  
      endif
      meta_data = InFmt%read(__RC__)
      call InFmt%close(__RC__)
@@ -2566,7 +2569,6 @@ contains
      call meta_data%modify_dimension('tile', ntiles, __RC__)
 
      OutFileName = "InData/"//trim(model)//"_internal_rst"
-
      call OutFmt%create(trim(OutFileName),__RC__) 
      call OutFmt%write(meta_data,__RC__)
  
@@ -2590,6 +2592,12 @@ contains
      end do
      call MAPL_VarWrite(OutFmt,'POROS',var_put)
      
+     STATUS = NF_GET_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'   ), (/1/), (/NTILES_RST/),var_get)
+     do k = 1, NTILES
+        VAR_PUT(k) = var_get(ld_reorder(id_glb(k)))
+     end do
+     call MAPL_VarWrite(OutFmt,'OLD_ITY',var_put) 
+
      STATUS = NF_GET_VARA_REAL(NCFID,VarID(NCFID,'COND'   ), (/1/), (/NTILES_RST/),var_get)
      do k = 1, NTILES
         VAR_PUT(k) = var_get(ld_reorder(id_glb(k)))
