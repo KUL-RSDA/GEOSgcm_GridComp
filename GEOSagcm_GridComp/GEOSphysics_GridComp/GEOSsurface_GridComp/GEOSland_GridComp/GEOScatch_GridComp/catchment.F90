@@ -93,8 +93,7 @@
            SATCAPFR          => CATCH_SATCAPFR,      &
            PHIGT             => CATCH_PHIGT,         &
            DZTSURF           => CATCH_DZTSURF,       &
-           PEATCLSM_POROS_THRESHOLD,                 &
-           PEATCLSM_ZBARMAX_4_SYSOIL
+           PEATCLSM_POROS_THRESHOLD
 
       USE SURFPARAMS,       ONLY:                    &
 	   LAND_FIX, ASTRFR, STEXP, RSWILT,          &
@@ -743,15 +742,16 @@
       ENDIF
 
 !**** 1. SATURATED FRACTION
-
+!MB bf1, bf2, poros, CATDEF added
       CALL ENERGY1 (                                                           &
                    NCH, DTSTEP, ITYP, UM, RCUN,                                &
                    ETURB1, DEDQA1X, DEDTC1X, HSTURB1, DHSDQA1X, DHSDTC1X,      &
                    QM,     RA1,   SWNETF,  HLWDWN, PSUR,                       &
                    RDCX,    HFTDS1, DHFT1,  QSAT1, DQS1, ALW1, BLW1,           &
                    EMAXRT,CSOIL,SWSRF1,POTFRC,.false.,                         &
-                   TC1SF, QA1,                                                 &
-                   EVAP1, SHFLUX1, HLWUP1, RX11, RX21, GHFLUX1, HSNACC1        &
+                   TC1SF, QA1, POROS,                                          &
+                   EVAP1, SHFLUX1, HLWUP1, RX11, RX21, GHFLUX1, HSNACC1,       &
+                   bf1, bf2, CATDEF                                            &
                   )
 
       IF (BUG) THEN
@@ -762,14 +762,16 @@
 
 
 !CC    print*,'energy2'
+!MB bf1, bf2, poros, CATDEF added
       CALL ENERGY2 (                                                           &
                    NCH, DTSTEP, ITYP, UM, RCUN,                                &
                    ETURB2, DEDQA2X, DEDTC2X, HSTURB2, DHSDQA2X, DHSDTC2X,      &
                    QM,     RA2,   SWNETF,  HLWDWN, PSUR,                       &
                    RDCX,    HFTDS2, DHFT2, QSAT2, DQS2, ALW2, BLW2,            &
                    EMAXRT,CSOIL,SWSRF2,POTFRC,.false., RZI, WPWET,             &
-                   TC2SF, QA2,                                                 &
-                   EVAP2, SHFLUX2, HLWUP2, RX12, RX22, GHFLUX2, HSNACC2        &
+                   TC2SF, QA2, POROS,                                          &
+                   EVAP2, SHFLUX2, HLWUP2, RX12, RX22, GHFLUX2, HSNACC2,       &
+                   bf1, bf2, CATDEF                                            &
                   )
 
       IF (BUG) THEN
@@ -1784,8 +1786,9 @@
                        RDC,    HFTDS, DHFTDS,                                  &
                        QSATTC, DQSDTC, ALWRAD, BLWRAD,                         &
                        EMAXRT,CSOIL,SWSRF,POTFRC,BUG,                          &
-                       TC, QA,                                                 &
-                       EVAP, SHFLUX, HLWUP, RX1, RX2, GHFLUX, HSNACC           &
+                       TC, QA, POROS,                                          &
+                       EVAP, SHFLUX, HLWUP, RX1, RX2, GHFLUX, HSNACC,          &
+                       bf1, bf2, CATDEF                                        &
                        )
 
       IMPLICIT NONE
@@ -1797,7 +1800,7 @@
       REAL, INTENT(IN), DIMENSION(NCH) :: UM, RCIN, ETURB, HSTURB, QM, RA,     &
                     SWNET, HLWDWN, PSUR, RDC, HFTDS, DHFTDS, QSATTC, DQSDTC,   &
                     ALWRAD, BLWRAD, EMAXRT, CSOIL, SWSRF, POTFRC, DEDQA,       &
-                    DEDTC, DHSDQA, DHSDTC
+                    DEDTC, DHSDQA, DHSDTC, POROS, bf1, bf2, CATDEF
       LOGICAL, INTENT(IN) :: BUG
 
 
@@ -1810,7 +1813,7 @@
       INTEGER ChNo, N
       REAL, DIMENSION(NCH) :: VPDSTR, ESATTX, VPDSTX, FTEMP, RC, EAX, TX,      &
                     RCX, DRCDTC, DUMMY,  FTEMPX, DRCDEA, DEDEA, DHSDEA, EM,    &
-                    ESATTC, DESDTC, EA
+                    ESATTC, DESDTC, EA, ZBAR, FOXY
       REAL  DELTC, DELEA
  
 
@@ -1840,6 +1843,8 @@
       DEDEA(CHNO)  = DEDQA(CHNO) * EPSILON / PSUR(CHNO)
       DHSDEA(CHNO) = DHSDQA(CHNO) * EPSILON / PSUR(CHNO)
 
+      !ZBAR defined here positive below ground and in meter
+      ZBAR(CHNO)=SQRT(1.e-20+CATDEF(CHNO)/BF1(CHNO))-BF2(CHNO)
 
  100  CONTINUE
 
@@ -1865,8 +1870,14 @@
                   )
 
 
+      ! MB: FOXY only called here, ZBAR unchanged
+      CALL OXYFAC (                                                            &
+                   NCH, ZBAR, POROS,                                           &
+                   FOXY                                                        &
+                  )
+
       DO N=1,NCH
-        RC(N)=RCIN(N)/(VPDSTR(N)*FTEMP(N)+1.E-20)
+        RC(N)=RCIN(N)/(VPDSTR(N)*FTEMP(N)*FOXY(N)+1.E-20)
         ENDDO
 
       CALL RSURFP1 (                                                           &
@@ -1899,7 +1910,7 @@
       CALL TMPFAC (NCH, ITYP, TX, FTEMPX)
 
       DO N=1,NCH
-        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMPX(N)+1.E-20)
+        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMPX(N)*FOXY(N)+1.E-20)
         ENDDO
 
       CALL RSURFP1 (NCH, UM, RDC, SWSRF, ESATTX, EA,                           &
@@ -1917,7 +1928,7 @@
       CALL VPDFAC (NCH, ITYP, ESATTC, EAX, VPDSTX)
 
       DO N=1,NCH
-        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMP(N)+1.E-20)
+        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMP(N)*FOXY(N)+1.E-20)
         ENDDO
 
       CALL RSURFP1 (NCH, UM, RDC, SWSRF, ESATTC, EAX,                          &
@@ -1970,8 +1981,9 @@
                        RDC,    HFTDS, DHFTDS,                                  &
                        QSATTC, DQSDTC, ALWRAD, BLWRAD,                         &
                        EMAXRT,CSOIL,SWSRF,POTFRC,BUG,RZI, WPWET,               &
-                       TC, QA,                                                 &
-                       EVAP, SHFLUX, HLWUP, RX1, RX2, GHFLUX, HSNACC           &
+                       TC, QA, POROS,                                          &
+                       EVAP, SHFLUX, HLWUP, RX1, RX2, GHFLUX, HSNACC,          &
+                       bf1, bf2, CATDEF                                        &
                        )
 
 
@@ -1984,7 +1996,7 @@
       REAL, INTENT(IN), DIMENSION(NCH) ::  UM, RCIN, ETURB, HSTURB, QM, RA,    &
                     SWNET, HLWDWN, PSUR, RDC, HFTDS, DHFTDS, QSATTC, DQSDTC,   &
                     ALWRAD, BLWRAD, EMAXRT, CSOIL, SWSRF, POTFRC, RZI, WPWET,  &
-                    DEDQA, DEDTC, DHSDQA, DHSDTC
+                    DEDQA, DEDTC, DHSDQA, DHSDTC, POROS, bf1, bf2, CATDEF
 
       LOGICAL, INTENT(IN) ::   BUG
 
@@ -1999,7 +2011,7 @@
       INTEGER ChNo, N
       REAL, DIMENSION(NCH) :: VPDSTR, ESATTX, VPDSTX, FTEMP, RC, EAX, TX,      &
                     RCX, DRCDTC, DUMMY, FTEMPX, DRCDEA, DEDEA, DHSDEA, EM,     &
-                    ESATTC, DESDTC, EA, RSTFAC
+                    ESATTC, DESDTC, EA, RSTFAC, ZBAR, FOXY
 !      REAL DELTC, DELEA, STEXP, ATRANS, ASTRFR
       REAL DELTC, DELEA, ATRANS
 
@@ -2029,6 +2041,9 @@
       DEDEA(CHNO)  = DEDQA(CHNO) * EPSILON / PSUR(CHNO)
       DHSDEA(CHNO) = DHSDQA(CHNO) * EPSILON / PSUR(CHNO)
 
+      !ZBAR defined here positive below ground and in meter
+      ZBAR(CHNO)=SQRT(1.e-20+CATDEF(CHNO)/BF1(CHNO))-BF2(CHNO)
+
  100  CONTINUE
 
 !****
@@ -2055,8 +2070,14 @@
                    FTEMP                                                       &
                   )
 
+      ! MB: OXYFAC only called here, ZBAR unchanged
+      CALL OXYFAC (                                                            &
+                   NCH, ZBAR, POROS,                                           &
+                   FOXY                                                        &
+                  )
+
       DO N=1,NCH
-        RC(N)=RCIN(N)/(VPDSTR(N)*FTEMP(N)+1.E-20)
+        RC(N)=RCIN(N)/(VPDSTR(N)*FTEMP(N)*FOXY(N)+1.E-20)
         ENDDO
 
 
@@ -2100,7 +2121,7 @@
       CALL TMPFAC (NCH, ITYP, TX, FTEMPX)
 
       DO N=1,NCH
-        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMPX(N)+1.E-20)
+        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMPX(N)*FOXY(N)+1.E-20)
         RCX(N) = RCX(N) / RSTFAC(N)**STEXP
         RCX(N) = AMIN1 (RCX(N) , 1.E10)
         ENDDO
@@ -2120,7 +2141,7 @@
       CALL VPDFAC (NCH, ITYP, ESATTC, EAX, VPDSTX)
 
       DO N=1,NCH
-        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMP(N)+1.E-20)
+        RCX(N)=RCIN(N)/(VPDSTX(N)*FTEMP(N)*FOXY(N)+1.E-20)
         RCX(N) = RCX(N) / RSTFAC(N)**STEXP
         RCX(N) = AMIN1 (RCX(N) , 1.E10)
         ENDDO
@@ -2597,6 +2618,48 @@
 !****
 !**** [ END TMPFAC ]
 !****
+
+!**** -----------------------------------------------------------------
+!**** /////////////////////////////////////////////////////////////////
+!**** -----------------------------------------------------------------
+!****
+!**** [ BEGIN OXYFAC ]
+!****
+      SUBROUTINE OXYFAC (                                                      &
+                         NCH, ZBAR, POROS,                                     &
+                         FOXY                                                  &
+                        )
+!****
+!**** Compute oxygen stress factor.
+!****
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NCH
+      REAL, INTENT(IN), DIMENSION(NCH) :: ZBAR, POROS
+      REAL, INTENT(OUT), DIMENSION(NCH) :: FOXY
+
+      INTEGER :: ChNo
+!****
+!**** -----------------------------------------------------------------
+
+      DO 100 ChNo = 1, NCH
+!****
+      IF ((POROS(CHNO) .GE. 0.75) .AND. (POROS(CHNO) .LT. 0.90) .AND.         &
+         (-1.0*ZBAR(CHNO) .GT. -0.29)) THEN
+         ! start of stress at 0.29. First try: linear increase with
+         ! stdev of microtopography: 0.32 for tropical natural peatlands 
+         FOXY(ChNo) = 1. - amax1(amin1( 0.29 - ZBAR(ChNo) / 0.32, 1.), 0.0)
+      ELSE
+         FOXY(CHNO) = 1.
+      ENDIF
+!****
+ 100  CONTINUE
+!****
+      RETURN
+      END SUBROUTINE OXYFAC
+!****
+!**** [ END OXYFAC ]
+!****
 !**** -----------------------------------------------------------------
 !**** /////////////////////////////////////////////////////////////////
 !**** -----------------------------------------------------------------
@@ -2720,12 +2783,27 @@
           IF (POROS(CHNO) < PEATCLSM_POROS_THRESHOLD) THEN
              CATDEF(CHNO) = CATDEF(CHNO) + (ESOI(CHNO) + EVEG(CHNO))*ESATFR
           ELSE
-             ! PEAT ! MB: Check for TN
+             ! PEAT
              ! MB: accounting for water ponding on AR1
              ! same approach as for RZFLW (see subroutine RZDRAIN for
              ! comments)
-             ZBAR1  = catch_calc_zbar( BF1(CHNO), BF2(CHNO), CATDEF(CHNO) )  
-             SYSOIL = (2.*bf1(CHNO)*amin1(amax1(zbar1,0.),PEATCLSM_ZBARMAX_4_SYSOIL) + 2.*bf1(CHNO)*bf2(CHNO))/1000.
+
+
+             ! PEATCLSM Tropics drained
+
+             ZBAR1  = catch_calc_zbar( BF1(CHNO), BF2(CHNO),CATDEF(CHNO) )   
+
+             IF ((POROS(CHNO) .GE. 0.67) .AND. (POROS(CHNO) .LT. 0.75)) THEN
+               SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,0.),0.80) +2*bf1(CHNO)*bf2(CHNO))/1000.
+             ! PEATCLSM Tropics natural
+             ELSE IF ((POROS(CHNO) .GE. 0.75) .AND. (POROS(CHNO) .LT. 0.90)) THEN
+               SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,0.),0.65) +2*bf1(CHNO)*bf2(CHNO))/1000.
+             ! PEATCLSM NORTH natural
+             ELSE IF (POROS(CHNO) .GE. 0.90) THEN
+               SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,0.),0.45) +2*bf1(CHNO)*bf2(CHNO))/1000.
+             ENDIF
+
+             ! Calculate fraction of RZFLW removed/added to catdef
              SYSOIL = amin1(SYSOIL,poros(CHNO))
              ET_CATDEF = SYSOIL*(ESOI(CHNO) + EVEG(CHNO))*ESATFR/(1.*AR1(CHNO)+SYSOIL*(1.-AR1(CHNO)))
              AR1eq = (1.+ars1(chno)*(catdef(chno)))/(1.+ars2(chno)*(catdef(chno))+ars3(chno)*(catdef(chno))**2)
