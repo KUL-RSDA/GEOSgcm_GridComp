@@ -269,7 +269,7 @@ CONTAINS
 
       ! constants for PEATCLSM piecewise linear relationship between surface runoff and AR1
       
-      REAL, PARAMETER      :: SRUN_AR1_MIN   =  0.5
+      REAL, PARAMETER      :: SRUN_AR1_MIN   = 9999
       REAL, PARAMETER      :: SRUN_AR1_SLOPE = 10.
       
 !**** - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -544,8 +544,8 @@ CONTAINS
 ! ---------------------------------------------------------------------
 
         SRFLW=SRFEXC(N)*DTSTEP/TSC0
-
-        IF(SRFLW < 0.    ) SRFLW = FLWALPHA * SRFLW ! C05 change
+       
+        IF ((POROS(N) .LT. 0.67) .AND. (SRFLW < 0.    )) SRFLW = FLWALPHA * SRFLW ! C05 change
 
 !rr   following inserted by koster Sep 22, 2003
         rzdif=rzave/poros(n)-wpwet(n)
@@ -600,7 +600,8 @@ CONTAINS
           ! to avoid extrapolation errors due to the non-optimal
           ! (linear) approximation with the bf1-bf2-CLSM function,
           ! theoretical SYSOIL curve levels off approximately at 0 m and 0.45 m.
-          ! 0.45 m (for tropics 0.80 and 0.65).          
+          ! 0.45 m (for tropics 0-0.80 m (TD)  and 0-0.65 m (TN) -0.11-1.00 m
+          ! (CON).          
           
           ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
          
@@ -609,7 +610,7 @@ CONTAINS
             SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80) +2*bf1(n)*bf2(n))/1000.
           ! PEATCLSM Tropics natural
           ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.65) +2*bf1(n)*bf2(n))/1000.
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.11),1.00) +2*bf1(n)*bf2(n))/1000.
           ! PEATCLSM NORTH natural
           ELSE IF (POROS(N) .GE. 0.90) THEN
             SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
@@ -648,14 +649,14 @@ CONTAINS
           ENDIF
        ENDIF
 
-       IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
+       ! SA:CON IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
           ! MB: CATDEF Threshold at zbar=0
           ! water table not allowed to rise higher (numerically instable) 
           ! zbar<0 only occurred due to extreme infiltration rates
           ! (noticed this only snow melt events, very few locations and times)
           ! (--> NOTE: PEATCLSM has no Hortonian runoff for zbar > 0)            
-          CATDEF_PEAT_THRESHOLD = ((BF2(N))**2.0)*BF1(N)
-          IF(CATDEF(N) .LT. CATDEF_PEAT_THRESHOLD) THEN
+         ! SA:CON CATDEF_PEAT_THRESHOLD = ((BF2(N))**2.0)*BF1(N)
+         ! SA:CON IF(CATDEF(N) .LT. CATDEF_PEAT_THRESHOLD) THEN
              ! RUNSRF(N)=RUNSRF(N) + (CATDEF_PEAT_THRESHOLD - CATDEF(N))
              ! runoff from AR1 for zbar>0
              ! RZFLW_AR1 = RZFLW - RZFLW_CATDEF + (CATDEF_PEAT_THRESHOLD - CATDEF(N))
@@ -665,10 +666,10 @@ CONTAINS
              ! 
              ! revised (rdk, 1/04/2021): take excess water from both 
              ! soil and free standing water, the latter assumed to cover area AR1=0.5
-             RUNSRF(N) = RUNSRF(N) + (CATDEF_PEAT_THRESHOLD-CATDEF(N) + 0.5*1000.*(-ZBAR1))/DTSTEP
-             CATDEF(N)=CATDEF_PEAT_THRESHOLD
-          ENDIF
-       ENDIF
+             ! SA:CON RUNSRF(N) = RUNSRF(N) + (CATDEF_PEAT_THRESHOLD-CATDEF(N) + 0.5*1000.*(-ZBAR1))/DTSTEP
+             ! SA:CON CATDEF(N)=CATDEF_PEAT_THRESHOLD
+          ! SA:CON ENDIF
+       ! SA:CON ENDIF
 
        IF(CATDEF(N) .LT. 0.) THEN
           ! bug fix: RUNSRF in flux units [kg m-2 s-1] for consistency with partition()
@@ -744,9 +745,9 @@ CONTAINS
             ! v_slope in m^(-1)
             ! PEATCLSM Tropics drained
             IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              Ksz_zero=7.0
-              m_Ivanov=3.0
-              v_slope = 1.5e-05
+              Ksz_zero=633.02
+              m_Ivanov=2.95
+              v_slope = 1.5e-08
             ! PEATCLSM Northern natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               Ksz_zero=10.0
@@ -754,7 +755,7 @@ CONTAINS
               v_slope = 1.5e-05
             ENDIF
             ! Ta in m2/s, BFLOW in mm/s
-            Ta = (Ksz_zero*(1.+100.*amax1(0.,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
+            Ta = (Ksz_zero*(9.+100.*amax1(-0.08,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
               Ksz_zero = 5. ! m/day macro saturated conductivity
@@ -787,7 +788,7 @@ CONTAINS
                  SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.80) +2*bf1(N)*bf2(N))/1000.
                ! PEATCLSM Tropics natural
                ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-                 SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.65) +2*bf1(N)*bf2(N))/1000.
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar,-0.11),1.00)+2*bf1(n)*bf2(n))/1000.
                ! PEATCLSM NORTH natural
                ELSE IF (POROS(N) .GE. 0.90) THEN
                  SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.45) +2*bf1(N)*bf2(N))/1000.
@@ -1040,8 +1041,8 @@ CONTAINS
                      0.09602305*(AMIN1(3.0,ZBAR))**3 + 0.01214020*(AMIN1(3.0,ZBAR))**4
             ! PEATCLSM Tropics natural
             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              SWSRF2(N)=0.85495671 - 0.51432256 * AMIN1(2.0,ZBAR) + 0.39039086 * (AMIN1(2.0,ZBAR))**2 - &
-                     0.14508113*(AMIN1(2.0,ZBAR))**3 + 0.02017389 * (AMIN1(2.0,ZBAR))**4
+              SWSRF2(N)=0.90678895 - 0.19493498 * AMIN1(2.0,ZBAR) - 0.07222558 * (AMIN1(2.0,ZBAR))**2 + &
+                     0.14496673*(AMIN1(2.0,ZBAR))**3 - 0.04343917 * (AMIN1(2.0,ZBAR))**4
             ! PEATCLSM NORTH natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + & 
