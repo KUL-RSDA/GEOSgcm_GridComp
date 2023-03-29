@@ -619,8 +619,10 @@ CONTAINS
           SYSOIL = amin1(SYSOIL,poros(n))    
 
           ! Calculate fraction of RZFLW removed/added to catdef
-          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*RZFLW/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
+          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
           CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
+          RUNSRF = 0.0
           ! MB: remove all RZFLW from RZEXC because the other part 
           ! flows into the surface water storage (microtopgraphy)
           RZEXC(N)=RZEXC(N)-RZFLW
