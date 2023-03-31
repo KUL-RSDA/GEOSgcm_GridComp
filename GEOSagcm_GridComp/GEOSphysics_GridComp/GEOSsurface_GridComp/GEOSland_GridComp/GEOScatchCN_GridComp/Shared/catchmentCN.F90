@@ -1163,7 +1163,7 @@ CONTAINS
              AR1, AR2, AR4, THRUL_VOL, THRUC_VOL,                       &
              FRICE, TP1, SRFMX, BUG,                                    & 
              VGWMAX, RZEQOL, POROS,                                     &
-             SRFEXC, RZEXC, RUNSRF, RUNON                               &
+             SRFEXC, RZEXC, RUNSRF, RUNON,                              &
              QINFIL                                                     &
              )
 
