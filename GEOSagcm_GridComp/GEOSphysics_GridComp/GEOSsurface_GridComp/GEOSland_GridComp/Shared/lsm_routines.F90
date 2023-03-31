@@ -455,7 +455,7 @@ CONTAINS
          ! convert outputs to flux units [kg m-2 s-1]
          RUNSRF(N)=RUNSRF(N)/DTSTEP
          QINFIL(N)=QIN/DTSTEP
-         IF (POROS(N) > PEATCLSM_POROS_THRESHOLD) THEN
+         IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
              RUNON(N)=RUNSRF(N)
              RUNSRF(N)=0.0
          endif
