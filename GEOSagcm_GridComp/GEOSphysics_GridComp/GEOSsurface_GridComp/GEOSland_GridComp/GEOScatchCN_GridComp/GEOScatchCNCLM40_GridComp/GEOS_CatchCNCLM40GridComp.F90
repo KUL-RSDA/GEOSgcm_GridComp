@@ -4935,7 +4935,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
 	real,pointer,dimension(:) :: ghflxsno, ghflxtskin
         real,pointer,dimension(:) :: SHSNOW1, AVETSNOW1, WAT10CM1, WATSOI1, ICESOI1
         real,pointer,dimension(:) :: LHSNOW1, LWUPSNOW1, LWDNSNOW1, NETSWSNOW
-        real,pointer,dimension(:) :: TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE
+        real,pointer,dimension(:) :: TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE, RUNON
 	real,pointer,dimension(:) :: WCHANGE, ECHANGE, HSNACC, EVACC, SHACC
 	real,pointer,dimension(:) :: SNOVR, SNOVF, SNONR, SNONF
 	real,pointer,dimension(:) :: VSUVR, VSUVF
@@ -5757,6 +5757,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         allocate(FICE1     (NTILES)) 
         allocate(SLDTOT    (NTILES)) 
         allocate(FSW_CHANGE(NTILES))
+        allocate(RUNON(NTILES))
 
         allocate(SHSBT    (NTILES,NUM_SUBTILES))
         allocate(DSHSBT   (NTILES,NUM_SUBTILES))
@@ -7244,7 +7245,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
                 TSURF                                                ,&
                 SHSNOW1, AVETSNOW1, WAT10CM1, WATSOI1, ICESOI1       ,&
                 LHSNOW1, LWUPSNOW1, LWDNSNOW1, NETSWSNOW             ,&
-                TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE            ,&
+                TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE, RUNON     ,&
                 TC1_0=TC1_0, TC2_0=TC2_0, TC4_0=TC4_0                ,&
                 QA1_0=QA1_0, QA2_0=QA2_0, QA4_0=QA4_0                ,&
                 RCONSTIT=RCONSTIT, RMELT=RMELT, TOTDEPOS=TOTDEPOS, LHACC=LHACC)
@@ -7647,6 +7648,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         deallocate(FICE1    )
         deallocate(SLDTOT   )
         deallocate(FSW_CHANGE)
+        deallocate(RUNON)
         deallocate(   btran )
         deallocate(     wgt )
         deallocate(     bt1 )
