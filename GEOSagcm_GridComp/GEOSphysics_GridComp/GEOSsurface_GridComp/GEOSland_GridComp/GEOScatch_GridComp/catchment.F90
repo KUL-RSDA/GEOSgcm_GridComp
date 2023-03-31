@@ -158,7 +158,7 @@
                      EVACC, SHACC,                                             &
                      SH_SNOW, AVET_SNOW, WAT_10CM, TOTWAT_SOIL, TOTICE_SOIL,   &
                      LH_SNOW, LWUP_SNOW, LWDOWN_SNOW, NETSW_SNOW,              &
-                     TCSORIG, TPSN1IN, TPSN1OUT,FSW_CHANGE ,                   &
+                     TCSORIG, TPSN1IN, TPSN1OUT,FSW_CHANGE , RUNON,            &
                      lonbeg,lonend,latbeg,latend,                              &
                      TC1_0, TC2_0, TC4_0, QA1_0, QA2_0, QA4_0, EACC_0,         &
                      RCONSTIT, RMELT, TOTDEPOS,  LHACC)
@@ -225,7 +225,7 @@
       REAL, INTENT(OUT), DIMENSION(NCH) :: LH_SNOW, LWUP_SNOW,         &
                      LWDOWN_SNOW, NETSW_SNOW
       REAL, INTENT(OUT), DIMENSION(NCH) :: TCSORIG, TPSN1IN, TPSN1OUT, &
-                     FSW_CHANGE
+                     FSW_CHANGE, RUNON
 
       
       REAL, INTENT(OUT), DIMENSION(NCH), OPTIONAL :: LHACC
@@ -1145,7 +1145,7 @@
                     NCH,DTSTEP,VGWMAX,SATCAP,RZEQOL,AR1,WPWET,                 &
                     tsa1,tsa2,tsb1,tsb2,atau,btau,CDCR2,poros,                 &
                     BF1, BF2, ARS1, ARS2, ARS3, BUG,                           &
-                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF                           &
+                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF,RUNON                     &
                     )
 
 ! ---------------------------------------------------------------------
@@ -1187,7 +1187,7 @@
              AR1, AR2, AR4, THRUL_VOL, THRUC_VOL,                       &
              FRICE, TP1, SRFMX, BUG,                                    & 
              VGWMAX, RZEQOL, POROS,                                     &
-             SRFEXC, RZEXC, RUNSRF,                                     &
+             SRFEXC, RZEXC, RUNSRF, RUNON,                              &
              QINFIL                                                     &
              )
 

@@ -238,7 +238,7 @@ CONTAINS
            FRICE, TP1, SRFMX, BUG,                            &
            VGWMAX, RZEQ, POROS,                               &
            SRFEXC, RZEXC,                                     &
-           RUNSRF,                                            &  ! [kg m-2 s-1]  (flux units)
+           RUNSRF, RUNON,                                     &  ! [kg m-2 s-1]  (flux units)
            QINFIL                                             &  ! [kg m-2 s-1]  (flux units)
            )
 
@@ -258,6 +258,7 @@ CONTAINS
       LOGICAL, INTENT(IN)                    :: BUG
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: SRFEXC, RZEXC
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                            ! [kg m-2 s-1]
+      REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNON                            ! [kg m-2 s-1]
       REAL,    INTENT(OUT),   DIMENSION(NCH) :: QINFIL                            ! [kg m-2 s-1]
 
       ! ---------------------------
@@ -454,6 +455,10 @@ CONTAINS
          ! convert outputs to flux units [kg m-2 s-1]
          RUNSRF(N)=RUNSRF(N)/DTSTEP
          QINFIL(N)=QIN/DTSTEP
+         IF (POROS(N) > PEATCLSM_POROS_THRESHOLD) THEN
+             RUNON(N)=RUNSRF(N)
+             RUNSRF(N)=0.0
+         endif
 
       END DO
 
@@ -472,7 +477,7 @@ CONTAINS
                           TSA1, TSA2, TSB1, TSB2, ATAU, BTAU, CDCR2, POROS,  &
                           BF1, BF2, ARS1, ARS2, ARS3, BUG,                   &
                           CAPAC, RZEXC, SRFEXC, CATDEF,                      &
-                          RUNSRF                                             &  ! [kg m-2 s-1]
+                          RUNSRF, RUNON                                      &  ! [kg m-2 s-1]
                           )
 
 !-----------------------------------------------------------------
@@ -493,6 +498,7 @@ CONTAINS
 
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RZEXC, SRFEXC, CATDEF, CAPAC   
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                          ! [kg m-2 s-1]
+      REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNON                           ! [kg m-2 s-1]
 
       ! --------------------
 
@@ -620,9 +626,10 @@ CONTAINS
 
           ! Calculate fraction of RZFLW removed/added to catdef
           ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
-          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)+RUNON(N))/(1.*AR1eq+SYSOIL*(1.-AR1eq))
           CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
-          RUNSRF = 0.0
+          RUNSRF(N) = 0.0
+          RUNON(N) = 0.0
           ! MB: remove all RZFLW from RZEXC because the other part 
           ! flows into the surface water storage (microtopgraphy)
           RZEXC(N)=RZEXC(N)-RZFLW
