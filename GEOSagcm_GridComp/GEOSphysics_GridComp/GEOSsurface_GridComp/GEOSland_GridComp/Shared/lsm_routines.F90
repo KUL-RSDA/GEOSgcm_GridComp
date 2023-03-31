@@ -626,7 +626,7 @@ CONTAINS
 
           ! Calculate fraction of RZFLW removed/added to catdef
           ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
-          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)+RUNON(N))/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+(RUNSRF(N)+RUNON(N))*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
           CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
           RUNSRF(N) = 0.0
           RUNON(N) = 0.0
