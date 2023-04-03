@@ -238,8 +238,9 @@ CONTAINS
            FRICE, TP1, SRFMX, BUG,                            &
            VGWMAX, RZEQ, POROS,                               &
            SRFEXC, RZEXC,                                     &
-           RUNSRF, RUNON,                                     &  ! [kg m-2 s-1]  (flux units)
-           QINFIL                                             &  ! [kg m-2 s-1]  (flux units)
+           RUNSRF,                                            &  ! [kg m-2 s-1]  (flux units)
+           QINFIL,                                            &  ! [kg m-2 s-1]  (flux units)
+           CATDEF, BF1, BF2, ARS1, ARS2, ARS3                 &
            )
 
 !**** NOTE: Input throughfall is in volume units, as are calcs throughout this subroutine  [kg m-2]
@@ -258,14 +259,15 @@ CONTAINS
       LOGICAL, INTENT(IN)                    :: BUG
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: SRFEXC, RZEXC
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                            ! [kg m-2 s-1]
-      REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNON                            ! [kg m-2 s-1]
+      REAL,    INTENT(INOUT), DIMENSION(NCH) :: CATDEF                            
       REAL,    INTENT(OUT),   DIMENSION(NCH) :: QINFIL                            ! [kg m-2 s-1]
-
+      REAL,    INTENT(IN),    DIMENSION(NCH) :: BF1,  BF2, ARS1, ARS2, ARS3
       ! ---------------------------
       
       INTEGER              :: N
       REAL                 :: deficit,srun0,frun,qin, qinfil_l, qinfil_c, qcapac, excess_infil
       REAL                 :: srunc, srunl, ptotal, excess, totcapac, watadd
+      REAL                 :: AR1eq, ZBAR1, SYSOIL, RUNSRF_CATDEF
       REAL, DIMENSION(NCH) :: THRUL, THRUC
 
       ! constants for PEATCLSM piecewise linear relationship between surface runoff and AR1
@@ -456,8 +458,29 @@ CONTAINS
          RUNSRF(N)=RUNSRF(N)/DTSTEP
          QINFIL(N)=QIN/DTSTEP
          IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
-             RUNON(N)=RUNSRF(N)
+             ! fill catdef and hollows using approach of RZDRAIN
+             AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+
+             ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+
+             ! PEATCLSM Tropics drained
+             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
+             ! PEATCLSM Tropics natural
+             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.11),1.00) +2*bf1(n)*bf2(n))/1000.
+             ! PEATCLSM NORTH natural
+             ELSE IF (POROS(N) .GE. 0.90) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
+             ENDIF
+
+             SYSOIL = amin1(SYSOIL,poros(n))
+
+             RUNSRF_CATDEF = (1.-AR1eq)*SYSOIL*(RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+             CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
              RUNSRF(N)=0.0
+             QIN=PTOTAL
+             QINFIL(N)=QIN/DTSTEP
          endif
 
       END DO
@@ -477,7 +500,7 @@ CONTAINS
                           TSA1, TSA2, TSB1, TSB2, ATAU, BTAU, CDCR2, POROS,  &
                           BF1, BF2, ARS1, ARS2, ARS3, BUG,                   &
                           CAPAC, RZEXC, SRFEXC, CATDEF,                      &
-                          RUNSRF, RUNON                                      &  ! [kg m-2 s-1]
+                          RUNSRF                                             &  ! [kg m-2 s-1]
                           )
 
 !-----------------------------------------------------------------
@@ -498,7 +521,6 @@ CONTAINS
 
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RZEXC, SRFEXC, CATDEF, CAPAC   
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                          ! [kg m-2 s-1]
-      REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNON                           ! [kg m-2 s-1]
 
       ! --------------------
 
@@ -626,10 +648,9 @@ CONTAINS
 
           ! Calculate fraction of RZFLW removed/added to catdef
           ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
-          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+(RUNSRF(N)+RUNON(N))*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
           CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
           RUNSRF(N) = 0.0
-          RUNON(N) = 0.0
           ! MB: remove all RZFLW from RZEXC because the other part 
           ! flows into the surface water storage (microtopgraphy)
           RZEXC(N)=RZEXC(N)-RZFLW

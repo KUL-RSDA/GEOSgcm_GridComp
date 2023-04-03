@@ -147,7 +147,7 @@
                      ARS1,ARS2,ARS3,ARA1,ARA2,ARA3,ARA4,ARW1,ARW2,ARW3,ARW4,   &
                      tsa1,tsa2,tsb1,tsb2,atau,btau,BUG,                        &
                      TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,                      &
-                     CATDEF, RUNON, RZEXC, srfexc, GHTCNT, TSURF,              &
+                     CATDEF, RZEXC, srfexc, GHTCNT, TSURF,                     &
                      WESNN, HTSNNN, SNDZN,                                     &
                      EVAP, SHFLUX, RUNOFF,                                     &
                      EINT, ESOI, EVEG, ESNO,  BFLOW,RUNSRF,SMELT,              &
@@ -200,7 +200,7 @@
 
       REAL, INTENT(INOUT), DIMENSION(NCH) ::                                   &
                      TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,                      &
-                     CATDEF, RUNON, RZEXC, SRFEXC
+                     CATDEF, RZEXC, SRFEXC
  
       REAL, INTENT(INOUT), DIMENSION(N_GT, NCH) ::  GHTCNT
  
@@ -1145,7 +1145,7 @@
                     NCH,DTSTEP,VGWMAX,SATCAP,RZEQOL,AR1,WPWET,                 &
                     tsa1,tsa2,tsb1,tsb2,atau,btau,CDCR2,poros,                 &
                     BF1, BF2, ARS1, ARS2, ARS3, BUG,                           &
-                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF,RUNON                     &
+                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF                           &
                     )
 
 ! ---------------------------------------------------------------------
@@ -1187,8 +1187,9 @@
              AR1, AR2, AR4, THRUL_VOL, THRUC_VOL,                       &
              FRICE, TP1, SRFMX, BUG,                                    & 
              VGWMAX, RZEQOL, POROS,                                     &
-             SRFEXC, RZEXC, RUNSRF, RUNON,                              &
-             QINFIL                                                     &
+             SRFEXC, RZEXC, RUNSRF,                                     &
+             QINFIL,                                                    &
+             CATDEF, BF1, BF2, ARS1, ARS2, ARS3                         &
              )
 
       IF (BUG) THEN

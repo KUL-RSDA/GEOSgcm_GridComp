@@ -1173,17 +1173,6 @@ subroutine SetServices ( GC, RC )
   VERIFY_(STATUS)
 
   call MAPL_AddInternalSpec(GC                  ,&
-    LONG_NAME          = 'peatclsm_runon'         ,&
-    UNITS              = 'kg m-2 s-1'                ,&
-    SHORT_NAME         = 'RUNON'                    ,&
-    FRIENDLYTO         = trim(COMP_NAME)             ,&
-    DIMS               = MAPL_DimsTileOnly           ,&
-    VLOCATION          = MAPL_VLocationNone          ,&
-    RESTART            = MAPL_RestartRequired        ,&
-                                           RC=STATUS  ) 
-  VERIFY_(STATUS)
-
-  call MAPL_AddInternalSpec(GC                  ,&
     LONG_NAME          = 'root_zone_excess'          ,&
     UNITS              = 'kg m-2'                    ,&
     SHORT_NAME         = 'RZEXC'                     ,&
@@ -3797,7 +3786,6 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         real, dimension(:),   pointer :: old_ity
         real, dimension(:),   pointer :: capac
         real, dimension(:),   pointer :: catdef
-        real, dimension(:),   pointer :: runon
         real, dimension(:),   pointer :: rzexc
         real, dimension(:),   pointer :: srfexc
         real, dimension(:),   pointer :: ghtcnt1
@@ -4344,7 +4332,6 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         call MAPL_GetPointer(INTERNAL,QC         ,'QC'         ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,CAPAC      ,'CAPAC'      ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,CATDEF     ,'CATDEF'     ,RC=STATUS); VERIFY_(STATUS)
-        call MAPL_GetPointer(INTERNAL,RUNON      ,'RUNON'      ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,RZEXC      ,'RZEXC'      ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,SRFEXC     ,'SRFEXC'     ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,GHTCNT1    ,'GHTCNT1'    ,RC=STATUS); VERIFY_(STATUS)
@@ -5138,7 +5125,6 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
            call MAPL_VarWrite(unit, tilegrid, QC(:,FWLT), mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, CAPAC, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, CATDEF, mask=mask, rc=status); VERIFY_(STATUS)
-           call MAPL_VarWrite(unit, tilegrid, RUNON, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, RZEXC, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, SRFEXC, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, GHTCNT(1,:), mask=mask, rc=status); VERIFY_(STATUS)
@@ -5451,7 +5437,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
              TC(:,FSAT), TC(:,FTRN), TC(:,FWLT)		          ,& 
              QC(:,FSAT), QC(:,FTRN), QC(:,FWLT)		          ,&
 
-             CAPAC, CATDEF, RUNON, RZEXC, SRFEXC, GHTCNT, TSURF   ,&
+             CAPAC, CATDEF, RZEXC, SRFEXC, GHTCNT, TSURF      ,&
              WESNN, HTSNNN, SNDZN                                 ,&
 
              EVAPOUT, SHOUT, RUNOFF, EVPINT, EVPSOI, EVPVEG       ,&

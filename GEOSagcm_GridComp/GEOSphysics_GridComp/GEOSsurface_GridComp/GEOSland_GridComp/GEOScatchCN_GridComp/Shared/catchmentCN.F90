@@ -158,7 +158,7 @@ CONTAINS
        tsa1,tsa2,tsb1,tsb2,atau,btau,BUG,                        &
        TG1, TG2, TG4,                                            &
        TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,                      &
-       CATDEF, RUNON, RZEXC, srfexc, GHTCNT,                     &
+       CATDEF, RZEXC, srfexc, GHTCNT,                            &
        WESNN, HTSNNN, SNDZN,     EVAP, SHFLUX, RUNOFF,           &
        EINT, ESOI, EVEG, ESNO,  BFLOW,RUNSRF,SMELT,              &
        HLWUP,SWLAND,HLATN,QINFIL,AR1, AR2, RZEQ,                 &
@@ -210,7 +210,7 @@ CONTAINS
     
     REAL, INTENT(INOUT), DIMENSION(:) ::                         &
          TG1, TG2, TG4, TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,       &
-         CATDEF, RUNON, RZEXC, SRFEXC
+         CATDEF, RZEXC, SRFEXC
  
     REAL, INTENT(INOUT), DIMENSION(:,:) ::  GHTCNT
     
@@ -1121,7 +1121,7 @@ CONTAINS
                     NCH,DTSTEP,VGWMAX,SATCAP,RZEQOL,AR1,WPWET,                 &
                     tsa1,tsa2,tsb1,tsb2,atau,btau,CDCR2,poros,                 &
                     BF1, BF2, ARS1, ARS2, ARS3, BUG,                           &
-                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF,RUNON                     &
+                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF                           &
                     )
 
 ! ---------------------------------------------------------------------
@@ -1163,8 +1163,9 @@ CONTAINS
              AR1, AR2, AR4, THRUL_VOL, THRUC_VOL,                       &
              FRICE, TP1, SRFMX, BUG,                                    & 
              VGWMAX, RZEQOL, POROS,                                     &
-             SRFEXC, RZEXC, RUNSRF, RUNON,                              &
-             QINFIL                                                     &
+             SRFEXC, RZEXC, RUNSRF,                                     &
+             QINFIL,                                                    &
+             CATDEF, BF1, BF2, ARS1, ARS2, ARS3                         &
              )
 
       IF (BUG) THEN
