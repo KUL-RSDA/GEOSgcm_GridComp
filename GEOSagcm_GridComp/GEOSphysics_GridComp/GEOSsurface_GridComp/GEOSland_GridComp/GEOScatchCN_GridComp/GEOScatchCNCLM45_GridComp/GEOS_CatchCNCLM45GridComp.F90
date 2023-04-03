@@ -4895,7 +4895,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
 	real,pointer,dimension(:) :: ghflxsno, ghflxtskin
         real,pointer,dimension(:) :: SHSNOW1, AVETSNOW1, WAT10CM1, WATSOI1, ICESOI1
         real,pointer,dimension(:) :: LHSNOW1, LWUPSNOW1, LWDNSNOW1, NETSWSNOW
-        real,pointer,dimension(:) :: TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE, RUNON
+        real,pointer,dimension(:) :: TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE
 	real,pointer,dimension(:) :: WCHANGE, ECHANGE, HSNACC, EVACC, SHACC
 	real,pointer,dimension(:) :: SNOVR, SNOVF, SNONR, SNONF
 	real,pointer,dimension(:) :: VSUVR, VSUVF
