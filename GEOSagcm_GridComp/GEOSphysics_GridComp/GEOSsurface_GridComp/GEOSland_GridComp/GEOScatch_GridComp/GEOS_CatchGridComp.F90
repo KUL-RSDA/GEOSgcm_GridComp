@@ -1173,6 +1173,17 @@ subroutine SetServices ( GC, RC )
   VERIFY_(STATUS)
 
   call MAPL_AddInternalSpec(GC                  ,&
+    LONG_NAME          = 'peatclsm_runon'         ,&
+    UNITS              = 'kg m-2 s-1'                ,&
+    SHORT_NAME         = 'RUNON'                    ,&
+    FRIENDLYTO         = trim(COMP_NAME)             ,&
+    DIMS               = MAPL_DimsTileOnly           ,&
+    VLOCATION          = MAPL_VLocationNone          ,&
+    RESTART            = MAPL_RestartRequired        ,&
+                                           RC=STATUS  ) 
+  VERIFY_(STATUS)
+
+  call MAPL_AddInternalSpec(GC                  ,&
     LONG_NAME          = 'root_zone_excess'          ,&
     UNITS              = 'kg m-2'                    ,&
     SHORT_NAME         = 'RZEXC'                     ,&
@@ -3786,6 +3797,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         real, dimension(:),   pointer :: old_ity
         real, dimension(:),   pointer :: capac
         real, dimension(:),   pointer :: catdef
+        real, dimension(:),   pointer :: runon
         real, dimension(:),   pointer :: rzexc
         real, dimension(:),   pointer :: srfexc
         real, dimension(:),   pointer :: ghtcnt1
@@ -3959,7 +3971,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
 	real,pointer,dimension(:) :: ghflxsno, ghflxtskin
         real,pointer,dimension(:) :: SHSNOW1, AVETSNOW1, WAT10CM1, WATSOI1, ICESOI1
         real,pointer,dimension(:) :: LHSNOW1, LWUPSNOW1, LWDNSNOW1, NETSWSNOW
-        real,pointer,dimension(:) :: TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE, RUNON
+        real,pointer,dimension(:) :: TCSORIG1, TPSN1IN1, TPSN1OUT1, FSW_CHANGE
 	real,pointer,dimension(:) :: WCHANGE, ECHANGE, HSNACC, EVACC, SHACC
 	real,pointer,dimension(:) :: SNOVR, SNOVF, SNONR, SNONF
 	real,pointer,dimension(:) :: VSUVR, VSUVF
@@ -4332,6 +4344,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         call MAPL_GetPointer(INTERNAL,QC         ,'QC'         ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,CAPAC      ,'CAPAC'      ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,CATDEF     ,'CATDEF'     ,RC=STATUS); VERIFY_(STATUS)
+        call MAPL_GetPointer(INTERNAL,RUNON      ,'RUNON'      ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,RZEXC      ,'RZEXC'      ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,SRFEXC     ,'SRFEXC'     ,RC=STATUS); VERIFY_(STATUS)
         call MAPL_GetPointer(INTERNAL,GHTCNT1    ,'GHTCNT1'    ,RC=STATUS); VERIFY_(STATUS)
@@ -4541,7 +4554,6 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         allocate(FICE1     (NTILES)) 
         allocate(SLDTOT    (NTILES))             ! total solid precip
         allocate(FSW_CHANGE(NTILES))
-        allocate(RUNON(NTILES))
         
         allocate(SHSBT    (NTILES,NUM_SUBTILES))
         allocate(DSHSBT   (NTILES,NUM_SUBTILES))
@@ -5126,6 +5138,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
            call MAPL_VarWrite(unit, tilegrid, QC(:,FWLT), mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, CAPAC, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, CATDEF, mask=mask, rc=status); VERIFY_(STATUS)
+           call MAPL_VarWrite(unit, tilegrid, RUNON, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, RZEXC, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, SRFEXC, mask=mask, rc=status); VERIFY_(STATUS)
            call MAPL_VarWrite(unit, tilegrid, GHTCNT(1,:), mask=mask, rc=status); VERIFY_(STATUS)
@@ -5438,7 +5451,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
              TC(:,FSAT), TC(:,FTRN), TC(:,FWLT)		          ,& 
              QC(:,FSAT), QC(:,FTRN), QC(:,FWLT)		          ,&
 
-             CAPAC, CATDEF, RZEXC, SRFEXC, GHTCNT, TSURF          ,&
+             CAPAC, CATDEF, RUNON, RZEXC, SRFEXC, GHTCNT, TSURF   ,&
              WESNN, HTSNNN, SNDZN                                 ,&
 
              EVAPOUT, SHOUT, RUNOFF, EVPINT, EVPSOI, EVPVEG       ,&
@@ -5462,7 +5475,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
              ENTOT,WTOT, WCHANGE, ECHANGE, HSNACC, EVACC, SHACC   ,&
              SHSNOW1, AVETSNOW1, WAT10CM1, WATSOI1, ICESOI1       ,&
              LHSNOW1, LWUPSNOW1, LWDNSNOW1, NETSWSNOW             ,&
-             TCSORIG1, TPSN1IN1, TPSN1OUT1,FSW_CHANGE,RUNON       ,&
+             TCSORIG1, TPSN1IN1, TPSN1OUT1,FSW_CHANGE             ,&
              lonbeg,lonend,latbeg,latend                          ,&
              TC1_0=TC1_0, TC2_0=TC2_0, TC4_0=TC4_0                ,&
              QA1_0=QA1_0, QA2_0=QA2_0, QA4_0=QA4_0                ,&
@@ -5822,7 +5835,6 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
         deallocate(FICE1 )
         deallocate(SLDTOT )
         deallocate(FSW_CHANGE)
-        deallocate(RUNON)
 
         RETURN_(ESMF_SUCCESS)
 

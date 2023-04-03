@@ -147,7 +147,7 @@
                      ARS1,ARS2,ARS3,ARA1,ARA2,ARA3,ARA4,ARW1,ARW2,ARW3,ARW4,   &
                      tsa1,tsa2,tsb1,tsb2,atau,btau,BUG,                        &
                      TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,                      &
-                     CATDEF, RZEXC, srfexc, GHTCNT, TSURF,                     &
+                     CATDEF, RUNON, RZEXC, srfexc, GHTCNT, TSURF,              &
                      WESNN, HTSNNN, SNDZN,                                     &
                      EVAP, SHFLUX, RUNOFF,                                     &
                      EINT, ESOI, EVEG, ESNO,  BFLOW,RUNSRF,SMELT,              &
@@ -158,7 +158,7 @@
                      EVACC, SHACC,                                             &
                      SH_SNOW, AVET_SNOW, WAT_10CM, TOTWAT_SOIL, TOTICE_SOIL,   &
                      LH_SNOW, LWUP_SNOW, LWDOWN_SNOW, NETSW_SNOW,              &
-                     TCSORIG, TPSN1IN, TPSN1OUT,FSW_CHANGE , RUNON,            &
+                     TCSORIG, TPSN1IN, TPSN1OUT,FSW_CHANGE ,                   &
                      lonbeg,lonend,latbeg,latend,                              &
                      TC1_0, TC2_0, TC4_0, QA1_0, QA2_0, QA4_0, EACC_0,         &
                      RCONSTIT, RMELT, TOTDEPOS,  LHACC)
@@ -200,7 +200,7 @@
 
       REAL, INTENT(INOUT), DIMENSION(NCH) ::                                   &
                      TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,                      &
-                     CATDEF, RZEXC, SRFEXC
+                     CATDEF, RUNON, RZEXC, SRFEXC
  
       REAL, INTENT(INOUT), DIMENSION(N_GT, NCH) ::  GHTCNT
  
@@ -225,7 +225,7 @@
       REAL, INTENT(OUT), DIMENSION(NCH) :: LH_SNOW, LWUP_SNOW,         &
                      LWDOWN_SNOW, NETSW_SNOW
       REAL, INTENT(OUT), DIMENSION(NCH) :: TCSORIG, TPSN1IN, TPSN1OUT, &
-                     FSW_CHANGE, RUNON
+                     FSW_CHANGE
 
       
       REAL, INTENT(OUT), DIMENSION(NCH), OPTIONAL :: LHACC

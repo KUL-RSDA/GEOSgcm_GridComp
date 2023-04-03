@@ -158,7 +158,7 @@ CONTAINS
        tsa1,tsa2,tsb1,tsb2,atau,btau,BUG,                        &
        TG1, TG2, TG4,                                            &
        TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,                      &
-       CATDEF, RZEXC, srfexc, GHTCNT,                            &
+       CATDEF, RUNON, RZEXC, srfexc, GHTCNT,                     &
        WESNN, HTSNNN, SNDZN,     EVAP, SHFLUX, RUNOFF,           &
        EINT, ESOI, EVEG, ESNO,  BFLOW,RUNSRF,SMELT,              &
        HLWUP,SWLAND,HLATN,QINFIL,AR1, AR2, RZEQ,                 &
@@ -168,7 +168,7 @@ CONTAINS
        EVACC, SHACC, TSURF,                                      &
        SH_SNOW, AVET_SNOW, WAT_10CM, TOTWAT_SOIL, TOTICE_SOIL,   &
        LH_SNOW, LWUP_SNOW, LWDOWN_SNOW, NETSW_SNOW,              &
-       TCSORIG, TPSN1IN, TPSN1OUT,FSW_CHANGE, RUNON,             &
+       TCSORIG, TPSN1IN, TPSN1OUT,FSW_CHANGE,                    &
        TC1_0, TC2_0, TC4_0, QA1_0, QA2_0, QA4_0, EACC_0,         &
        RCONSTIT, RMELT, TOTDEPOS, LHACC                          &
        )
@@ -210,7 +210,7 @@ CONTAINS
     
     REAL, INTENT(INOUT), DIMENSION(:) ::                         &
          TG1, TG2, TG4, TC1, TC2, TC4, QA1, QA2, QA4, CAPAC,       &
-         CATDEF, RZEXC, SRFEXC
+         CATDEF, RUNON, RZEXC, SRFEXC
  
     REAL, INTENT(INOUT), DIMENSION(:,:) ::  GHTCNT
     
@@ -235,7 +235,7 @@ CONTAINS
     REAL, INTENT(OUT), DIMENSION(:) :: LH_SNOW, LWUP_SNOW,         &
          LWDOWN_SNOW, NETSW_SNOW
     REAL, INTENT(OUT), DIMENSION(:) :: TCSORIG, TPSN1IN, TPSN1OUT, &
-         FSW_CHANGE, RUNON
+         FSW_CHANGE
     
     
     REAL, INTENT(OUT), DIMENSION(:), OPTIONAL :: LHACC
@@ -1121,7 +1121,7 @@ CONTAINS
                     NCH,DTSTEP,VGWMAX,SATCAP,RZEQOL,AR1,WPWET,                 &
                     tsa1,tsa2,tsb1,tsb2,atau,btau,CDCR2,poros,                 &
                     BF1, BF2, ARS1, ARS2, ARS3, BUG,                           &
-                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF, RUNON                    &
+                    CAPAC,RZEXC,SRFEXC,CATDEF,RUNSRF,RUNON                     &
                     )
 
 ! ---------------------------------------------------------------------
