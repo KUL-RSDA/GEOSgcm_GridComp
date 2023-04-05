@@ -1211,16 +1211,18 @@
         ENDIF
 
       DO N=1,NCH
-        ADJ=0.5*(RZEQOL(N)-RZEQ(N))
-        RZEXC(N)=RZEXC(N)+ADJ
-        CATDEF(N)=CATDEF(N)+ADJ
+        IF(POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
+          ADJ=0.5*(RZEQOL(N)-RZEQ(N))
+          RZEXC(N)=RZEXC(N)+ADJ
+          CATDEF(N)=CATDEF(N)+ADJ
+        ENDIF
         ! make sure catdef does not become negative
         ! reichle, Aug 16, 2002
         IF(CATDEF(N) .LT. 0.) THEN
            RUNSRF(N)=RUNSRF(N)-CATDEF(N)/DTSTEP
            CATDEF(N)=0.
-           ENDIF
-         ENDDO
+        ENDIF
+      ENDDO
 
 !**** Correct energy imbalance due to changing areas:
   
