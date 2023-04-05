@@ -333,15 +333,16 @@ CONTAINS
                watadd=ptotal-srun0
                if (watadd .gt. totcapac) then
                   excess=watadd-totcapac
-                  srun0=srun0+excess
-                  srfexc(n)=srfmx(n)
+                  srun0=srun0+excess+0.9*srfmx(n)
+                  srfexc(n)=0.1*srfmx(n)
                   rzexc(n)=vgwmax(n)-rzeq(n)
                elseif(watadd .gt. srfmx(n)-srfexc(n)) then
                   excess=watadd-(srfmx(n)-srfexc(n))
-                  srfexc(n)=srfmx(n)
-                  rzexc(n)=rzexc(n)+excess
+                  srfexc(n)=0.1*srfmx(n)
+                  rzexc(n)=rzexc(n)+excess+0.9*srfmx(n)
                else
-                  srfexc(n)=srfexc(n)+watadd
+                  srfexc(n)=srfexc(n)+0.1*watadd
+                  rzexc(n)=rzexc(n)+0.9*watadd
                endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
@@ -427,21 +428,17 @@ CONTAINS
                watadd=ptotal-srun0
                if (watadd .gt. totcapac) then
                   excess=watadd-totcapac
-                  srun0=srun0+excess
-                  srfexc(n)=srfmx(n)
+                  srun0=srun0+excess+0.9*srfmx(n)
+                  srfexc(n)=0.1*srfmx(n)
                   rzexc(n)=vgwmax(n)-rzeq(n)
                elseif(watadd .gt. srfmx(n)-srfexc(n)) then
                   excess=watadd-(srfmx(n)-srfexc(n))
-                  srfexc(n)=srfmx(n)
-                  rzexc(n)=rzexc(n)+excess
+                  srfexc(n)=0.1*srfmx(n)
+                  rzexc(n)=rzexc(n)+excess+0.9*srfmx(n)
                else
-                  srfexc(n)=srfexc(n)+watadd
+                  srfexc(n)=srfexc(n)+0.1*watadd
+                  rzexc(n)=rzexc(n)+0.9*watadd
                endif
-               !if (ptotal-srun0 .gt. srfmx(n)-srfexc(n)) then
-               !  excess=(ptotal-srun0)-(srfmx(n)-srfexc(n))
-               !  rzexc(n)=rzexc(n) + excess
-               !  ptotal=ptotal-excess
-               !  endif                   
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
                !  srun0 = srun0 + RZEQ(N)+RZEXC(N)-VGWMAX(N)
