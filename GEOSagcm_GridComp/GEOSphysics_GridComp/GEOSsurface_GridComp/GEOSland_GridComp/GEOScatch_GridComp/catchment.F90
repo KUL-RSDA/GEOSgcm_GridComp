@@ -1211,11 +1211,12 @@
         ENDIF
 
       DO N=1,NCH
-        IF(POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
+       !MB: 
+        !IF(POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
           ADJ=0.5*(RZEQOL(N)-RZEQ(N))
           RZEXC(N)=RZEXC(N)+ADJ
           CATDEF(N)=CATDEF(N)+ADJ
-        ENDIF
+        !ENDIF
         ! make sure catdef does not become negative
         ! reichle, Aug 16, 2002
         IF(CATDEF(N) .LT. 0.) THEN
@@ -1256,37 +1257,37 @@
 ! in CATCH_CALC_SOIL_MOIST
 ! add new runsrf to catdef
 
-      do n=1,nch
-         IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
-             ! fill catdef and hollows using approach of RZDRAIN
-             AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+      !do n=1,nch
+      !   IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
+      !       ! fill catdef and hollows using approach of RZDRAIN
+      !       AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+      !
+      !       ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
 
-             ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+      !       ! PEATCLSM Tropics drained
+      !       IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+      !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
+      !       ! PEATCLSM Tropics natural
+      !       ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+      !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.11),1.00) +2*bf1(n)*bf2(n))/1000.
+      !       ! PEATCLSM NORTH natural
+      !       ELSE IF (POROS(N) .GE. 0.90) THEN
+      !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
+      !       ENDIF
+      !
+      !       SYSOIL = amin1(SYSOIL,poros(n))
 
-             ! PEATCLSM Tropics drained
-             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
-                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
-             ! PEATCLSM Tropics natural
-             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.11),1.00) +2*bf1(n)*bf2(n))/1000.
-             ! PEATCLSM NORTH natural
-             ELSE IF (POROS(N) .GE. 0.90) THEN
-                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
-             ENDIF
-
-             SYSOIL = amin1(SYSOIL,poros(n))
-
-             RUNSRF_CATDEF = (1.-AR1eq)*SYSOIL*(RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-             CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
-             IF (CATDEF(N) .le. 1.) THEN
-                RUNSRF(N) = -1.0 * (CATDEF(N)-1.0)/DTSTEP*                       &
-                            ((1.*AR1eq+SYSOIL*(1.-AR1eq))/((1.-AR1eq)*SYSOIL))
-                CATDEF(N) = 1.0
-             ELSE
-                RUNSRF(N)=0.0
-             ENDIF
-          ENDIF
-      enddo
+      !       RUNSRF_CATDEF = (1.-AR1eq)*SYSOIL*(RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+      !       CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
+      !       IF (CATDEF(N) .le. 1.) THEN
+      !          RUNSRF(N) = -1.0 * (CATDEF(N)-1.0)/DTSTEP*                       &
+      !                      ((1.*AR1eq+SYSOIL*(1.-AR1eq))/((1.-AR1eq)*SYSOIL))
+      !          CATDEF(N) = 1.0
+      !       ELSE
+      !          RUNSRF(N)=0.0
+      !       ENDIF
+      !    ENDIF
+      !enddo
 
     ! after revisions of calc_soil_moist() the call to partition is now obsolete 
     ! - reichle, 3 Apr 2012     
