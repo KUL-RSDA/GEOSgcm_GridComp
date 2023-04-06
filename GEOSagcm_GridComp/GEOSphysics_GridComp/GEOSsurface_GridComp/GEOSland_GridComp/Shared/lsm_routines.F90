@@ -782,7 +782,7 @@ CONTAINS
               v_slope = 1.5e-05
             ENDIF
             ! Ta in m2/s, BFLOW in mm/s
-            Ta = (Ksz_zero*(9.+100.*amax1(-0.08,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
+            Ta = (Ksz_zero*(9.+100.*amax1(-0.089999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
               Ksz_zero = 5. ! m/day macro saturated conductivity
