@@ -329,20 +329,19 @@ CONTAINS
                ! MB: even no surface runoff when srfmx is exceeded (activating macro-pore flow)
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
 
-               totcapac=0.1*((srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n))))
+               totcapac=(srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n)))
                watadd=ptotal-srun0
-               if (watadd .gt. totcapac) then
-                  excess=watadd-totcapac
-                  srun0=srun0+excess+0.9*srfmx(n)+0.9*(vgwmax(n)-rzeq(n))
-                  srfexc(n)=0.1*srfmx(n)
-                  rzexc(n)=0.1*(vgwmax(n)-rzeq(n))
-               elseif(watadd .gt. srfmx(n)-srfexc(n)) then
-                  excess=watadd-(srfmx(n)-srfexc(n))
-                  srfexc(n)=0.1*srfmx(n)
-                  rzexc(n)=rzexc(n)+excess+0.9*srfmx(n)
+               if (watadd .gt. (0.1*totcapac)) then
+                  excess=watadd-0.1*totcapac
+                  srun0=srun0+excess
+                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                  rzexc(n)=vgwmax(n)-0.9*(vgwmax(n)-(rzeq(n)+rzexc(n)))
+               elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                  excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                  rzexc(n)=rzexc(n)+excess
                else
-                  srfexc(n)=srfexc(n)+0.1*watadd
-                  rzexc(n)=rzexc(n)+0.9*watadd
+                  srfexc(n)=srfexc(n)+watadd
                endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
@@ -426,18 +425,17 @@ CONTAINS
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
                totcapac=(srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n)))
                watadd=ptotal-srun0
-               if (watadd .gt. totcapac) then
-                  excess=watadd-totcapac
-                  srun0=srun0+excess+0.9*srfmx(n)
-                  srfexc(n)=0.1*srfmx(n)
-                  rzexc(n)=vgwmax(n)-rzeq(n)
-               elseif(watadd .gt. srfmx(n)-srfexc(n)) then
-                  excess=watadd-(srfmx(n)-srfexc(n))
-                  srfexc(n)=0.1*srfmx(n)
-                  rzexc(n)=rzexc(n)+excess+0.9*srfmx(n)
+               if (watadd .gt. (0.1*totcapac)) then
+                  excess=watadd-0.1*totcapac
+                  srun0=srun0+excess
+                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                  rzexc(n)=vgwmax(n)-0.9*(vgwmax(n)-(rzeq(n)+rzexc(n)))
+               elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                  excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                  rzexc(n)=rzexc(n)+excess
                else
-                  srfexc(n)=srfexc(n)+0.1*watadd
-                  rzexc(n)=rzexc(n)+0.9*watadd
+                  srfexc(n)=srfexc(n)+watadd
                endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
@@ -772,9 +770,9 @@ CONTAINS
             ! v_slope in m^(-1)
             ! PEATCLSM Tropics drained
             IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              Ksz_zero=197.62
-              m_Ivanov=1.32
-              v_slope = 1.5e-08
+              Ksz_zero=7.3
+              m_Ivanov=3.0
+              v_slope = 1.5e-05
             ! PEATCLSM Northern natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               Ksz_zero=10.0
@@ -782,7 +780,7 @@ CONTAINS
               v_slope = 1.5e-05
             ENDIF
             ! Ta in m2/s, BFLOW in mm/s
-            Ta = (Ksz_zero*(29.+100.*amax1(-0.28,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
+            Ta = (Ksz_zero*(29.+100.*amax1(-0.28999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
               Ksz_zero = 5. ! m/day macro saturated conductivity
