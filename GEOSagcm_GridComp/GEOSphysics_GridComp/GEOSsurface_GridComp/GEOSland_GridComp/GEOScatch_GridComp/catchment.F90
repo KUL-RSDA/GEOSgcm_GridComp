@@ -1269,7 +1269,7 @@
       !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
       !       ! PEATCLSM Tropics natural
       !       ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-      !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.11),1.00) +2*bf1(n)*bf2(n))/1000.
+      !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.30),1.00) +2*bf1(n)*bf2(n))/1000.
       !       ! PEATCLSM NORTH natural
       !       ELSE IF (POROS(N) .GE. 0.90) THEN
       !           SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
@@ -2836,7 +2836,7 @@
                SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,0.),0.80) +2*bf1(CHNO)*bf2(CHNO))/1000.
              ! PEATCLSM Tropics natural
              ELSE IF ((POROS(CHNO) .GE. 0.75) .AND. (POROS(CHNO) .LT. 0.90)) THEN
-               SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,-0.11),1.00) +2*bf1(CHNO)*bf2(CHNO))/1000.
+               SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,-0.30),0.65) +2*bf1(CHNO)*bf2(CHNO))/1000.
              ! PEATCLSM NORTH natural
              ELSE IF (POROS(CHNO) .GE. 0.90) THEN
                SYSOIL = (2*bf1(CHNO)*amin1(amax1(zbar1,0.),0.45) +2*bf1(CHNO)*bf2(CHNO))/1000.
