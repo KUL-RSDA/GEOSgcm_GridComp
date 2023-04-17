@@ -1066,8 +1066,8 @@ CONTAINS
                      0.09602305*(AMIN1(3.0,ZBAR))**3 + 0.01214020*(AMIN1(3.0,ZBAR))**4
             ! PEATCLSM Tropics natural
             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              SWSRF2(N)=0.85495671 - 0.51432256*AMIN1(2.0,ZBAR) + 0.39039086*(AMIN1(2.0,ZBAR))**2 - &
-                     0.14508113*(AMIN1(2.0,ZBAR))**3 + 0.02017389*(AMIN1(2.0,ZBAR))**4
+              SWSRF2(N)=0.8345176 - 0.3222168*AMIN1(2.0,ZBAR) - 0.0779873*(AMIN1(2.0,ZBAR))**2 + &
+                     0.2737291*(AMIN1(2.0,ZBAR))**3 - 0.1034847*(AMIN1(2.0,ZBAR))**4
             ! PEATCLSM NORTH natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + & 
