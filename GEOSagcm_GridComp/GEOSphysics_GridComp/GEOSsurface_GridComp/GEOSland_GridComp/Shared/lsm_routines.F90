@@ -1062,6 +1062,9 @@ CONTAINS
            AR4(N)=amin1(ARREST,AR4(N))
            ar4(n)=amax1(0., amin1(1., ar4(n)))
            AR2(N)=1.0-AR4(n)-AR1(N)
+           AR1(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR1(N)
+           AR2(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR2(N)
+           AR4(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR4(N)
         ENDIF
            
         RZI(N)=RZEQYI
