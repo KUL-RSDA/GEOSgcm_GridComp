@@ -321,6 +321,7 @@ CONTAINS
                ! discharge calculations elsewhere in the code.
 
                srun0 = 0.
+               ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
                ! handling numerical instability due to exceptional snow melt events at some pixels
                ! avoid AR1 to increase much higher than > 0.5 by enabling runoff
                !Added ramping to avoid potential oscillations (rdk, 09/18/20)
@@ -329,20 +330,31 @@ CONTAINS
                ! MB: even no surface runoff when srfmx is exceeded (activating macro-pore flow)
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
 
-               totcapac=(srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n)))
+               totcapac=(srfmx(n)-srfexc(n))+((vgwmax(n)-rzeq(n))-rzexc(n))
                watadd=ptotal-srun0
-               if (watadd .gt. (0.1*totcapac)) then
-                  excess=watadd-0.1*totcapac
-                  srun0=srun0+excess
-                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                  rzexc(n)=vgwmax(n)-0.9*(vgwmax(n)-(rzeq(n)+rzexc(n)))
-               elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                  excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                  rzexc(n)=rzexc(n)+excess
-               else
-                  srfexc(n)=srfexc(n)+watadd
-               endif
+               !if (ZBAR1>0.1)
+                 !if (watadd .gt. (0.1*totcapac)) then
+                 if (watadd .gt. (totcapac)) then
+                    !excess=watadd-0.1*totcapac
+                    excess=watadd-totcapac
+                    srun0=srun0+excess
+                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                    srfexc(n)=srfmx(n)
+                    !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                    rzexc(n)=vgwmax(n)-rzeq(n)
+                 !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                 elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                    !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                    excess=watadd-(srfmx(n)-srfexc(n))
+                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                    srfexc(n)=srfmx(n)
+                    rzexc(n)=rzexc(n)+excess
+                 else
+                    srfexc(n)=srfexc(n)+watadd
+                 endif
+               !else
+               !   srun0 = watadd
+               !endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
                !  srun0 = srun0 + RZEQ(N)+RZEXC(N)-VGWMAX(N)
@@ -425,18 +437,29 @@ CONTAINS
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
                totcapac=(srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n)))
                watadd=ptotal-srun0
-               if (watadd .gt. (0.1*totcapac)) then
-                  excess=watadd-0.1*totcapac
-                  srun0=srun0+excess
-                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                  rzexc(n)=vgwmax(n)-0.9*(vgwmax(n)-(rzeq(n)+rzexc(n)))
-               elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                  excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                  srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                  rzexc(n)=rzexc(n)+excess
-               else
-                  srfexc(n)=srfexc(n)+watadd
-               endif
+               !if (ZBAR1>0.1)
+                 !if (watadd .gt. (0.1*totcapac)) then
+                 if (watadd .gt. (totcapac)) then
+                    !excess=watadd-0.1*totcapac
+                    excess=watadd-totcapac
+                    srun0=srun0+excess
+                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                    srfexc(n)=srfmx(n)
+                    !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                    rzexc(n)=vgwmax(n)-rzeq(n)
+                 !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                 elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                    !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                    excess=watadd-(srfmx(n)-srfexc(n))
+                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                    srfexc(n)=srfmx(n)
+                    rzexc(n)=rzexc(n)+excess
+                 else
+                    srfexc(n)=srfexc(n)+watadd
+                 endif
+               !else
+               !   srun0 = watadd
+               !endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
                !  srun0 = srun0 + RZEQ(N)+RZEXC(N)-VGWMAX(N)
@@ -1031,6 +1054,8 @@ CONTAINS
            ELSE IF (POROS(N) .GE. 0.90) THEN
              AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
            ENDIF
+           AR1(N) = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+           RZEQYI = RZEQXI+WRZ
            ARREST = 1.0 - AR1(N)
            AR4(N)=amin1(ARREST,AR4(N))
            AR2(N)=1.0-AR4(n)-AR1(N)
@@ -1937,7 +1962,11 @@ CONTAINS
     ! reichle, 5 Feb 2004
 
     do n=1,NTILES
-       catdef(n)=max(1.,min(cdcr2(n),catdef(n)))
+       IF (POROS(N)<PEATCLSM_POROS_THRESHOLD) THEN
+           catdef(n)=max(1.,min(cdcr2(n),catdef(n)))
+       ELSE
+           catdef(n)=max(0.,min(cdcr2(n),catdef(n)))
+       END IF
     end do
 
     ! ------------------------------------------------------------------
