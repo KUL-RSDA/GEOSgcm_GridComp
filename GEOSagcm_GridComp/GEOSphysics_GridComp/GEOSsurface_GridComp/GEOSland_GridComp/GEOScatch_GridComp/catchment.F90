@@ -1212,11 +1212,14 @@
 
       DO N=1,NCH
        !MB: 
+        IF(POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
           ADJ=0.5*(RZEQOL(N)-RZEQ(N))
           RZEXC(N)=RZEXC(N)+ADJ
-        IF(POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
           CATDEF(N)=CATDEF(N)+ADJ
         ELSE
+          ADJ=RZEQOL(N)-RZEQ(N)
+          RZEXC(N)=RZEXC(N)+ADJ
+          RUNSRF(N)=RUNSRF(N) - ADJ/DTSTEP 
           AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
           ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
 
@@ -1233,7 +1236,8 @@
 
          SYSOIL = amin1(SYSOIL,poros(n))
 
-         CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
+         !CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
+
 
         ENDIF
         ! make sure catdef does not become negative
