@@ -337,23 +337,27 @@ CONTAINS
                  if (totcapac .le. 0.0) then
                      srun0=watadd
                  elseif (ptotal .gt. 0.0) then
-                   if (watadd .gt. (totcapac)) then
-                      !excess=watadd-0.1*totcapac
-                      excess=watadd-totcapac
-                      srun0=srun0+excess
-                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                      srfexc(n)=srfmx(n)
-                      !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
-                      rzexc(n)=vgwmax(n)-rzeq(n)
-                   !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                   elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
-                      !excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                      excess=watadd-(srfmx(n)-srfexc(n))
-                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                      srfexc(n)=srfmx(n)
-                      rzexc(n)=rzexc(n)+excess
+                   if (zbar1 .le. -0.1) then
+                       srun0=watadd
                    else
-                      srfexc(n)=srfexc(n)+watadd
+                       if (watadd .gt. (totcapac)) then
+                          !excess=watadd-0.1*totcapac
+                          excess=watadd-totcapac
+                          srun0=srun0+excess
+                          !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                          srfexc(n)=srfmx(n)
+                          !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                          rzexc(n)=vgwmax(n)-rzeq(n)
+                       !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                       elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                          !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                          excess=watadd-(srfmx(n)-srfexc(n))
+                          !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                          srfexc(n)=srfmx(n)
+                          rzexc(n)=rzexc(n)+excess
+                       else
+                          srfexc(n)=srfexc(n)+watadd
+                       endif
                    endif
                  endif
                !else
@@ -446,23 +450,27 @@ CONTAINS
                  if (totcapac .le. 0.0) then
                      srun0=watadd
                  elseif (ptotal .gt. 0.0) then
-                   if (watadd .gt. (totcapac)) then
-                      !excess=watadd-0.1*totcapac
-                      excess=watadd-totcapac
-                      srun0=srun0+excess
-                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                      srfexc(n)=srfmx(n)
-                      !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
-                      rzexc(n)=vgwmax(n)-rzeq(n)
-                   !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                   elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
-                      !excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                      excess=watadd-(srfmx(n)-srfexc(n))
-                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                      srfexc(n)=srfmx(n)
-                      rzexc(n)=rzexc(n)+excess
+                   if (zbar1 .le. -0.1) then
+                       srun0=watadd
                    else
-                      srfexc(n)=srfexc(n)+watadd
+                       if (watadd .gt. (totcapac)) then
+                          !excess=watadd-0.1*totcapac
+                          excess=watadd-totcapac
+                          srun0=srun0+excess
+                          !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                          srfexc(n)=srfmx(n)
+                          !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                          rzexc(n)=vgwmax(n)-rzeq(n)
+                       !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                       elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                          !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                          excess=watadd-(srfmx(n)-srfexc(n))
+                          !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                          srfexc(n)=srfmx(n)
+                          rzexc(n)=rzexc(n)+excess
+                       else
+                          srfexc(n)=srfexc(n)+watadd
+                       endif
                    endif
                  endif
                !else
@@ -506,7 +514,7 @@ CONTAINS
              if (zbar1 .ge. -0.10) then
                  CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
              else
-                 CATDEF(N)= ((zbar1-(RUNSRF(N)*DTSTEP)/1000 + BF2(N))^2 - 1.0E-20)*BF1(N)
+                 CATDEF(N)= ((zbar1-(RUNSRF(N)*DTSTEP)/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
              endif
              RUNSRF(N)=0.0
              QIN=PTOTAL
@@ -682,7 +690,7 @@ CONTAINS
              if (zbar1 .ge. -0.10) then
                  CATDEF(N)=CATDEF(N) - RZFLW_CATDEF
              else
-                 CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))^2 - 1.0E-20)*BF1(N)
+                 CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
              endif
           RUNSRF(N) = 0.0
           ! MB: remove all RZFLW from RZEXC because the other part 
@@ -712,7 +720,7 @@ CONTAINS
              if (zbar1 .ge. -0.10) then
                  CATDEF(N)=CATDEF(N) - EXCESS_CATDEF
              else
-                 CATDEF(N)= ((zbar1-EXCESS/1000.0 + BF2(N))^2 - 1.0E-20)*BF1(N)
+                 CATDEF(N)= ((zbar1-EXCESS/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
              endif
           ENDIF
        ENDIF
@@ -868,7 +876,7 @@ CONTAINS
                if (zbar .ge. -0.10) then
                  CATDEF(N)=CATDEF(N) + BFLOW_CATDEF*dtstep
                else
-                 CATDEF(N)= ((zbar+(BFLOW(N)*DTSTEP)/1000 + BF2(N))^2 - 1.0E-20)*BF1(N)
+                 CATDEF(N)= ((zbar+(BFLOW(N)*DTSTEP)/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
                endif
             ENDIF
 

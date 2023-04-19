@@ -1240,7 +1240,7 @@
          if (zbar .ge. -0.10) then
          CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
          else
-         CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))^2 - 1.0E-20)*BF1(N)
+         CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
          endif
          !RUNSRF(N) = RUNSRF(N) - ADJ/DTSTEP
          ENDIF
