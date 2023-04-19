@@ -334,23 +334,27 @@ CONTAINS
                watadd=ptotal-srun0
                !if (ZBAR1>0.1)
                  !if (watadd .gt. (0.1*totcapac)) then
-                 if (watadd .gt. (totcapac)) then
-                    !excess=watadd-0.1*totcapac
-                    excess=watadd-totcapac
-                    srun0=srun0+excess
-                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                    srfexc(n)=srfmx(n)
-                    !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
-                    rzexc(n)=vgwmax(n)-rzeq(n)
-                 !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                 elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
-                    !excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                    excess=watadd-(srfmx(n)-srfexc(n))
-                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                    srfexc(n)=srfmx(n)
-                    rzexc(n)=rzexc(n)+excess
-                 else
-                    srfexc(n)=srfexc(n)+watadd
+                 if (totcapac .le. 0.0) then
+                     srun0=watadd
+                 elseif (ptotal .gt. 0.0) then
+                   if (watadd .gt. (totcapac)) then
+                      !excess=watadd-0.1*totcapac
+                      excess=watadd-totcapac
+                      srun0=srun0+excess
+                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                      srfexc(n)=srfmx(n)
+                      !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                      rzexc(n)=vgwmax(n)-rzeq(n)
+                   !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                   elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                      !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                      excess=watadd-(srfmx(n)-srfexc(n))
+                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                      srfexc(n)=srfmx(n)
+                      rzexc(n)=rzexc(n)+excess
+                   else
+                      srfexc(n)=srfexc(n)+watadd
+                   endif
                  endif
                !else
                !   srun0 = watadd
@@ -439,23 +443,27 @@ CONTAINS
                watadd=ptotal-srun0
                !if (ZBAR1>0.1)
                  !if (watadd .gt. (0.1*totcapac)) then
-                 if (watadd .gt. (totcapac)) then
-                    !excess=watadd-0.1*totcapac
-                    excess=watadd-totcapac
-                    srun0=srun0+excess
-                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                    srfexc(n)=srfmx(n)
-                    !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
-                    rzexc(n)=vgwmax(n)-rzeq(n)
-                 !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                 elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
-                    !excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                    excess=watadd-(srfmx(n)-srfexc(n))
-                    !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                    srfexc(n)=srfmx(n)
-                    rzexc(n)=rzexc(n)+excess
-                 else
-                    srfexc(n)=srfexc(n)+watadd
+                 if (totcapac .le. 0.0) then
+                     srun0=watadd
+                 elseif (ptotal .gt. 0.0) then
+                   if (watadd .gt. (totcapac)) then
+                      !excess=watadd-0.1*totcapac
+                      excess=watadd-totcapac
+                      srun0=srun0+excess
+                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                      srfexc(n)=srfmx(n)
+                      !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                      rzexc(n)=vgwmax(n)-rzeq(n)
+                   !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                   elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                      !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                      excess=watadd-(srfmx(n)-srfexc(n))
+                      !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                      srfexc(n)=srfmx(n)
+                      rzexc(n)=rzexc(n)+excess
+                   else
+                      srfexc(n)=srfexc(n)+watadd
+                   endif
                  endif
                !else
                !   srun0 = watadd
@@ -685,7 +693,7 @@ CONTAINS
 
         IF(RZEQ(N) + RZEXC(N) .GT. VGWMAX(N)) THEN
           EXCESS=RZEQ(N)+RZEXC(N)-VGWMAX(N)
-          RZEXC(N)=VGWMAX(N)-RZEQ(N)
+          RZEXC(N)=RZEXC(N) - EXCESS
 
           IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
              CATDEF(N)=CATDEF(N)-EXCESS
@@ -1118,7 +1126,11 @@ CONTAINS
         if(srfexc(n).gt.srfmx(n)) then
             cor=srfexc(n)-srfmx(n)     !  The correction is here
             srfexc(n)=srfmx(n)
-            catdef(n)=catdef(n)-cor
+            IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
+              catdef(n)=catdef(n)-cor
+            ELSE
+              runsrf(n)=runsrf(n) + cor/dtstep
+            ENDIF
             if(catdef(n).lt.0.) then
               runsrf(n)=runsrf(n)-catdef(n)/dtstep
               catdef(n)=0.
