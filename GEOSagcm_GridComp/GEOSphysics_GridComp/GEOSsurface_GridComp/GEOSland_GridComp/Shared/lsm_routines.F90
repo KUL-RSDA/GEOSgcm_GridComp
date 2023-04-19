@@ -503,7 +503,11 @@ CONTAINS
              SYSOIL = amin1(SYSOIL,poros(n))
 
              RUNSRF_CATDEF = (1.-AR1eq)*SYSOIL*(RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-             CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
+             if (zbar1 .ge. -0.10) then
+                 CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
+             else
+                 CATDEF(N)= ((zbar1-(RUNSRF(N)*DTSTEP)/1000 + BF2(N))^2 - 1.0E-20)*BF1(N)
+             endif
              RUNSRF(N)=0.0
              QIN=PTOTAL
              QINFIL(N)=QIN/DTSTEP
@@ -675,7 +679,11 @@ CONTAINS
           ! Calculate fraction of RZFLW removed/added to catdef
           ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
           RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-          CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
+             if (zbar1 .ge. -0.10) then
+                 CATDEF(N)=CATDEF(N) - RZFLW_CATDEF
+             else
+                 CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))^2 - 1.0E-20)*BF1(N)
+             endif
           RUNSRF(N) = 0.0
           ! MB: remove all RZFLW from RZEXC because the other part 
           ! flows into the surface water storage (microtopgraphy)
@@ -701,7 +709,11 @@ CONTAINS
              ! PEAT
              ! MB: like for RZFLW --> EXCESS_CATDEF is the fraction in/out of catdef
              EXCESS_CATDEF=(1.-AR1eq)*SYSOIL*EXCESS/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-             CATDEF(N)=CATDEF(N)-EXCESS_CATDEF
+             if (zbar1 .ge. -0.10) then
+                 CATDEF(N)=CATDEF(N) - EXCESS_CATDEF
+             else
+                 CATDEF(N)= ((zbar1-EXCESS/1000.0 + BF2(N))^2 - 1.0E-20)*BF1(N)
+             endif
           ENDIF
        ENDIF
 
@@ -853,7 +865,11 @@ CONTAINS
                !MB2021: use AR1eq, equilibrium assumption between water level in soil hummocks and surface water level in hollows
                AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
                BFLOW_CATDEF = (1.-AR1eq)*SYSOIL*BFLOW(N)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-               CATDEF(N)=CATDEF(N)+BFLOW_CATDEF*dtstep
+               if (zbar .ge. -0.10) then
+                 CATDEF(N)=CATDEF(N) + BFLOW_CATDEF*dtstep
+               else
+                 CATDEF(N)= ((zbar+(BFLOW(N)*DTSTEP)/1000 + BF2(N))^2 - 1.0E-20)*BF1(N)
+               endif
             ENDIF
 
          ENDIF
