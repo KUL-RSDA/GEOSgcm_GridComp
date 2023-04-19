@@ -1217,9 +1217,9 @@
           RZEXC(N)=RZEXC(N)+ADJ
           CATDEF(N)=CATDEF(N)+ADJ
         ELSE
-          ADJ=RZEQOL(N)-RZEQ(N)
-          RZEXC(N)=RZEXC(N)+ADJ
-          RUNSRF(N)=RUNSRF(N) - ADJ/DTSTEP 
+          !ADJ=RZEQOL(N)-RZEQ(N)
+          !RZEXC(N)=RZEXC(N)+ADJ
+          !RUNSRF(N)=RUNSRF(N) - ADJ/DTSTEP 
           AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
           ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
 
