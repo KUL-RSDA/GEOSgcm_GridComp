@@ -515,6 +515,7 @@ CONTAINS
                  CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
              else
                  CATDEF(N)= ((zbar1-(RUNSRF(N)*DTSTEP)/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
              endif
              RUNSRF(N)=0.0
              QIN=PTOTAL
@@ -691,6 +692,7 @@ CONTAINS
                  CATDEF(N)=CATDEF(N) - RZFLW_CATDEF
              else
                  CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
              endif
           RUNSRF(N) = 0.0
           ! MB: remove all RZFLW from RZEXC because the other part 
@@ -721,6 +723,7 @@ CONTAINS
                  CATDEF(N)=CATDEF(N) - EXCESS_CATDEF
              else
                  CATDEF(N)= ((zbar1-EXCESS/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
              endif
           ENDIF
        ENDIF
@@ -877,6 +880,7 @@ CONTAINS
                  CATDEF(N)=CATDEF(N) + BFLOW_CATDEF*dtstep
                else
                  CATDEF(N)= ((zbar+(BFLOW(N)*DTSTEP)/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
                endif
             ENDIF
 

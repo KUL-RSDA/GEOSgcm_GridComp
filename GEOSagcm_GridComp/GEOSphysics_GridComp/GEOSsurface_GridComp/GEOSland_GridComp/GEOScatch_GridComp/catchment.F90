@@ -1241,6 +1241,7 @@
          CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
          else
          CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+         ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
          endif
          !RUNSRF(N) = RUNSRF(N) - ADJ/DTSTEP
          ENDIF
@@ -2875,7 +2876,12 @@
              SYSOIL = amin1(SYSOIL,poros(CHNO))
              ET_CATDEF = SYSOIL*(ESOI(CHNO) + EVEG(CHNO))*ESATFR/(1.*AR1(CHNO)+SYSOIL*(1.-AR1(CHNO)))
              AR1eq = (1.+ars1(chno)*(catdef(chno)))/(1.+ars2(chno)*(catdef(chno))+ars3(chno)*(catdef(chno))**2)
-             CATDEF(CHNO) = CATDEF(CHNO) + (1.-AR1eq)*ET_CATDEF
+             if (zbar1 .ge. -0.10) then
+                 CATDEF(CHNO) = CATDEF(CHNO) + (1.-AR1eq)*ET_CATDEF
+             else
+                 CATDEF(CHNO)= ((zbar1 + ((ESOI(CHNO) + EVEG(CHNO))*ESATFR)/1000.0 + BF2(CHNO))**2 - 1.0E-20)*BF1(CHNO)
+                 ZBAR1 = catch_calc_zbar( BF1(CHNO), BF2(CHNO), CATDEF(CHNO) )
+             endif
           ENDIF
 ! 05.12.98: first attempt to include bedrock
         ELSE
