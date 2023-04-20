@@ -2846,11 +2846,11 @@
 
         IF (CATDEF(CHNO) .LT. CDCR1(CHNO)) THEN
           CAPAC(CHNO) = AMAX1(0., CAPAC(CHNO) - EINT(CHNO))
-          RZEXC(CHNO) = RZEXC(CHNO) - EVEG(CHNO)*(1.-ESATFR)
-          SRFEXC(CHNO) = SRFEXC(CHNO) - ESOI(CHNO)*(1.-ESATFR)
 
           IF (POROS(CHNO) < PEATCLSM_POROS_THRESHOLD) THEN
              CATDEF(CHNO) = CATDEF(CHNO) + (ESOI(CHNO) + EVEG(CHNO))*ESATFR
+             RZEXC(CHNO) = RZEXC(CHNO) - EVEG(CHNO)*(1.-ESATFR)
+             SRFEXC(CHNO) = SRFEXC(CHNO) - ESOI(CHNO)*(1.-ESATFR)
           ELSE
              ! PEAT
              ! MB: accounting for water ponding on AR1
@@ -2878,8 +2878,10 @@
              AR1eq = (1.+ars1(chno)*(catdef(chno)))/(1.+ars2(chno)*(catdef(chno))+ars3(chno)*(catdef(chno))**2)
              if (zbar1 .ge. -0.10) then
                  CATDEF(CHNO) = CATDEF(CHNO) + (1.-AR1eq)*ET_CATDEF
+                 RZEXC(CHNO) = RZEXC(CHNO) - EVEG(CHNO)*(1.-ESATFR)
+                 SRFEXC(CHNO) = SRFEXC(CHNO) - ESOI(CHNO)*(1.-ESATFR)
              else
-                 CATDEF(CHNO)= ((zbar1 + ((ESOI(CHNO) + EVEG(CHNO))*ESATFR)/1000.0 + BF2(CHNO))**2 - 1.0E-20)*BF1(CHNO)
+                 CATDEF(CHNO)= ((zbar1 + (ESOI(CHNO) + EVEG(CHNO))/1000.0 + BF2(CHNO))**2 - 1.0E-20)*BF1(CHNO)
                  ZBAR1 = catch_calc_zbar( BF1(CHNO), BF2(CHNO), CATDEF(CHNO) )
              endif
           ENDIF
