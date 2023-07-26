@@ -291,15 +291,16 @@
 
       REAL    :: dtc1, dtc2, dtc4
 
+      INTEGER :: DebugWriteOut_ADJ_DEEP, DebugWriteOut_ADJ_PONDING
+      DebugWriteOut_ADJ_DEEP = 1
+      DebugWriteOut_ADJ_PONDING = 1
+
       integer  numout
       integer  n_out
       integer  n_outs(20)
 
       numout =  0
 
-      INTEGER :: DebugWriteOut_ADJ_DEEP, DebugWriteOut_ADJ_PONDING
-      DebugWriteOut_ADJ_DEEP = 1
-      DebugWriteOut_ADJ_PONDING = 1
 ! choose output point by lon and lat Input lons and lats are in radians
 ! EXAMPLE:
 ! 0.120643381534E+03  0.650233927779E+02       in degrees
