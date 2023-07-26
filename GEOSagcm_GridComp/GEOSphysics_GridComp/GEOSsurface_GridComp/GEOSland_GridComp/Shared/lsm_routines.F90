@@ -448,10 +448,10 @@ CONTAINS
                !if (ZBAR1>0.1)
                  !if (watadd .gt. (0.1*totcapac)) then
                  if (totcapac .le. 0.0) then
-                     srun0 = srun + watadd
+                     srun0 = srun0 + watadd
                  elseif (ptotal .gt. 0.0) then
                    if (zbar1 .le. 0.0) then
-                       srun0 = srun + watadd
+                       srun0 = srun0 + watadd
                    else
                        if (watadd .gt. (totcapac)) then
                           !excess=watadd-0.1*totcapac
