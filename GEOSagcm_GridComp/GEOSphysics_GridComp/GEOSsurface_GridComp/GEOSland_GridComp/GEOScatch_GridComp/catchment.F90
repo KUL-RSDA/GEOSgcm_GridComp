@@ -297,6 +297,10 @@
 
       numout =  0
 
+      INTEGER :: DebugWriteOut_ADJ_DEEP
+      INTEGER :: DebugWriteOut_ADJ_PONDING
+      DebugWriteOut_ADJ_DEEP = 1
+      DebugWriteOut_ADJ_PONDING = 1
 ! choose output point by lon and lat Input lons and lats are in radians
 ! EXAMPLE:
 ! 0.120643381534E+03  0.650233927779E+02       in degrees
@@ -1217,34 +1221,48 @@
           RZEXC(N)=RZEXC(N)+ADJ
           CATDEF(N)=CATDEF(N)+ADJ
         ELSE
-          ADJ=RZEQOL(N)-RZEQ(N)
-          IF (ADJ .le. 0.0) THEN
-          RZEXC(N)=RZEXC(N)+ADJ
-          !RUNSRF(N)=RUNSRF(N) - ADJ/DTSTEP 
-          AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
           ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
-
-         ! PEATCLSM Tropics drained
-         IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
-             SYSOIL = (2*bf1(n)*amin1(amax1(zbar,0.),0.80)+2*bf1(n)*bf2(n))/1000.
-         ! PEATCLSM Tropics natural
-         ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-             SYSOIL = (2*bf1(n)*amin1(amax1(zbar,-0.30),0.65)+2*bf1(n)*bf2(n))/1000.
-         ! PEATCLSM NORTH natural
-         ELSE IF (POROS(N) .GE. 0.90) THEN
-             SYSOIL = (2*bf1(n)*amin1(amax1(zbar,0.),0.45) +2*bf1(n)*bf2(n))/1000.
-         ENDIF
-
-         SYSOIL = amin1(SYSOIL,poros(n))
-         
-         if (zbar .ge. -0.10) then
-         CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
-         else
-         CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
-         ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
-         endif
-         !RUNSRF(N) = RUNSRF(N) - ADJ/DTSTEP
-         ENDIF
+          IF(ZBAR>0) THEN
+              ADJ=0.5*(RZEQOL(N)-RZEQ(N))
+              RZEXC(N)=RZEXC(N)+ADJ
+              CATDEF(N)=CATDEF(N)+ADJ 
+            IF(DebugWriteOut_ADJ_DEEP .GE. 1) THEN
+              write (*,*) 'ADJ(N): N: ',N,' ADJ: ',ADJ
+              DebugWriteOut_ADJ_DEEP = 0.
+            ENDIF
+          ELSE
+           ADJ=RZEQOL(N)-RZEQ(N)
+            IF(DebugWriteOut_ADJ_SHALLOW .GE. 1) THEN
+              write (*,*) 'ADJ(N): N: ',N,' ADJ: ',ADJ
+              DebugWriteOut_ADJ_SHALLOW = 0.
+            ENDIF
+        !  IF (ADJ .le. 0.0) THEN
+        !    RZEXC(N)=RZEXC(N)+ADJ
+        !    !RUNSRF(N)=RUNSRF(N) - ADJ/DTSTEP 
+        !    AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+        !    ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+        ! 
+        !   ! PEATCLSM Tropics drained
+        !    IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+        !      SYSOIL = (2*bf1(n)*amin1(amax1(zbar,0.),0.80)+2*bf1(n)*bf2(n))/1000.
+        !      ! PEATCLSM Tropics natural
+        !    ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+        !      SYSOIL = (2*bf1(n)*amin1(amax1(zbar,-0.30),0.65)+2*bf1(n)*bf2(n))/1000.
+        !      ! PEATCLSM NORTH natural
+        !    ELSE IF (POROS(N) .GE. 0.90) THEN
+        !      SYSOIL = (2*bf1(n)*amin1(amax1(zbar,0.),0.45) +2*bf1(n)*bf2(n))/1000.
+        !    ENDIF
+        !
+        !    SYSOIL = amin1(SYSOIL,poros(n))
+        ! 
+        !    if (zbar .ge. -0.10) then
+        !      CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
+        !    else
+        !      CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+        !      ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+        !    endif
+            RUNSRF(N) = RUNSRF(N) - ADJ/DTSTEP
+          ENDIF
 
         ENDIF
         ! make sure catdef does not become negative
@@ -2708,16 +2726,24 @@
       REAL, INTENT(OUT), DIMENSION(NCH) :: FOXY
 
       INTEGER :: ChNo
+      INTEGER :: DebugWriteOut
 !****
 !**** -----------------------------------------------------------------
-
+      
+      DebugWriteOut = 1
       DO 100 ChNo = 1, NCH
 !****
       IF ((POROS(CHNO) .GE. 0.75) .AND. (POROS(CHNO) .LT. 0.90) .AND.         &
          (-1.0*ZBAR(CHNO) .GT. -0.29)) THEN
          ! start of stress at 0.29. First try: linear increase with
          ! stdev of microtopography: 0.32 for tropical natural peatlands 
-         FOXY(ChNo) = 1. - amax1(amin1( 0.29 - ZBAR(ChNo) / 0.32, 1.), 0.0)
+         IF(DebugWriteOut .GE. 1) THEN
+           FOXY(ChNo) = 1. - amax1(amin1( 0.29 - ZBAR(ChNo) / 0.32, 1.), 0.0)
+           write (*,*) 'FOXY(ChNo): ChNo: ',ChNo,' FOXY: ',FOXY(ChNo)
+           DebugWriteOut = 0
+         ENDIF
+         ! Turned off for CO version ... needs adjustment
+         FOXY(CHNO) = 1.
       ELSE
          FOXY(CHNO) = 1.
       ENDIF
@@ -2876,7 +2902,7 @@
              SYSOIL = amin1(SYSOIL,poros(CHNO))
              ET_CATDEF = SYSOIL*(ESOI(CHNO) + EVEG(CHNO))*ESATFR/(1.*AR1(CHNO)+SYSOIL*(1.-AR1(CHNO)))
              AR1eq = (1.+ars1(chno)*(catdef(chno)))/(1.+ars2(chno)*(catdef(chno))+ars3(chno)*(catdef(chno))**2)
-             if (zbar1 .ge. -0.10) then
+             if (zbar1 .ge. 0.0) then
                  CATDEF(CHNO) = CATDEF(CHNO) + (1.-AR1eq)*ET_CATDEF
                  RZEXC(CHNO) = RZEXC(CHNO) - EVEG(CHNO)*(1.-ESATFR)
                  SRFEXC(CHNO) = SRFEXC(CHNO) - ESOI(CHNO)*(1.-ESATFR)
