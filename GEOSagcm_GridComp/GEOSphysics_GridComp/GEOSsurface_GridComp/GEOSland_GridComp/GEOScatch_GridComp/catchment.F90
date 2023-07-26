@@ -297,8 +297,7 @@
 
       numout =  0
 
-      INTEGER :: DebugWriteOut_ADJ_DEEP
-      INTEGER :: DebugWriteOut_ADJ_PONDING
+      INTEGER :: DebugWriteOut_ADJ_DEEP, DebugWriteOut_ADJ_PONDING
       DebugWriteOut_ADJ_DEEP = 1
       DebugWriteOut_ADJ_PONDING = 1
 ! choose output point by lon and lat Input lons and lats are in radians
@@ -1232,9 +1231,9 @@
             ENDIF
           ELSE
            ADJ=RZEQOL(N)-RZEQ(N)
-            IF(DebugWriteOut_ADJ_SHALLOW .GE. 1) THEN
+            IF(DebugWriteOut_ADJ_PONDING .GE. 1) THEN
               write (*,*) 'ADJ(N): N: ',N,' ADJ: ',ADJ
-              DebugWriteOut_ADJ_SHALLOW = 0.
+              DebugWriteOut_ADJ_PONDING = 0.
             ENDIF
         !  IF (ADJ .le. 0.0) THEN
         !    RZEXC(N)=RZEXC(N)+ADJ
