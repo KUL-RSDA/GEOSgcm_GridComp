@@ -1227,20 +1227,20 @@
               RZEXC(N)=RZEXC(N)+ADJ
               CATDEF(N)=CATDEF(N)+ADJ 
             IF(DebugWriteOut_ADJ_DEEP .GE. 1) THEN
-              write (*,*) 'ADJ(N): N: ',N,' ADJ: ',ADJ
+              write (*,*) 'ADJ_DEEP(N): N: ',N,' ADJ: ',ADJ
               DebugWriteOut_ADJ_DEEP = 0.
             ENDIF
           ELSE
            ADJ=RZEQOL(N)-RZEQ(N)
             IF(DebugWriteOut_ADJ_PONDING .GE. 1) THEN
-              write (*,*) 'ADJ(N): N: ',N,' ADJ: ',ADJ
+              write (*,*) 'ADJ_PONDING(N): N: ',N,' ADJ: ',ADJ
               DebugWriteOut_ADJ_PONDING = 0.
             ENDIF
         !  IF (ADJ .le. 0.0) THEN
         !    RZEXC(N)=RZEXC(N)+ADJ
         !    !RUNSRF(N)=RUNSRF(N) - ADJ/DTSTEP 
-        !    AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
-        !    ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+        !   AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+            ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
         ! 
         !   ! PEATCLSM Tropics drained
         !    IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
@@ -1256,12 +1256,12 @@
         !    SYSOIL = amin1(SYSOIL,poros(n))
         ! 
         !    if (zbar .ge. -0.10) then
-        !      CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
-        !    else
-        !      CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
-        !      ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
-        !    endif
-            RUNSRF(N) = RUNSRF(N) - ADJ/DTSTEP
+        !       CATDEF(N)=CATDEF(N) + ((1.-AR1eq)*SYSOIL*ADJ/(1.*AR1eq+SYSOIL*(1.-AR1eq)))
+        !     else
+               CATDEF(N)= ((zbar + ADJ/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+               ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+        !     endif
+            !RUNSRF(N) = RUNSRF(N) - ADJ/DTSTEP
           ENDIF
 
         ENDIF
