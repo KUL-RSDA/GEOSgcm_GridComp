@@ -2743,7 +2743,7 @@
            DebugWriteOut = 0
          ENDIF
          ! Turned off for CO version ... needs adjustment
-         FOXY(CHNO) = 1.
+         ! FOXY(CHNO) = 1.
       ELSE
          FOXY(CHNO) = 1.
       ENDIF
