@@ -3017,6 +3017,7 @@
           RSURF=1.E10
         ENDIF
       RSURF = AMIN1(RSURF , 1.E10)
+      RC(CHNO)=AMIN1(RC(CHNO),1.E10)
 
       RX1(CHNO)=RC(CHNO)
       RX2(CHNO)=RSURF
