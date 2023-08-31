@@ -3016,10 +3016,12 @@
         ELSE
           RSURF=1.E10
         ENDIF
-      RSURF = AMIN1(RSURF , 1.E10)
-      RC(CHNO)=AMIN1(RC(CHNO),1.E10)
+      RC(CHNO)=AMAX1(AMIN1(RC(CHNO),1.E10),-1.E10)
+      RSURF = AMAX1(AMIN1(RSURF,1.E10),-1.E10)
 
+      ! RX1 
       RX1(CHNO)=RC(CHNO)
+      ! RSURF
       RX2(CHNO)=RSURF
 
       RC(ChNo) = RC(CHNO) * RSURF / ( RC(ChNo) + RSURF )
