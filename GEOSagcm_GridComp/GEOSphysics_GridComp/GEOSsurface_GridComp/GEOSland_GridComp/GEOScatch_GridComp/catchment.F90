@@ -2737,11 +2737,12 @@
          (-1.0*ZBAR(CHNO) .GT. -0.29)) THEN
          ! start of stress at 0.29. First try: linear increase with
          ! stdev of microtopography: 0.32 for tropical natural peatlands 
-         IF(DebugWriteOut .GE. 1) THEN
-           FOXY(ChNo) = 1. - amax1(amin1( 0.29 - ZBAR(ChNo) / 0.32, 0.9999), 0.0)
-           write (*,*) 'FOXY(ChNo): ChNo: ',ChNo,' FOXY: ',FOXY(ChNo)
-           DebugWriteOut = 0
-         ENDIF
+         ! IF(DebugWriteOut .GE. 1) THEN
+         FOXY(ChNo) = 1. - amax1(amin1( (0.29 - ZBAR(ChNo)) / 0.64, 0.9), 0.0)
+         !FOXY(ChNo) = AMAX1(FOXY(ChNo),0.1)
+         !  write (*,*) 'FOXY(ChNo): ChNo: ',ChNo,' FOXY: ',FOXY(ChNo)
+         !  DebugWriteOut = 0
+         ! ENDIF
          ! Turned off for CO version ... needs adjustment
          ! FOXY(CHNO) = 1.
       ELSE
@@ -3017,6 +3018,9 @@
           RSURF=1.E10
         ENDIF
       RC(CHNO)=AMAX1(AMIN1(RC(CHNO),1.E10),1.E-20)
+      IF(RSURF .LT. 0.0) THEN 
+        write (*,*) 'RSURF is negative'
+      ENDIF
       RSURF = AMAX1(AMIN1(RSURF,1.E10),1.E-20)
 
       ! RX1 
