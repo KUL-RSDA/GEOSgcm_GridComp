@@ -2648,7 +2648,7 @@
          (-1.0*ZBAR(CHNO) .GT. -0.29)) THEN
          ! start of stress at 0.29. First try: linear increase with
          ! stdev of microtopography: 0.32 for tropical natural peatlands 
-         FOXY(ChNo) = 1. - amax1(amin1( 0.29 - ZBAR(ChNo) / 0.32, 1.), 0.0)
+         FOXY(ChNo) = 1. - amax1(amin1( (0.29 - ZBAR(ChNo)) / 0.32, 1.), 0.0)
       ELSE
          FOXY(CHNO) = 1.
       ENDIF
