@@ -822,11 +822,11 @@ CONTAINS
             ! Ksz0  in  m/s
             ! m_Ivanov [-]  value depends on unit of Ksz0 and z
             ! v_slope in m^(-1)
-            ! PEATCLSM Tropics drained
+            ! PEATCLSM CON natural
             IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              Ksz_zero=7.3
-              m_Ivanov=3.0
-              v_slope = 1.5e-05
+              Ksz_zero=2.0e+04
+              m_Ivanov=2.9
+              v_slope = 1.5e-08
             ! PEATCLSM Northern natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               Ksz_zero=10.0
@@ -834,7 +834,7 @@ CONTAINS
               v_slope = 1.5e-05
             ENDIF
             ! Ta in m2/s, BFLOW in mm/s
-            Ta = (Ksz_zero*(29.+100.*amax1(-0.28999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
+            Ta = (Ksz_zero*(16.5+100.*amax1(-0.164999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
               Ksz_zero = 5. ! m/day macro saturated conductivity
@@ -1133,8 +1133,8 @@ CONTAINS
                      0.09602305*(AMIN1(3.0,ZBAR))**3 + 0.01214020*(AMIN1(3.0,ZBAR))**4
             ! PEATCLSM Tropics natural
             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              SWSRF2(N)=0.8345176 - 0.3222168*AMIN1(2.0,ZBAR) - 0.0779873*(AMIN1(2.0,ZBAR))**2 + &
-                     0.2737291*(AMIN1(2.0,ZBAR))**3 - 0.1034847*(AMIN1(2.0,ZBAR))**4
+              SWSRF2(N)=0.88495496 - 0.24010102*AMIN1(2.0,ZBAR) - 0.07792644*(AMIN1(2.0,ZBAR))**2 + &
+                     0.20348547*(AMIN1(2.0,ZBAR))**3 - 0.07121314*(AMIN1(2.0,ZBAR))**4
             ! PEATCLSM NORTH natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + & 
