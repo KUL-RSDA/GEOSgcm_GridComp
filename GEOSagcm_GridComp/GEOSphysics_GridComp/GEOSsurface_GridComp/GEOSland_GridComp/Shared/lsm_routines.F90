@@ -1085,7 +1085,7 @@ CONTAINS
              AR4(N)=amax1(0.,amin1(1.0,(ZBAR-1.54)/(1.31)))
            ! PEATCLSM TROPICS natural
            ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.15)/(0.95)))
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.15)/(1.10)))
            ! PEATCLSM NORTH natural
            ELSE IF (POROS(N) .GE. 0.90) THEN
              AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
