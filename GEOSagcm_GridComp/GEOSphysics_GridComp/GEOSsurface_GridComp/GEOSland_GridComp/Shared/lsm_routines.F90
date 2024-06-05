@@ -502,7 +502,7 @@ CONTAINS
                  SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
              ! PEATCLSM Tropics natural
              ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.30),0.75)+2*bf1(n)*bf2(n))/1000.
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.40),0.72)+2*bf1(n)*bf2(n))/1000.
              ! PEATCLSM NORTH natural
              ELSE IF (POROS(N) .GE. 0.90) THEN
                  SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
@@ -677,7 +677,7 @@ CONTAINS
             SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80) +2*bf1(n)*bf2(n))/1000.
           ! PEATCLSM Tropics natural
           ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.30),0.75)+2*bf1(n)*bf2(n))/1000.
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.40),0.72)+2*bf1(n)*bf2(n))/1000.
           ! PEATCLSM NORTH natural
           ELSE IF (POROS(N) .GE. 0.90) THEN
             SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
@@ -824,8 +824,8 @@ CONTAINS
             ! v_slope in m^(-1)
             ! PEATCLSM CON natural
             IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              Ksz_zero=7800
-              m_Ivanov=2.59
+              Ksz_zero=3165.38
+              m_Ivanov=2.06
               v_slope = 1.5e-08
             ! PEATCLSM Northern natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
@@ -834,7 +834,7 @@ CONTAINS
               v_slope = 1.5e-05
             ENDIF
             ! Ta in m2/s, BFLOW in mm/s
-            Ta = (Ksz_zero*(16.5+100.*amax1(-0.164999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
+            Ta = (Ksz_zero*(24.5+100.*amax1(-0.244999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
               Ksz_zero = 5. ! m/day macro saturated conductivity
@@ -867,7 +867,7 @@ CONTAINS
                  SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.80) +2*bf1(N)*bf2(N))/1000.
                ! PEATCLSM Tropics natural
                ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar,-0.30),0.75)+2*bf1(n)*bf2(n))/1000.
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar,-0.40),0.72)+2*bf1(n)*bf2(n))/1000.
                ! PEATCLSM NORTH natural
                ELSE IF (POROS(N) .GE. 0.90) THEN
                  SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.45) +2*bf1(N)*bf2(N))/1000.
@@ -1085,7 +1085,7 @@ CONTAINS
              AR4(N)=amax1(0.,amin1(1.0,(ZBAR-1.54)/(1.31)))
            ! PEATCLSM TROPICS natural
            ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.40)/(1.06)))
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(0.85)))
            ! PEATCLSM NORTH natural
            ELSE IF (POROS(N) .GE. 0.90) THEN
              AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
@@ -1133,8 +1133,8 @@ CONTAINS
                      0.09602305*(AMIN1(3.0,ZBAR))**3 + 0.01214020*(AMIN1(3.0,ZBAR))**4
             ! PEATCLSM Tropics natural
             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
-              SWSRF2(N)=0.88995654 - 0.24649059*AMIN1(2.0,ZBAR) - 0.08454399*(AMIN1(2.0,ZBAR))**2 + &
-                     0.21163264*(AMIN1(2.0,ZBAR))**3 - 0.07331218*(AMIN1(2.0,ZBAR))**4
+              SWSRF2(N)=0.89026722 - 0.24531794*AMIN1(2.0,ZBAR) - 0.10317137*(AMIN1(2.0,ZBAR))**2 + &
+                     0.20644821*(AMIN1(2.0,ZBAR))**3 - 0.06491769*(AMIN1(2.0,ZBAR))**4
             ! PEATCLSM NORTH natural
             ELSE IF (POROS(N) .GE. 0.90) THEN
               SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + & 
