@@ -298,8 +298,8 @@
 
       numout =  0
 
-      DebugWriteOut_ADJ_DEEP = 1
-      DebugWriteOut_ADJ_PONDING = 1
+      DebugWriteOut_ADJ_DEEP = 0
+      DebugWriteOut_ADJ_PONDING = 0
 
 ! choose output point by lon and lat Input lons and lats are in radians
 ! EXAMPLE:
