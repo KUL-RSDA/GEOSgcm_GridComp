@@ -273,6 +273,7 @@ CONTAINS
       ! constants for PEATCLSM piecewise linear relationship between surface runoff and AR1
       
       REAL, PARAMETER      :: SRUN_AR1_MIN   = 9999
+      REAL, PARAMETER      :: SRUN_CATDEF_MIN   = 0.02
       REAL, PARAMETER      :: SRUN_AR1_SLOPE = 10.
       
 !**** - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -326,6 +327,10 @@ CONTAINS
                ! avoid AR1 to increase much higher than > 0.5 by enabling runoff
                !Added ramping to avoid potential oscillations (rdk, 09/18/20)
                IF (AR1(N)>SRUN_AR1_MIN) srun0=PTOTAL*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
+
+               IF (CATDEF(N)<SRUN_CATDEF_MIN) THEN
+                  srun0 = PTOTAL
+               ENDIF
 
                ! MB: even no surface runoff when srfmx is exceeded (activating macro-pore flow)
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
@@ -438,6 +443,10 @@ CONTAINS
           !Added ramping to avoid potential oscillations (rdk, 09/18/20)
           srunl = THRUL(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
           srunc = THRUC(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
+       ENDIF
+       IF (CATDEF(N)<SRUN_CATDEF_MIN) THEN
+          srunl = THRUL(n)
+          srunc = THRUC(n)
        ENDIF
        PTOTAL = THRUL(N) + THRUC(N)
        SRUN0  = srunl + srunc
