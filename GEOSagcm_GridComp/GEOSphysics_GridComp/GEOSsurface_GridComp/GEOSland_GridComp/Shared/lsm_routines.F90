@@ -377,111 +377,111 @@ CONTAINS
        !if (srun0 .gt. ptotal) then
        !   srun0=ptotal
        !   endif
-       RUNSRF(N)=RUNSRF(N)+srun0
-       QIN=PTOTAL-srun0
+               RUNSRF(N)=RUNSRF(N)+srun0
+               QIN=PTOTAL-srun0
        !SRFEXC(N)=amin1(SRFEXC(N)+QIN,srfmx(n))               
-    ENDIF
+            ENDIF
 
- endif
+         endif
 
- if(UFW4RO) then
+         if(UFW4RO) then
 
-    !**** Compute runoff from large-scale and convective storms separately:
-    IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
-        !non-peatland
-       deficit=srfmx(n)-srfexc(n)
-       srunl=AR1(n)*THRUL(n)
-       qinfil_l=(1.-ar1(n))*THRUL(n)
-       qcapac=deficit*FWETL
+            !**** Compute runoff from large-scale and convective storms separately:
+            IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
+              !non-peatland
+              deficit=srfmx(n)-srfexc(n)
+               srunl=AR1(n)*THRUL(n)
+               qinfil_l=(1.-ar1(n))*THRUL(n)
+               qcapac=deficit*FWETL
 
-       if(qinfil_l .gt. qcapac) then
-          excess_infil=qinfil_l-qcapac
-          srunl=srunl+excess_infil
-          qinfil_l=qinfil_l-excess_infil
-       endif
+               if(qinfil_l .gt. qcapac) then
+                  excess_infil=qinfil_l-qcapac
+                  srunl=srunl+excess_infil
+                  qinfil_l=qinfil_l-excess_infil
+               endif
 
-       srunc=AR1(n)*THRUC(n)
-       qinfil_c=(1.-ar1(n))*THRUC(n)
-       qcapac=deficit*FWETC
+               srunc=AR1(n)*THRUC(n)
+               qinfil_c=(1.-ar1(n))*THRUC(n)
+               qcapac=deficit*FWETC
 
-       if(qinfil_c .gt. qcapac) then
-          excess_infil=qinfil_c-qcapac
-          srunc=srunc+excess_infil
-          qinfil_c=qinfil_c-excess_infil
-       endif
+               if(qinfil_c .gt. qcapac) then
+                  excess_infil=qinfil_c-qcapac
+                  srunc=srunc+excess_infil
+                  qinfil_c=qinfil_c-excess_infil
+               endif
 
-       !**** Comment out this line in order to allow moisture
-       !**** to infiltrate soil:
-       !       if(tp1(n) .lt. 0.) srun0=ptotal
+               !**** Comment out this line in order to allow moisture
+               !**** to infiltrate soil:
+               !       if(tp1(n) .lt. 0.) srun0=ptotal
 
-       if (srunl .gt. THRUL(n)) srunl=THRUL(n)
+               if (srunl .gt. THRUL(n)) srunl=THRUL(n)
 
-       if (srunc .gt. THRUC(n)) srunc=THRUC(n)
+               if (srunc .gt. THRUC(n)) srunc=THRUC(n)
 
-       RUNSRF(N)=RUNSRF(N)+srunl+srunc
-       QIN=THRUL(n)+THRUC(n)-(srunl+srunc)
-       SRFEXC(N)=SRFEXC(N)+QIN
+               RUNSRF(N)=RUNSRF(N)+srunl+srunc
+               QIN=THRUL(n)+THRUC(n)-(srunl+srunc)
+               SRFEXC(N)=SRFEXC(N)+QIN
 
-    else
-       ! peatland
-       ! MB: no Hortonian surface runoff
-       !Note (rdk, from discussion w/MB; email 01/04/2021): 
-       ! forcing all the rain to fall onto 
-       ! the soil (1-AR1 fraction) rather than
-       ! onto both the soil and the free water surface is a simple shortcut;
-       ! the key function of this code is to retain all rainwater in the system
-       ! and *only* to produce surface runoff when the 
-       ! ground is already ridiculously wet.
-       ! This prevents problems (e.g., numerical instabilities) found in 
-       ! discharge calculations elsewhere in the code.
+           ELSE
+               ! peatland
+               ! MB: no Hortonian surface runoff
+               !Note (rdk, from discussion w/MB; email 01/04/2021): 
+               ! forcing all the rain to fall onto 
+               ! the soil (1-AR1 fraction) rather than
+               ! onto both the soil and the free water surface is a simple shortcut;
+               ! the key function of this code is to retain all rainwater in the system
+               ! and *only* to produce surface runoff when the 
+               ! ground is already ridiculously wet.
+               ! This prevents problems (e.g., numerical instabilities) found in 
+               ! discharge calculations elsewhere in the code.
 
-       srunl = 0.
-       srunc = 0.
-       ! handling numerical instability due to exceptional snow melt events at some pixels
-       ! avoid AR1 to increase much higher than > 0.5 by enabling runoff
-       IF (AR1(N)>SRUN_AR1_MIN) THEN
-          !Added ramping to avoid potential oscillations (rdk, 09/18/20)
-          srunl = THRUL(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
-          srunc = THRUC(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
-       ENDIF
-       IF (CATDEF(N)<SRUN_CATDEF_MIN) THEN
-          srunl = THRUL(n)
-          srunc = THRUC(n)
-       ENDIF
-       PTOTAL = THRUL(N) + THRUC(N)
-       SRUN0  = srunl + srunc
+               srunl = 0.
+               srunc = 0.
+               ! handling numerical instability due to exceptional snow melt events at some pixels
+               ! avoid AR1 to increase much higher than > 0.5 by enabling runoff
+               IF (AR1(N)>SRUN_AR1_MIN) THEN
+                  !Added ramping to avoid potential oscillations (rdk, 09/18/20)
+                  srunl = THRUL(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
+                  srunc = THRUC(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
+               ENDIF
+               IF (CATDEF(N)<SRUN_CATDEF_MIN) THEN
+                  srunl = THRUL(n)
+                  srunc = THRUC(n)
+               ENDIF
+               PTOTAL = THRUL(N) + THRUC(N)
+               SRUN0  = srunl + srunc
                ! MB: even no surface runoff when srfmx is exceeded (activating macro-pore flow)
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
                totcapac=(srfmx(n)-srfexc(n))+((vgwmax(n)-rzeq(n))-rzexc(n))
                watadd=ptotal-srun0
                !if (ZBAR1>0.1)
-                 !if (watadd .gt. (0.1*totcapac)) then
-                 if (totcapac .le. 0.0) then
+               !if (watadd .gt. (0.1*totcapac)) then
+               if (totcapac .le. 0.0) then
+                   srun0 = srun0 + watadd
+               elseif (ptotal .gt. 0.0) then
+                 if (zbar1 .le. 0.0) then
                      srun0 = srun0 + watadd
-                 elseif (ptotal .gt. 0.0) then
-                   if (zbar1 .le. 0.0) then
-                       srun0 = srun0 + watadd
-                   else
-                       if (watadd .gt. (totcapac)) then
-                          !excess=watadd-0.1*totcapac
-                          excess=watadd-totcapac
-                          srun0=srun0+excess
-                          !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                          srfexc(n)=srfmx(n)
-                          !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
-                          rzexc(n)=vgwmax(n)-rzeq(n)
+                 else
+                     if (watadd .gt. (totcapac)) then
+                        !excess=watadd-0.1*totcapac
+                        excess=watadd-totcapac
+                        srun0=srun0+excess
+                        !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                        srfexc(n)=srfmx(n)
+                        !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                        rzexc(n)=vgwmax(n)-rzeq(n)
                        !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
-                       elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
-                          !excess=watadd-0.1*(srfmx(n)-srfexc(n))
-                          excess=watadd-(srfmx(n)-srfexc(n))
-                          !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
-                          srfexc(n)=srfmx(n)
-                          rzexc(n)=rzexc(n)+excess
-                       else
-                          srfexc(n)=srfexc(n)+watadd
-                       endif
-                   endif
+                     elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                        !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                        excess=watadd-(srfmx(n)-srfexc(n))
+                        !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                        srfexc(n)=srfmx(n)
+                        rzexc(n)=rzexc(n)+excess
+                     else
+                        srfexc(n)=srfexc(n)+watadd
+                     endif
                  endif
+               endif
                !else
                !   srun0 = watadd
                !endif
@@ -493,14 +493,14 @@ CONTAINS
                RUNSRF(N)=RUNSRF(N)+srun0
                QIN=PTOTAL-srun0
                ! SRFEXC(N)=amin1(SRFEXC(N)+QIN,srfmx(n))  
-            endif
+            ENDIF
 
-         endif
+        ENDIF
 
          ! convert outputs to flux units [kg m-2 s-1]
          RUNSRF(N)=RUNSRF(N)/DTSTEP
          QINFIL(N)=QIN/DTSTEP
-         IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
+         IF ((POROS(N) >= PEATCLSM_POROS_THRESHOLD) .and. (CATDEF(N)>SRUN_CATDEF_MIN)) THEN
              ! fill catdef and hollows using approach of RZDRAIN
              AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
 
