@@ -696,14 +696,23 @@ CONTAINS
 
           ! Calculate fraction of RZFLW removed/added to catdef
           ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
-          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-             if (zbar1 .ge. 0.0) then
-                 CATDEF(N)=CATDEF(N) - RZFLW_CATDEF
-             else
-                 CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
-                 ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
-             endif
-          RUNSRF(N) = 0.0
+          IF (CATDEF(N)>SRUN_CATDEF_MIN) THEN
+            RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          ELSE
+            RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*RZFLW/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          ENDIF
+          if (zbar1 .ge. 0.0) then
+              CATDEF(N)=CATDEF(N) - RZFLW_CATDEF
+          else
+            IF (CATDEF(N)>SRUN_CATDEF_MIN) THEN
+              CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+              ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+              RUNSRF(N) = 0.0
+            ELSE
+              CATDEF(N)= ((zbar1-RZFLW/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+              ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+            ENDIF
+          endif
           ! MB: remove all RZFLW from RZEXC because the other part 
           ! flows into the surface water storage (microtopgraphy)
           RZEXC(N)=RZEXC(N)-RZFLW
