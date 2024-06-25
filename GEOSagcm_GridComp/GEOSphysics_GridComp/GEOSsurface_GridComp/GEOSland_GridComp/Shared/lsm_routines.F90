@@ -571,6 +571,8 @@ CONTAINS
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                          ! [kg m-2 s-1]
 
       ! --------------------
+      ! CONSTANT
+      REAL, PARAMETER      :: SRUN_CATDEF_MIN   = 0.02
 
       INTEGER N
       REAL srflw,rzflw,FLOW,EXCESS,TSC0,tsc2,rzave,rz0,wanom,rztot,          &
