@@ -1110,17 +1110,17 @@ CONTAINS
            ELSE IF (POROS(N) .GE. 0.90) THEN
              AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
            ENDIF
-           AR1(N) = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
-           RZEQYI = RZEQXI+WRZ
+           !AR1(N) = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+           !RZEQYI = RZEQXI+WRZ
            ar1(n)=amax1(0., amin1(1., ar1(n)))
-           ar4(n)=amax1(0., amin1(1., ar4(n)))
+           !ar4(n)=amax1(0., amin1(1., ar4(n)))
            ARREST = 1.0 - AR1(N)
            AR4(N)=amin1(ARREST,AR4(N))
-           ar4(n)=amax1(0., amin1(1., ar4(n)))
+           !ar4(n)=amax1(0., amin1(1., ar4(n)))
            AR2(N)=1.0-AR4(n)-AR1(N)
-           AR1(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR1(N)
-           AR2(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR2(N)
-           AR4(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR4(N)
+           !AR1(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR1(N)
+           !AR2(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR2(N)
+           !AR4(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR4(N)
         ENDIF
            
         RZI(N)=RZEQYI
@@ -2001,6 +2001,7 @@ CONTAINS
     integer :: n
 
     real, parameter :: dtstep_dummy = -9999.
+    real, parameter      :: SRUN_CATDEF_MIN   = 0.02
 
     real, dimension(NTILES) :: rzeq, runsrf_dummy, catdef_dummy
     real, dimension(NTILES) :: prmc_orig
@@ -2031,7 +2032,7 @@ CONTAINS
        IF (POROS(N)<PEATCLSM_POROS_THRESHOLD) THEN
            catdef(n)=max(1.,min(cdcr2(n),catdef(n)))
        ELSE
-           catdef(n)=max(0.,min(cdcr2(n),catdef(n)))
+           catdef(n)=max(SRUN_CATDEF_MIN,min(cdcr2(n),catdef(n)))
        END IF
     end do
 
