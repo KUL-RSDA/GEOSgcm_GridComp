@@ -40,8 +40,7 @@ MODULE lsm_routines
        FSN               => CATCH_FSN,           &       
        SHR               => CATCH_SHR,           &
        N_SM              => CATCH_N_ZONES,       &
-       PEATCLSM_POROS_THRESHOLD,                 &
-       PEATCLSM_ZBARMAX_4_SYSOIL
+       PEATCLSM_POROS_THRESHOLD
   
   USE SURFPARAMS,        ONLY:                   &
        LAND_FIX, CSOIL_2, WEMIN, AICEV, AICEN,   &
@@ -240,7 +239,8 @@ CONTAINS
            VGWMAX, RZEQ, POROS,                               &
            SRFEXC, RZEXC,                                     &
            RUNSRF,                                            &  ! [kg m-2 s-1]  (flux units)
-           QINFIL                                             &  ! [kg m-2 s-1]  (flux units)
+           QINFIL,                                            &  ! [kg m-2 s-1]  (flux units)
+           CATDEF, BF1, BF2, ARS1, ARS2, ARS3                 &
            )
 
 !**** NOTE: Input throughfall is in volume units, as are calcs throughout this subroutine  [kg m-2]
@@ -259,18 +259,21 @@ CONTAINS
       LOGICAL, INTENT(IN)                    :: BUG
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: SRFEXC, RZEXC
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                            ! [kg m-2 s-1]
+      REAL,    INTENT(INOUT), DIMENSION(NCH) :: CATDEF                            
       REAL,    INTENT(OUT),   DIMENSION(NCH) :: QINFIL                            ! [kg m-2 s-1]
-
+      REAL,    INTENT(IN),    DIMENSION(NCH) :: BF1,  BF2, ARS1, ARS2, ARS3
       ! ---------------------------
       
       INTEGER              :: N
       REAL                 :: deficit,srun0,frun,qin, qinfil_l, qinfil_c, qcapac, excess_infil
       REAL                 :: srunc, srunl, ptotal, excess, totcapac, watadd
+      REAL                 :: AR1eq, ZBAR1, SYSOIL, RUNSRF_CATDEF
       REAL, DIMENSION(NCH) :: THRUL, THRUC
 
       ! constants for PEATCLSM piecewise linear relationship between surface runoff and AR1
       
-      REAL, PARAMETER      :: SRUN_AR1_MIN   =  0.5
+      REAL, PARAMETER      :: SRUN_AR1_MIN   = 9999
+      REAL, PARAMETER      :: SRUN_CATDEF_MIN   = 0.02
       REAL, PARAMETER      :: SRUN_AR1_SLOPE = 10.
       
 !**** - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -319,40 +322,64 @@ CONTAINS
                ! discharge calculations elsewhere in the code.
 
                srun0 = 0.
+               ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
                ! handling numerical instability due to exceptional snow melt events at some pixels
                ! avoid AR1 to increase much higher than > 0.5 by enabling runoff
                !Added ramping to avoid potential oscillations (rdk, 09/18/20)
                IF (AR1(N)>SRUN_AR1_MIN) srun0=PTOTAL*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
 
+               IF (CATDEF(N)<SRUN_CATDEF_MIN) THEN
+                  srun0 = PTOTAL
+               ENDIF
+
                ! MB: even no surface runoff when srfmx is exceeded (activating macro-pore flow)
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
 
-               totcapac=(srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n)))
+               totcapac=(srfmx(n)-srfexc(n))+((vgwmax(n)-rzeq(n))-rzexc(n))
                watadd=ptotal-srun0
-               if (watadd .gt. totcapac) then
-                  excess=watadd-totcapac
-                  srun0=srun0+excess
-                  srfexc(n)=srfmx(n)
-                  rzexc(n)=vgwmax(n)-rzeq(n)
-               elseif(watadd .gt. srfmx(n)-srfexc(n)) then
-                  excess=watadd-(srfmx(n)-srfexc(n))
-                  srfexc(n)=srfmx(n)
-                  rzexc(n)=rzexc(n)+excess
-               else
-                  srfexc(n)=srfexc(n)+watadd
+               !if (ZBAR1>0.1)
+               !if (watadd .gt. (0.1*totcapac)) then
+               if (totcapac .le. 0.0) then
+                 srun0 = srun0 + watadd
+               elseif (ptotal .gt. 0.0) then
+                 if (zbar1 .le. 0.0) then
+                    srun0= srun0 + watadd
+                 else
+                    if (watadd .gt. (totcapac)) then
+                       !excess=watadd-0.1*totcapac
+                       excess=watadd-totcapac
+                       srun0=srun0+excess
+                       !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                       srfexc(n)=srfmx(n)
+                       !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                       rzexc(n)=vgwmax(n)-rzeq(n)
+                       !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                    elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                       !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                       excess=watadd-(srfmx(n)-srfexc(n))
+                       !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                       srfexc(n)=srfmx(n)
+                       rzexc(n)=rzexc(n)+excess
+                    else
+                       srfexc(n)=srfexc(n)+watadd
+                    endif
+                 endif
                endif
+               !else
+               !   srun0 = watadd
+               !endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
                !  srun0 = srun0 + RZEQ(N)+RZEXC(N)-VGWMAX(N)
                !  RZEXC(N)=VGWMAX(N)-RZEQ(N)
-               !  ENDIF
-               !(Commented out following lines to retain water balance -- rdk, 9/18/20)
-               !if (srun0 .gt. ptotal) then
-               !   srun0=ptotal
-               !   endif
+       !  ENDIF
+       !(Commented out following lines to retain water balance -- rdk, 9/18/20)
+       !if (srun0 .gt. ptotal) then
+       !   srun0=ptotal
+       !   endif
                RUNSRF(N)=RUNSRF(N)+srun0
                QIN=PTOTAL-srun0
-               !SRFEXC(N)=amin1(SRFEXC(N)+QIN,srfmx(n))               
+       !SRFEXC(N)=amin1(SRFEXC(N)+QIN,srfmx(n))               
             ENDIF
 
          endif
@@ -361,8 +388,8 @@ CONTAINS
 
             !**** Compute runoff from large-scale and convective storms separately:
             IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
-                !non-peatland
-               deficit=srfmx(n)-srfexc(n)
+              !non-peatland
+              deficit=srfmx(n)-srfexc(n)
                srunl=AR1(n)*THRUL(n)
                qinfil_l=(1.-ar1(n))*THRUL(n)
                qcapac=deficit*FWETL
@@ -395,7 +422,7 @@ CONTAINS
                QIN=THRUL(n)+THRUC(n)-(srunl+srunc)
                SRFEXC(N)=SRFEXC(N)+QIN
 
-            else
+           ELSE
                ! peatland
                ! MB: no Hortonian surface runoff
                !Note (rdk, from discussion w/MB; email 01/04/2021): 
@@ -417,29 +444,47 @@ CONTAINS
                   srunl = THRUL(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
                   srunc = THRUC(n)*amin1(1.,(ar1(n)-SRUN_AR1_MIN)*SRUN_AR1_SLOPE)
                ENDIF
+               IF (CATDEF(N)<SRUN_CATDEF_MIN) THEN
+                  srunl = THRUL(n)
+                  srunc = THRUC(n)
+               ENDIF
                PTOTAL = THRUL(N) + THRUC(N)
                SRUN0  = srunl + srunc
                ! MB: even no surface runoff when srfmx is exceeded (activating macro-pore flow)
                ! Rewrote code to determine excess over capacity all at once (rdk, 09/18/20)
-               totcapac=(srfmx(n)-srfexc(n))+(vgwmax(n)-(rzeq(n)+rzexc(n)))
+               totcapac=(srfmx(n)-srfexc(n))+((vgwmax(n)-rzeq(n))-rzexc(n))
                watadd=ptotal-srun0
-               if (watadd .gt. totcapac) then
-                  excess=watadd-totcapac
-                  srun0=srun0+excess
-                  srfexc(n)=srfmx(n)
-                  rzexc(n)=vgwmax(n)-rzeq(n)
-               elseif(watadd .gt. srfmx(n)-srfexc(n)) then
-                  excess=watadd-(srfmx(n)-srfexc(n))
-                  srfexc(n)=srfmx(n)
-                  rzexc(n)=rzexc(n)+excess
-               else
-                  srfexc(n)=srfexc(n)+watadd
+               !if (ZBAR1>0.1)
+               !if (watadd .gt. (0.1*totcapac)) then
+               if (totcapac .le. 0.0) then
+                   srun0 = srun0 + watadd
+               elseif (ptotal .gt. 0.0) then
+                 if (zbar1 .le. 0.0) then
+                     srun0 = srun0 + watadd
+                 else
+                     if (watadd .gt. (totcapac)) then
+                        !excess=watadd-0.1*totcapac
+                        excess=watadd-totcapac
+                        srun0=srun0+excess
+                        !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                        srfexc(n)=srfmx(n)
+                        !rzexc(n)=(vgwmax(n)-rzeq(n))-0.9*((vgwmax(n)-rzeq(n))-rzexc(n))
+                        rzexc(n)=vgwmax(n)-rzeq(n)
+                       !elseif(watadd .gt. 0.1*(srfmx(n)-srfexc(n))) then
+                     elseif(watadd .gt. (srfmx(n)-srfexc(n))) then
+                        !excess=watadd-0.1*(srfmx(n)-srfexc(n))
+                        excess=watadd-(srfmx(n)-srfexc(n))
+                        !srfexc(n)=srfmx(n)-0.9*(srfmx(n)-srfexc(n))
+                        srfexc(n)=srfmx(n)
+                        rzexc(n)=rzexc(n)+excess
+                     else
+                        srfexc(n)=srfexc(n)+watadd
+                     endif
+                 endif
                endif
-               !if (ptotal-srun0 .gt. srfmx(n)-srfexc(n)) then
-               !  excess=(ptotal-srun0)-(srfmx(n)-srfexc(n))
-               !  rzexc(n)=rzexc(n) + excess
-               !  ptotal=ptotal-excess
-               !  endif                   
+               !else
+               !   srun0 = watadd
+               !endif
                ! MB: check if VGWMAX is exceeded
                !IF(RZEQ(N) + RZEXC(N) .GT. (VGWMAX(N))) THEN
                !  srun0 = srun0 + RZEQ(N)+RZEXC(N)-VGWMAX(N)
@@ -448,13 +493,43 @@ CONTAINS
                RUNSRF(N)=RUNSRF(N)+srun0
                QIN=PTOTAL-srun0
                ! SRFEXC(N)=amin1(SRFEXC(N)+QIN,srfmx(n))  
-            endif
+            ENDIF
 
-         endif
+        ENDIF
 
          ! convert outputs to flux units [kg m-2 s-1]
          RUNSRF(N)=RUNSRF(N)/DTSTEP
          QINFIL(N)=QIN/DTSTEP
+         IF ((POROS(N) >= PEATCLSM_POROS_THRESHOLD) .and. (CATDEF(N)>SRUN_CATDEF_MIN)) THEN
+             ! fill catdef and hollows using approach of RZDRAIN
+             AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+
+             ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+
+             ! PEATCLSM Tropics drained
+             IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80)+2*bf1(n)*bf2(n))/1000.
+             ! PEATCLSM Tropics natural
+             ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.40),0.88)+2*bf1(n)*bf2(n))/1000.
+             ! PEATCLSM NORTH natural
+             ELSE IF (POROS(N) .GE. 0.90) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
+             ENDIF
+
+             SYSOIL = amin1(SYSOIL,poros(n))
+
+             RUNSRF_CATDEF = (1.-AR1eq)*SYSOIL*(RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+             if (zbar1 .ge. 0.0) then
+                 CATDEF(N)=CATDEF(N) - RUNSRF_CATDEF
+             else
+                 CATDEF(N)= ((zbar1-(RUNSRF(N)*DTSTEP)/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+             endif
+             RUNSRF(N)=0.0
+             QIN=PTOTAL
+             QINFIL(N)=QIN/DTSTEP
+         endif
 
       END DO
 
@@ -496,6 +571,8 @@ CONTAINS
       REAL,    INTENT(INOUT), DIMENSION(NCH) :: RUNSRF                          ! [kg m-2 s-1]
 
       ! --------------------
+      ! CONSTANT
+      REAL, PARAMETER      :: SRUN_CATDEF_MIN   = 0.02
 
       INTEGER N
       REAL srflw,rzflw,FLOW,EXCESS,TSC0,tsc2,rzave,rz0,wanom,rztot,          &
@@ -545,8 +622,8 @@ CONTAINS
 ! ---------------------------------------------------------------------
 
         SRFLW=SRFEXC(N)*DTSTEP/TSC0
-
-        IF(SRFLW < 0.    ) SRFLW = FLWALPHA * SRFLW ! C05 change
+       
+        IF ((POROS(N) .LT. 0.67) .AND. (SRFLW < 0.    )) SRFLW = FLWALPHA * SRFLW ! C05 change
 
 !rr   following inserted by koster Sep 22, 2003
         rzdif=rzave/poros(n)-wpwet(n)
@@ -601,12 +678,43 @@ CONTAINS
           ! to avoid extrapolation errors due to the non-optimal
           ! (linear) approximation with the bf1-bf2-CLSM function,
           ! theoretical SYSOIL curve levels off approximately at 0 m and 0.45 m.
-          ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )  
-          SYSOIL = (2.*bf1(n)*amin1(amax1(zbar1,0.),PEATCLSM_ZBARMAX_4_SYSOIL) + 2.*bf1(n)*bf2(n))/1000.
-          SYSOIL = amin1(SYSOIL,poros(n))
+          ! 0.45 m (for tropics 0-0.80 m (TD)  and 0-0.65 m (TN) -0.11-1.00 m
+          ! (CON).          
+          
+          ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+         
+          ! PEATCLSM Tropics drained
+          IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.80) +2*bf1(n)*bf2(n))/1000.
+          ! PEATCLSM Tropics natural
+          ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,-0.40),0.88)+2*bf1(n)*bf2(n))/1000.
+          ! PEATCLSM NORTH natural
+          ELSE IF (POROS(N) .GE. 0.90) THEN
+            SYSOIL = (2*bf1(n)*amin1(amax1(zbar1,0.),0.45) +2*bf1(n)*bf2(n))/1000.
+          ENDIF
+
+          SYSOIL = amin1(SYSOIL,poros(n))    
+
           ! Calculate fraction of RZFLW removed/added to catdef
-          RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*RZFLW/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-          CATDEF(N)=CATDEF(N)-RZFLW_CATDEF
+          ! MB (2023/03/29): allowing RUNSRF to also fill hollows and catdef 
+          IF (CATDEF(N)>SRUN_CATDEF_MIN) THEN
+            RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*(RZFLW+RUNSRF(N)*DTSTEP)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          ELSE
+            RZFLW_CATDEF = (1.-AR1eq)*SYSOIL*RZFLW/(1.*AR1eq+SYSOIL*(1.-AR1eq))
+          ENDIF
+          if (zbar1 .ge. 0.0) then
+              CATDEF(N)=CATDEF(N) - RZFLW_CATDEF
+          else
+            IF (CATDEF(N)>SRUN_CATDEF_MIN) THEN
+              CATDEF(N)= ((zbar1-(RZFLW+RUNSRF(N)*DTSTEP)/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+              ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+              RUNSRF(N) = 0.0
+            ELSE
+              CATDEF(N)= ((zbar1-RZFLW/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+              ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+            ENDIF
+          endif
           ! MB: remove all RZFLW from RZEXC because the other part 
           ! flows into the surface water storage (microtopgraphy)
           RZEXC(N)=RZEXC(N)-RZFLW
@@ -623,7 +731,7 @@ CONTAINS
 
         IF(RZEQ(N) + RZEXC(N) .GT. VGWMAX(N)) THEN
           EXCESS=RZEQ(N)+RZEXC(N)-VGWMAX(N)
-          RZEXC(N)=VGWMAX(N)-RZEQ(N)
+          RZEXC(N)=RZEXC(N) - EXCESS
 
           IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
              CATDEF(N)=CATDEF(N)-EXCESS
@@ -631,18 +739,23 @@ CONTAINS
              ! PEAT
              ! MB: like for RZFLW --> EXCESS_CATDEF is the fraction in/out of catdef
              EXCESS_CATDEF=(1.-AR1eq)*SYSOIL*EXCESS/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-             CATDEF(N)=CATDEF(N)-EXCESS_CATDEF
+             if (zbar1 .ge. 0.0) then
+                 CATDEF(N)=CATDEF(N) - EXCESS_CATDEF
+             else
+                 CATDEF(N)= ((zbar1-EXCESS/1000.0 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR1 = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+             endif
           ENDIF
        ENDIF
 
-       IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
+       ! SA:CON IF (POROS(N) >= PEATCLSM_POROS_THRESHOLD) THEN
           ! MB: CATDEF Threshold at zbar=0
           ! water table not allowed to rise higher (numerically instable) 
           ! zbar<0 only occurred due to extreme infiltration rates
           ! (noticed this only snow melt events, very few locations and times)
           ! (--> NOTE: PEATCLSM has no Hortonian runoff for zbar > 0)            
-          CATDEF_PEAT_THRESHOLD = ((BF2(N))**2.0)*BF1(N)
-          IF(CATDEF(N) .LT. CATDEF_PEAT_THRESHOLD) THEN
+         ! SA:CON CATDEF_PEAT_THRESHOLD = ((BF2(N))**2.0)*BF1(N)
+         ! SA:CON IF(CATDEF(N) .LT. CATDEF_PEAT_THRESHOLD) THEN
              ! RUNSRF(N)=RUNSRF(N) + (CATDEF_PEAT_THRESHOLD - CATDEF(N))
              ! runoff from AR1 for zbar>0
              ! RZFLW_AR1 = RZFLW - RZFLW_CATDEF + (CATDEF_PEAT_THRESHOLD - CATDEF(N))
@@ -652,10 +765,10 @@ CONTAINS
              ! 
              ! revised (rdk, 1/04/2021): take excess water from both 
              ! soil and free standing water, the latter assumed to cover area AR1=0.5
-             RUNSRF(N) = RUNSRF(N) + (CATDEF_PEAT_THRESHOLD-CATDEF(N) + 0.5*1000.*(-ZBAR1))/DTSTEP
-             CATDEF(N)=CATDEF_PEAT_THRESHOLD
-          ENDIF
-       ENDIF
+             ! SA:CON RUNSRF(N) = RUNSRF(N) + (CATDEF_PEAT_THRESHOLD-CATDEF(N) + 0.5*1000.*(-ZBAR1))/DTSTEP
+             ! SA:CON CATDEF(N)=CATDEF_PEAT_THRESHOLD
+          ! SA:CON ENDIF
+       ! SA:CON ENDIF
 
        IF(CATDEF(N) .LT. 0.) THEN
           ! bug fix: RUNSRF in flux units [kg m-2 s-1] for consistency with partition()
@@ -696,7 +809,7 @@ CONTAINS
 
 
       INTEGER N
-      REAL ZBAR, ashift, CFRICE,Ksz_zero,m_Ivanov,v_slope,Ta,dztmp,SYSOIL,BFLOW_CATDEF,ICERAMP,AR1eq
+      REAL ZBAR, ashift, CFRICE,Ksz_zero,m_Ivanov,v_slope,Ta,Lditch,zditch,wstrip, dztmp,SYSOIL,BFLOW_CATDEF,ICERAMP,AR1eq
 
       data ashift/0./
 
@@ -729,12 +842,34 @@ CONTAINS
             ! Ksz0  in  m/s
             ! m_Ivanov [-]  value depends on unit of Ksz0 and z
             ! v_slope in m^(-1)
-            Ksz_zero=10.
-            m_Ivanov=3.0
-            v_slope = 1.5e-05
+            ! PEATCLSM CON natural
+            IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+              Ksz_zero=3165.38
+              m_Ivanov=2.06
+              v_slope = 1.5e-08
+            ! PEATCLSM Northern natural
+            ELSE IF (POROS(N) .GE. 0.90) THEN
+              Ksz_zero=10.0
+              m_Ivanov=3.0
+              v_slope = 1.5e-05
+            ENDIF
             ! Ta in m2/s, BFLOW in mm/s
-            Ta = (Ksz_zero*(1.+100.*amax1(0.,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
+            Ta = (Ksz_zero*(24.5+100.*amax1(-0.244999,ZBAR))**(1.-m_Ivanov))/(100.*(m_Ivanov-1.))
             BFLOW(N)=v_slope*Ta*1000.
+            IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+              Ksz_zero = 5. ! m/day macro saturated conductivity
+              zditch = 68. ! cm ditch depth
+              wstrip = 32. ! m ditch distance
+              Lditch = 32. ! m/ha drainage density length/surface
+              IF ((ZBAR*100) .GE. zditch) THEN
+                   BFLOW(N)=0
+              ELSE IF (((ZBAR*100) .GT. 0.) .AND.  ((ZBAR*100) .LT. zditch)) THEN
+                   BFLOW(N) =(4.*Ksz_zero*(zditch-(ZBAR*100))**2.*Lditch/wstrip)/1000/86400
+              ELSE
+                   BFLOW(N) =(4.*Ksz_zero*(zditch)**2.*Lditch/wstrip+(-ZBAR*100))/1000/86400
+              ENDIF
+            ENDIF
+
             ! handling numerical instability due to extreme snow melt events on partly frozen ground
             ! --> allow BFLOW/DISCHARGE for zbar .LE. 0.05
             ICERAMP= AMAX1(0., AMIN1(1., ZBAR/0.05))
@@ -747,12 +882,26 @@ CONTAINS
                ! MB: accounting for water ponding on AR1
                ! same approach as for RZFLW (see subroutine RZDRAIN for
                ! comments)
-               SYSOIL = (2.*bf1(N)*amin1(amax1(zbar,0.),PEATCLSM_ZBARMAX_4_SYSOIL) + 2.*bf1(N)*bf2(N))/1000.
+               ! PEATCLSM Tropics
+               IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+                 SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.80) +2*bf1(N)*bf2(N))/1000.
+               ! PEATCLSM Tropics natural
+               ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+                 SYSOIL = (2*bf1(n)*amin1(amax1(zbar,-0.40),0.88)+2*bf1(n)*bf2(n))/1000.
+               ! PEATCLSM NORTH natural
+               ELSE IF (POROS(N) .GE. 0.90) THEN
+                 SYSOIL = (2*bf1(N)*amin1(amax1(zbar,0.),0.45) +2*bf1(N)*bf2(N))/1000.
+               ENDIF
                SYSOIL = amin1(SYSOIL,poros(n))
                !MB2021: use AR1eq, equilibrium assumption between water level in soil hummocks and surface water level in hollows
                AR1eq = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
                BFLOW_CATDEF = (1.-AR1eq)*SYSOIL*BFLOW(N)/(1.*AR1eq+SYSOIL*(1.-AR1eq))
-               CATDEF(N)=CATDEF(N)+BFLOW_CATDEF*dtstep
+               if (zbar .ge. 0.0) then
+                 CATDEF(N)=CATDEF(N) + BFLOW_CATDEF*dtstep
+               else
+                 CATDEF(N)= ((zbar+(BFLOW(N)*DTSTEP)/1000 + BF2(N))**2 - 1.0E-20)*BF1(N)
+                 ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )
+               endif
             ENDIF
 
          ENDIF
@@ -951,12 +1100,29 @@ CONTAINS
            ! MB: AR4 (wilting fraction) for peatland depending on water table depth
            !ZBAR defined here positive below ground and in meter
            ZBAR = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )  
-           AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
+           ! PEATCLSM TROPICS drained
+           IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-1.54)/(1.31)))
+           ! PEATCLSM TROPICS natural
+           ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(0.85)))
+           ! PEATCLSM NORTH natural
+           ELSE IF (POROS(N) .GE. 0.90) THEN
+             AR4(N)=amax1(0.,amin1(1.0,(ZBAR-0.30)/(1.0)))
+           ENDIF
+           !AR1(N) = (1.+ars1(n)*(catdef(n)))/(1.+ars2(n)*(catdef(n))+ars3(n)*(catdef(n))**2)
+           !RZEQYI = RZEQXI+WRZ
+           ar1(n)=amax1(0., amin1(1., ar1(n)))
+           !ar4(n)=amax1(0., amin1(1., ar4(n)))
            ARREST = 1.0 - AR1(N)
            AR4(N)=amin1(ARREST,AR4(N))
+           !ar4(n)=amax1(0., amin1(1., ar4(n)))
            AR2(N)=1.0-AR4(n)-AR1(N)
-           ENDIF
-
+           !AR1(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR1(N)
+           !AR2(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR2(N)
+           !AR4(N)=1.0/(AR1(N)+AR2(N)+AR4(N))*AR4(N)
+        ENDIF
+           
         RZI(N)=RZEQYI
 
         SWSRF1(N)=1.
@@ -974,16 +1140,27 @@ CONTAINS
         SWSRF2(N)=((SWSRF2(N)**(-BEE(N))) - (.5/PSIS(N)))**(-1./BEE(N))
         SWSRF4(N)=((SWSRF4(N)**(-BEE(N))) - (.5/PSIS(N)))**(-1./BEE(N))
         ELSE
-
-             ! PEAT
-             ! MB: for peatlands integrate across surface soil moisture distribution
-             ! coefficients fitted for equilibrium conditions
-             ! SWSRF2 and SWSRF4 as wetness (not moisture)
-             ! MB: bug April 2018, AMIN1 function due to problems when spin up from
-             ! scratch (i.e. dry soil at time=0)
-             SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + &
+            ! PEAT
+            ! MB: for peatlands integrate across surface soil moisture
+            ! distribution
+            ! coefficients fitted for equilibrium conditions
+            ! SWSRF2 and SWSRF4 as wetness (not moisture)
+            ! MB: bug April 2018, AMIN1 function due to problems when spin up from
+            ! scratch (i.e. dry soil at time=0)
+            ! PEATCLSM Tropics drained
+            IF ((POROS(N) .GE. 0.67) .AND. (POROS(N) .LT. 0.75)) THEN
+              SWSRF2(N)=0.92524664 - 0.40941739*AMIN1(3.0,ZBAR) + 0.28382861*(AMIN1(3.0,ZBAR))**2 - &
+                     0.09602305*(AMIN1(3.0,ZBAR))**3 + 0.01214020*(AMIN1(3.0,ZBAR))**4
+            ! PEATCLSM Tropics natural
+            ELSE IF ((POROS(N) .GE. 0.75) .AND. (POROS(N) .LT. 0.90)) THEN
+              SWSRF2(N)=0.89026722 - 0.24531794*AMIN1(2.0,ZBAR) - 0.10317137*(AMIN1(2.0,ZBAR))**2 + &
+                     0.20644821*(AMIN1(2.0,ZBAR))**3 - 0.06491769*(AMIN1(2.0,ZBAR))**4
+            ! PEATCLSM NORTH natural
+            ELSE IF (POROS(N) .GE. 0.90) THEN
+              SWSRF2(N)=0.79437 - 0.99996*AMIN1(1.5,ZBAR) + 0.68801*(AMIN1(1.5,ZBAR))**2 + & 
                      0.04186*(AMIN1(1.5,ZBAR))**3 - 0.15042*(AMIN1(1.5,ZBAR))**4
-             SWSRF4(N)=SWSRF2(N)
+            ENDIF
+            SWSRF4(N)=SWSRF2(N)
         ENDIF
 
 ! srfmx is the maximum amount of water that can be added to the surface layer
@@ -997,7 +1174,11 @@ CONTAINS
         if(srfexc(n).gt.srfmx(n)) then
             cor=srfexc(n)-srfmx(n)     !  The correction is here
             srfexc(n)=srfmx(n)
-            catdef(n)=catdef(n)-cor
+            IF (POROS(N) < PEATCLSM_POROS_THRESHOLD) THEN
+              catdef(n)=catdef(n)-cor
+            ELSE
+              runsrf(n)=runsrf(n) + cor/dtstep
+            ENDIF
             if(catdef(n).lt.0.) then
               runsrf(n)=runsrf(n)-catdef(n)/dtstep
               catdef(n)=0.
@@ -1820,6 +2001,7 @@ CONTAINS
     integer :: n
 
     real, parameter :: dtstep_dummy = -9999.
+    real, parameter      :: SRUN_CATDEF_MIN   = 0.02
 
     real, dimension(NTILES) :: rzeq, runsrf_dummy, catdef_dummy
     real, dimension(NTILES) :: prmc_orig
@@ -1847,7 +2029,11 @@ CONTAINS
     ! reichle, 5 Feb 2004
 
     do n=1,NTILES
-       catdef(n)=max(1.,min(cdcr2(n),catdef(n)))
+       IF (POROS(N)<PEATCLSM_POROS_THRESHOLD) THEN
+           catdef(n)=max(1.,min(cdcr2(n),catdef(n)))
+       ELSE
+           catdef(n)=max(SRUN_CATDEF_MIN,min(cdcr2(n),catdef(n)))
+       END IF
     end do
 
     ! ------------------------------------------------------------------

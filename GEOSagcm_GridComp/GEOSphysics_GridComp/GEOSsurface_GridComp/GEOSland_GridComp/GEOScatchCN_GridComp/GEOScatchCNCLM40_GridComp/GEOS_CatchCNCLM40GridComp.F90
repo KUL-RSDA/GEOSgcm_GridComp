@@ -7219,7 +7219,7 @@ subroutine RUN2 ( GC, IMPORT, EXPORT, CLOCK, RC )
                 TC(:,FSAT), TC(:,FTRN), TC(:,FWLT)		          ,& 
                 QC(:,FSAT), QC(:,FTRN), QC(:,FWLT)		          ,&
 
-                CAPAC, CATDEF, RZEXC, SRFEXC, GHTCNT                 ,&
+                CAPAC, CATDEF, RZEXC, SRFEXC, GHTCNT              ,&
                 WESNN, HTSNNN, SNDZN                                 ,&
 
                 EVAPOUT, SHOUT, RUNOFF, EVPINT, EVPSOI, EVPVEG       ,&

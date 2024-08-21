@@ -93,8 +93,7 @@ MODULE CATCHMENT_CN_MODEL
        DZTSURF           => CATCH_DZTSURF,       &
        DZGT              => CATCH_DZGT,          &
        FSN               => CATCH_FSN,           &
-       PEATCLSM_POROS_THRESHOLD,                 &
-       PEATCLSM_ZBARMAX_4_SYSOIL
+       PEATCLSM_POROS_THRESHOLD
 
   USE SURFPARAMS,       ONLY: CSOIL_2, RSWILT,   &
        LAND_FIX, FLWALPHA
@@ -1165,7 +1164,8 @@ CONTAINS
              FRICE, TP1, SRFMX, BUG,                                    & 
              VGWMAX, RZEQOL, POROS,                                     &
              SRFEXC, RZEXC, RUNSRF,                                     &
-             QINFIL                                                     &
+             QINFIL,                                                    &
+             CATDEF, BF1, BF2, ARS1, ARS2, ARS3                         &
              )
 
       IF (BUG) THEN
@@ -2247,7 +2247,7 @@ CONTAINS
              ! same approach as for RZFLW (see subroutine RZDRAIN for
              ! comments)
              ZBAR1  = catch_calc_zbar( BF1(N), BF2(N), CATDEF(N) )  
-             SYSOIL = (2.*bf1(N)*amin1(amax1(zbar1,0.),PEATCLSM_ZBARMAX_4_SYSOIL) + 2.*bf1(N)*bf2(N))/1000.
+             SYSOIL = (2.*bf1(N)*amin1(amax1(zbar1,0.),0.45) + 2.*bf1(N)*bf2(N))/1000.
              SYSOIL = amin1(SYSOIL,poros(N))
              ET_CATDEF = SYSOIL*(EVSURF(N) + EVROOT(N))*ESATFR(N)/(1.*AR1(N)+SYSOIL*(1.-AR1(N)))
              AR1eq = (1.+ars1(N)*(catdef(N)))/(1.+ars2(N)*(catdef(N))+ars3(N)*(catdef(N))**2)
