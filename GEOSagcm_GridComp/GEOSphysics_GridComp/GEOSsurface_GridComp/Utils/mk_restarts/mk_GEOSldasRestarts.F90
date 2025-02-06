@@ -543,6 +543,7 @@ contains
         print *, 'SA: filetype is (should be 0): ', filetype
         if(filetype == 0) then
            ! GEOSldas CATCH/CATCHCN or CATCHCN LDASsa
+           print*, 'SA: rst_file is:', rst_file
            call  put_land_vars  (NTILES, ntiles_rst, id_glb, ld_reorder, model,  rst_file)
         else
            call read_ldas_restarts (NTILES, ntiles_rst, id_glb, ld_reorder,  rst_file, pfile)
@@ -1452,8 +1453,10 @@ contains
           ! W.J notes: CanopH is not used. If CLM_veg_typs_fracs exists, the read some dummy ???? Ask Sarith  
           if (NewLand) then
              read(21,*) I, j, ITY(N),idum, rdum, rdum, CanopH(N)
+             print *, 'NewLand is True and ITY value is (mosaic should be 4) ', ITY(12)
           else
              read(21,*) I, j, ITY(N),idum, rdum, rdum
+             print *, 'NewLand is False but ITY value is (mosaic should be 4)', ITY(12)
           endif
           
           read (22, *) i,j, GNU(n), BF1(n), BF2(n), BF3(n)
@@ -1752,6 +1755,8 @@ contains
 
      else
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
+        print *, 'This is the ITY assigned to the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY
+
      endif
 
      STATUS = NF_CLOSE ( NCFID)
@@ -2573,12 +2578,14 @@ contains
      call OutFmt%write(meta_data,__RC__)
  
      if (present(rst_file)) then
+        print*, 'rst_file is present:', rst_file
         STATUS = NF_OPEN (trim(rst_file ),NF_NOWRITE,NCFID)  ; VERIFY_(STATUS)  
      else
         if(index(model, 'catchcn') /=0 ) then
            STATUS = NF_OPEN (trim(InCNRestart ),NF_NOWRITE,NCFID) ; VERIFY_(STATUS)  
         endif
         if(trim(model) == 'catch') then
+           print*, 'rst_file is not present and InCatRestart is used:', InCatRestart
            STATUS = NF_OPEN (trim(InCatRestart),NF_NOWRITE,NCFID) ; VERIFY_(STATUS)  
         endif
      endif
