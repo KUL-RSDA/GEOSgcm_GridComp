@@ -1694,6 +1694,7 @@ contains
 
      STATUS = NF_OPEN (trim(InRestart),NF_WRITE,NCFID)  ; VERIFY_(STATUS)  
      print *, 'SA! The InRestart netcdf is opened and variables are written to it, this is the InRestart file:', InRestart
+     print *, 'SA! Print of the STATUS after opening (1):', STATUS 
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF1'), (/1/), (/NTILES/),BF1)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF2'), (/1/), (/NTILES/),BF2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF3'), (/1/), (/NTILES/),BF3)
@@ -1703,7 +1704,6 @@ contains
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'PSIS'), (/1/), (/NTILES/),PSIS)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BEE'), (/1/), (/NTILES/),BEE)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'POROS'), (/1/), (/NTILES/),POROS)
-     print *, 'SA! if this is written the general values are written to the netcdf file'
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'WPWET'), (/1/), (/NTILES/),WPWET)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'COND'), (/1/), (/NTILES/),COND)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'GNU'), (/1/), (/NTILES/),GNU)
@@ -1725,6 +1725,10 @@ contains
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ATAU'), (/1/), (/NTILES/),ATAU2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BTAU'), (/1/), (/NTILES/),BTAU2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TILE_ID'), (/1/), (/NTILES/),VAR1)
+     print *, 'SA! Print of the STATUS after reading in all regular variables (2):', STATUS
+     STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
+     print *, 'SA! I checked whether this would read in the ITY to OLD_ITY'
+     print *, 'SA! Print isCatchCN:', isCatchCN
 
      if( isCatchCN ) then
         print *, 'SA! If this is written the ITY is NOT assigned to the OLD_ITY in the netcdf'
@@ -1760,8 +1764,12 @@ contains
         print *, 'SA! This is the ITY assigned to the OLD_ITY in the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY(1:NTILES)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
      endif
+     print *, 'SA! Print of the STATUS after the if else block (3):', STATUS
 
      STATUS = NF_CLOSE ( NCFID)
+
+     print *, 'SA! Print of the STATUS after closing the netcdf (4):', STATUS
+
 
      deallocate (   BF1,     BF2,     BF3  )
      deallocate (VGWMAX,   CDCR1,   CDCR2  ) 
