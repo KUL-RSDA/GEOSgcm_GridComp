@@ -1757,7 +1757,7 @@ contains
 
      else
         print *, 'SA! If this is written the ITY is assigned to the OLD_ITY in the netcdf'
-        print *, 'SA! This is the ITY assigned to the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY
+        print *, 'SA! This is the ITY assigned to the OLD_ITY in the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY(1:NTILES)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
      endif
 
