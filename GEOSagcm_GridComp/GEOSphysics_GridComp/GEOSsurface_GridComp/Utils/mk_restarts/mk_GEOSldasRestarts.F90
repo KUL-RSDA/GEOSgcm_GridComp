@@ -1359,6 +1359,7 @@ contains
     inquire(file = trim(DataDir)//"CLM_veg_typs_fracs"   ,exist=NewLand )
 
     isCatchCN = (index(model,'catchcn') /=0)
+    print *, 'SA! check if isCatchCN is False or 0:', isCatchCN
 
     if(file_exists) then
 
@@ -1453,10 +1454,9 @@ contains
           ! W.J notes: CanopH is not used. If CLM_veg_typs_fracs exists, the read some dummy ???? Ask Sarith  
           if (NewLand) then
              read(21,*) I, j, ITY(N),idum, rdum, rdum, CanopH(N)
-             print *, 'NewLand is True and ITY value is (mosaic should be 4) ', ITY(12)
+             print *, 'SA!: NewLand is True and ITY value is (should correspond to mosaic_veg_typs_fracs):', ITY(N)
           else
              read(21,*) I, j, ITY(N),idum, rdum, rdum
-             print *, 'NewLand is False but ITY value is (mosaic should be 4)', ITY(12)
           endif
           
           read (22, *) i,j, GNU(n), BF1(n), BF2(n), BF3(n)
@@ -1693,6 +1693,7 @@ contains
      ! -----------------------------------------------------------------------
 
      STATUS = NF_OPEN (trim(InRestart),NF_WRITE,NCFID)  ; VERIFY_(STATUS)  
+     print *, 'SA! The InRestart netcdf is opened and variables are written to it, this is the InRestart file:', InRestart
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF1'), (/1/), (/NTILES/),BF1)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF2'), (/1/), (/NTILES/),BF2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF3'), (/1/), (/NTILES/),BF3)
@@ -1702,6 +1703,7 @@ contains
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'PSIS'), (/1/), (/NTILES/),PSIS)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BEE'), (/1/), (/NTILES/),BEE)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'POROS'), (/1/), (/NTILES/),POROS)
+     print *, 'SA! if this is written the general values are written to the netcdf file'
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'WPWET'), (/1/), (/NTILES/),WPWET)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'COND'), (/1/), (/NTILES/),COND)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'GNU'), (/1/), (/NTILES/),GNU)
@@ -1725,7 +1727,7 @@ contains
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TILE_ID'), (/1/), (/NTILES/),VAR1)
 
      if( isCatchCN ) then
-
+        print *, 'SA! If this is written the ITY is NOT assigned to the OLD_ITY in the netcdf'
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,1/), (/NTILES,1/),CLMC_pt1)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,2/), (/NTILES,1/),CLMC_pt2)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,3/), (/NTILES,1/),CLMC_st1)
@@ -1754,9 +1756,9 @@ contains
         endif
 
      else
+        print *, 'SA! If this is written the ITY is assigned to the OLD_ITY in the netcdf'
+        print *, 'SA! This is the ITY assigned to the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
-        print *, 'This is the ITY assigned to the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY
-
      endif
 
      STATUS = NF_CLOSE ( NCFID)
