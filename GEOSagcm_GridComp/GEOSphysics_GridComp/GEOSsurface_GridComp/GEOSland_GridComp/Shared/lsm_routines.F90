@@ -546,7 +546,7 @@ CONTAINS
 
         SRFLW=SRFEXC(N)*DTSTEP/TSC0
 
-        IF(SRFLW < 0.    ) SRFLW = FLWALPHA * SRFLW ! C05 change
+        IF ((POROS(N) .LT. 0.67) .AND. (SRFLW < 0.    )) SRFLW = FLWALPHA * SRFLW ! C05 change
 
 !rr   following inserted by koster Sep 22, 2003
         rzdif=rzave/poros(n)-wpwet(n)

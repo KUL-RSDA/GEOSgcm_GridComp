@@ -146,11 +146,10 @@ module catch_constants
   !     NLv5                  | PEATMAP                   | poros=0.93
   !
   ! - reichle, 26 Jan 2022
-  
+ 
   REAL, PARAMETER, PUBLIC :: PEATCLSM_POROS_THRESHOLD  = 0.90    ! [m3/m3]
+    ! max zbar for specific yield calc in PEATCLSM
 
-  ! max zbar for specific yield calc in PEATCLSM
-  
   REAL, PARAMETER, PUBLIC :: PEATCLSM_ZBARMAX_4_SYSOIL = 0.45    ! [m] 
 
 contains

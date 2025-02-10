@@ -72,10 +72,10 @@ PROGRAM mk_GEOSldasRestarts
   integer, parameter :: ntiles_cn = 1684725, ntiles_cat = 1653157
   character(len=300), parameter :: &
        InCNRestart = '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/CatchCN/M09/20151231/catchcn_internal_rst', &
-       InCNTilFile = '/discover/nobackup/ltakacs/bcs/Heracles-NL/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til',                        &
-       InCatRestart= '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/Catch/M09/20170101/catch_internal_rst', &
-       InCatTilFile= '/discover/nobackup/projects/gmao/ssd/land/l_data/geos5/bcs/CLSM_params/mkCatchParam_SMAP_L4SM_v002/' &
-                      //'SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til',                                                   &        
+       InCNTilFile = '/dodrio/scratch/projects/2022_200/project_output/rsda/vsc32460/CLSM_params/NL5/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til', &
+       InCatRestart= '/data/leuven/324/vsc32460/projects/GEOSldas/SMAP_Nature_v8.3/output/SMAP_EASEv2_M09_GLOBAL/rs/ens0000/' &
+                        //'Y2000/M01/SMAP_Nature_v8.3.catch_internal_rst.20000101_0000', &
+       InCatTilFile= '/dodrio/scratch/projects/2022_200/project_output/rsda/vsc32460/CLSM_params/NL5/SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til', &        
        InCatRest45 = '/discover/nobackup/projects/gmao/ssd/land/l_data/LandRestarts_for_Regridding/Catch/M09/20170101/catch_internal_rst', &
        InCatTil45  = '/discover/nobackup/projects/gmao/ssd/land/l_data/geos5/bcs/CLSM_params/mkCatchParam_SMAP_L4SM_v002/' &
                       //'SMAP_EASEv2_M09/SMAP_EASEv2_M09_3856x1624.til'            
@@ -540,8 +540,10 @@ contains
 
         filetype = 0
         call MAPL_NCIOGetFileType(rst_file, filetype,__RC__)
+        print *, 'SA: filetype is (should be 0): ', filetype
         if(filetype == 0) then
            ! GEOSldas CATCH/CATCHCN or CATCHCN LDASsa
+           print*, 'SA: rst_file is:', rst_file
            call  put_land_vars  (NTILES, ntiles_rst, id_glb, ld_reorder, model,  rst_file)
         else
            call read_ldas_restarts (NTILES, ntiles_rst, id_glb, ld_reorder,  rst_file, pfile)
@@ -1357,6 +1359,7 @@ contains
     inquire(file = trim(DataDir)//"CLM_veg_typs_fracs"   ,exist=NewLand )
 
     isCatchCN = (index(model,'catchcn') /=0)
+    print *, 'SA! check if isCatchCN is False or 0:', isCatchCN
 
     if(file_exists) then
 
@@ -1451,6 +1454,7 @@ contains
           ! W.J notes: CanopH is not used. If CLM_veg_typs_fracs exists, the read some dummy ???? Ask Sarith  
           if (NewLand) then
              read(21,*) I, j, ITY(N),idum, rdum, rdum, CanopH(N)
+             print *, 'SA!: NewLand is True and ITY value is (should correspond to mosaic_veg_typs_fracs):', ITY(N)
           else
              read(21,*) I, j, ITY(N),idum, rdum, rdum
           endif
@@ -1689,6 +1693,8 @@ contains
      ! -----------------------------------------------------------------------
 
      STATUS = NF_OPEN (trim(InRestart),NF_WRITE,NCFID)  ; VERIFY_(STATUS)  
+     print *, 'SA! The InRestart netcdf is opened and variables are written to it, this is the InRestart file:', InRestart
+     print *, 'SA! Print of the STATUS after opening (1):', STATUS 
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF1'), (/1/), (/NTILES/),BF1)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF2'), (/1/), (/NTILES/),BF2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BF3'), (/1/), (/NTILES/),BF3)
@@ -1718,10 +1724,11 @@ contains
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TSB2'), (/1/), (/NTILES/),TSB2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ATAU'), (/1/), (/NTILES/),ATAU2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BTAU'), (/1/), (/NTILES/),BTAU2)
-     STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TILE_ID'), (/1/), (/NTILES/),VAR1)
+     ! STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TILE_ID'), (/1/), (/NTILES/),VAR1)
+     print *, 'SA! Print of the STATUS after reading in all regular variables and outcommenting TILE ID (2):', STATUS
+     ! STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
 
      if( isCatchCN ) then
-
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,1/), (/NTILES,1/),CLMC_pt1)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,2/), (/NTILES,1/),CLMC_pt2)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,3/), (/NTILES,1/),CLMC_st1)
@@ -1750,10 +1757,16 @@ contains
         endif
 
      else
+        print *, 'SA! If this is written the ITY is assigned to the OLD_ITY in the netcdf'
+        print *, 'SA! This is the ITY assigned to the OLD_ITY in the netcdf file, check if value 12 is 4 (correct) or 5 (incorrect)', ITY(1:NTILES)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
      endif
+     print *, 'SA! Print of the STATUS after the if else block (3):', STATUS
 
      STATUS = NF_CLOSE ( NCFID)
+
+     print *, 'SA! Print of the STATUS after closing the netcdf (4):', STATUS
+
 
      deallocate (   BF1,     BF2,     BF3  )
      deallocate (VGWMAX,   CDCR1,   CDCR2  ) 
@@ -2559,7 +2572,8 @@ contains
         endif
      endif
      if(trim(model) == 'catch'  ) then
-        call InFmt%open(trim(InCatRestart), pFIO_READ, __RC__)  
+           print *, 'SA: Restart path for rewriting: ', InCatRestart
+           call InFmt%open(trim(InCatRestart), pFIO_READ, __RC__)  
      endif
      meta_data = InFmt%read(__RC__)
      call InFmt%close(__RC__)
@@ -2567,17 +2581,18 @@ contains
      call meta_data%modify_dimension('tile', ntiles, __RC__)
 
      OutFileName = "InData/"//trim(model)//"_internal_rst"
-
      call OutFmt%create(trim(OutFileName),__RC__) 
      call OutFmt%write(meta_data,__RC__)
  
      if (present(rst_file)) then
+        print*, 'rst_file is present:', rst_file
         STATUS = NF_OPEN (trim(rst_file ),NF_NOWRITE,NCFID)  ; VERIFY_(STATUS)  
      else
         if(index(model, 'catchcn') /=0 ) then
            STATUS = NF_OPEN (trim(InCNRestart ),NF_NOWRITE,NCFID) ; VERIFY_(STATUS)  
         endif
         if(trim(model) == 'catch') then
+           print*, 'rst_file is not present and InCatRestart is used:', InCatRestart
            STATUS = NF_OPEN (trim(InCatRestart),NF_NOWRITE,NCFID) ; VERIFY_(STATUS)  
         endif
      endif
@@ -2591,6 +2606,12 @@ contains
      end do
      call MAPL_VarWrite(OutFmt,'POROS',var_put)
      
+     STATUS = NF_GET_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'   ), (/1/), (/NTILES_RST/),var_get)
+     do k = 1, NTILES
+        VAR_PUT(k) = var_get(ld_reorder(id_glb(k)))
+     end do
+     call MAPL_VarWrite(OutFmt,'OLD_ITY',var_put) 
+
      STATUS = NF_GET_VARA_REAL(NCFID,VarID(NCFID,'COND'   ), (/1/), (/NTILES_RST/),var_get)
      do k = 1, NTILES
         VAR_PUT(k) = var_get(ld_reorder(id_glb(k)))

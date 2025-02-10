@@ -73,7 +73,6 @@ program Scale_Catch
        real, pointer ::    ghtcnt4(:)
        real, pointer ::    ghtcnt5(:)
        real, pointer ::    ghtcnt6(:)
-       real, pointer ::      tsurf(:)
        real, pointer ::     wesnn1(:)
        real, pointer ::     wesnn2(:)
        real, pointer ::     wesnn3(:)
@@ -83,11 +82,6 @@ program Scale_Catch
        real, pointer ::     sndzn1(:)
        real, pointer ::     sndzn2(:)
        real, pointer ::     sndzn3(:)
-       real, pointer ::         ch(:,:)
-       real, pointer ::         cm(:,:)
-       real, pointer ::         cq(:,:)
-       real, pointer ::         fr(:,:)
-       real, pointer ::         ww(:,:)
   endtype catch_rst
 
   type(catch_rst) catch(3)
@@ -441,7 +435,6 @@ program Scale_Catch
        allocate( catch%    ghtcnt4(ntiles) )
        allocate( catch%    ghtcnt5(ntiles) )
        allocate( catch%    ghtcnt6(ntiles) )
-       allocate( catch%      tsurf(ntiles) )
        allocate( catch%     wesnn1(ntiles) )
        allocate( catch%     wesnn2(ntiles) )
        allocate( catch%     wesnn3(ntiles) )
@@ -451,11 +444,6 @@ program Scale_Catch
        allocate( catch%     sndzn1(ntiles) )
        allocate( catch%     sndzn2(ntiles) )
        allocate( catch%     sndzn3(ntiles) )
-       allocate( catch%         ch(ntiles,4) )
-       allocate( catch%         cm(ntiles,4) )
-       allocate( catch%         cq(ntiles,4) )
-       allocate( catch%         fr(ntiles,4) )
-       allocate( catch%         ww(ntiles,4) )
 
    return
    end subroutine allocatch
@@ -510,7 +498,6 @@ program Scale_Catch
        call MAPL_VarRead(formatter,"GHTCNT4",catch%ghtcnt4, __RC__)
        call MAPL_VarRead(formatter,"GHTCNT5",catch%ghtcnt5, __RC__)
        call MAPL_VarRead(formatter,"GHTCNT6",catch%ghtcnt6, __RC__)
-       call MAPL_VarRead(formatter,"TSURF",catch%tsurf, __RC__)
        call MAPL_VarRead(formatter,"WESNN1",catch%wesnn1, __RC__)
        call MAPL_VarRead(formatter,"WESNN2",catch%wesnn2, __RC__)
        call MAPL_VarRead(formatter,"WESNN3",catch%wesnn3, __RC__)
@@ -520,11 +507,6 @@ program Scale_Catch
        call MAPL_VarRead(formatter,"SNDZN1",catch%sndzn1, __RC__)
        call MAPL_VarRead(formatter,"SNDZN2",catch%sndzn2, __RC__)
        call MAPL_VarRead(formatter,"SNDZN3",catch%sndzn3, __RC__)
-       call MAPL_VarRead(formatter,"CH",catch%ch, __RC__)
-       call MAPL_VarRead(formatter,"CM",catch%cm, __RC__)
-       call MAPL_VarRead(formatter,"CQ",catch%cq, __RC__)
-       call MAPL_VarRead(formatter,"FR",catch%fr, __RC__)
-       call MAPL_VarRead(formatter,"WW",catch%ww, __RC__)
        if (present(rc)) rc =0
        !_RETURN(_SUCCESS)
    end subroutine readcatch_nc4
@@ -575,7 +557,6 @@ program Scale_Catch
        read(unit) catch%  ghtcnt4
        read(unit) catch%  ghtcnt5
        read(unit) catch%  ghtcnt6
-       read(unit) catch%    tsurf
        read(unit) catch%   wesnn1
        read(unit) catch%   wesnn2
        read(unit) catch%   wesnn3
@@ -585,11 +566,6 @@ program Scale_Catch
        read(unit) catch%   sndzn1
        read(unit) catch%   sndzn2
        read(unit) catch%   sndzn3
-       read(unit) catch%       ch
-       read(unit) catch%       cm
-       read(unit) catch%       cq
-       read(unit) catch%       fr
-       read(unit) catch%       ww
 
    return
    end subroutine readcatch
@@ -641,7 +617,6 @@ program Scale_Catch
        call MAPL_VarWrite(formatter,"GHTCNT4",catch%ghtcnt4)
        call MAPL_VarWrite(formatter,"GHTCNT5",catch%ghtcnt5)
        call MAPL_VarWrite(formatter,"GHTCNT6",catch%ghtcnt6)
-       call MAPL_VarWrite(formatter,"TSURF",catch%tsurf)
        call MAPL_VarWrite(formatter,"WESNN1",catch%wesnn1)
        call MAPL_VarWrite(formatter,"WESNN2",catch%wesnn2)
        call MAPL_VarWrite(formatter,"WESNN3",catch%wesnn3)
@@ -651,11 +626,6 @@ program Scale_Catch
        call MAPL_VarWrite(formatter,"SNDZN1",catch%sndzn1)
        call MAPL_VarWrite(formatter,"SNDZN2",catch%sndzn2)
        call MAPL_VarWrite(formatter,"SNDZN3",catch%sndzn3)
-       call MAPL_VarWrite(formatter,"CH",catch%ch)
-       call MAPL_VarWrite(formatter,"CM",catch%cm)
-       call MAPL_VarWrite(formatter,"CQ",catch%cq)
-       call MAPL_VarWrite(formatter,"FR",catch%fr)
-       call MAPL_VarWrite(formatter,"WW",catch%ww)
 
    return
    end subroutine writecatch_nc4
@@ -706,7 +676,6 @@ program Scale_Catch
        write(unit) catch%  ghtcnt4
        write(unit) catch%  ghtcnt5
        write(unit) catch%  ghtcnt6
-       write(unit) catch%    tsurf
        write(unit) catch%   wesnn1
        write(unit) catch%   wesnn2
        write(unit) catch%   wesnn3
@@ -716,11 +685,6 @@ program Scale_Catch
        write(unit) catch%   sndzn1
        write(unit) catch%   sndzn2
        write(unit) catch%   sndzn3
-       write(unit) catch%       ch
-       write(unit) catch%       cm
-       write(unit) catch%       cq
-       write(unit) catch%       fr
-       write(unit) catch%       ww
 
    return
    end subroutine writecatch
