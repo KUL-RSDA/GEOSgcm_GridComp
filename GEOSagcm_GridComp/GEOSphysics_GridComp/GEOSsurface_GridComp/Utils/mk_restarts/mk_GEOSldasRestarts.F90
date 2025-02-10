@@ -1724,14 +1724,11 @@ contains
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TSB2'), (/1/), (/NTILES/),TSB2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ATAU'), (/1/), (/NTILES/),ATAU2)
      STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'BTAU'), (/1/), (/NTILES/),BTAU2)
-     STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TILE_ID'), (/1/), (/NTILES/),VAR1)
-     print *, 'SA! Print of the STATUS after reading in all regular variables (2):', STATUS
-     STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
-     print *, 'SA! I checked whether this would read in the ITY to OLD_ITY'
-     print *, 'SA! Print isCatchCN:', isCatchCN
+     ! STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'TILE_ID'), (/1/), (/NTILES/),VAR1)
+     print *, 'SA! Print of the STATUS after reading in all regular variables and outcommenting TILE ID (2):', STATUS
+     ! STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'OLD_ITY'), (/1/), (/NTILES/),real(ITY))
 
      if( isCatchCN ) then
-        print *, 'SA! If this is written the ITY is NOT assigned to the OLD_ITY in the netcdf'
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,1/), (/NTILES,1/),CLMC_pt1)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,2/), (/NTILES,1/),CLMC_pt2)
         STATUS = NF_PUT_VARA_REAL(NCFID,VarID(NCFID,'ITY'), (/1,3/), (/NTILES,1/),CLMC_st1)
